@@ -2,9 +2,9 @@
 :root,
 [data-theme='light'] {
   /* Brand colors */
-  --color-brand-primary: #3b82f6;
-  --color-brand-primary-dark: #2563eb;
-  --color-brand-primary-alpha: rgba(59, 130, 246, 0.1);
+  --color-brand-primary: #8b5cf6;
+  --color-brand-primary-dark: #7c3aed;
+  --color-brand-primary-alpha: rgba(139, 92, 246, 0.1);
 
   /* Background colors - matching modern.css naming */
   --color-bg-primary: #ffffff;
@@ -32,7 +32,7 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-info: #3b82f6;
+  --color-info: #8b5cf6;
 
   /* Component specific */
   --color-overlay: rgba(0, 0, 0, 0.5);
@@ -48,9 +48,9 @@
 /* Dark theme */
 [data-theme='dark'] {
   /* Brand colors */
-  --color-brand-primary: #60a5fa;
-  --color-brand-primary-dark: #3b82f6;
-  --color-brand-primary-alpha: rgba(96, 165, 250, 0.1);
+  --color-brand-primary: #a78bfa;
+  --color-brand-primary-dark: #9333ea;
+  --color-brand-primary-alpha: rgba(167, 139, 250, 0.1);
 
   /* Background colors - matching modern.css naming */
   --color-bg-primary: #1f2937;
@@ -78,7 +78,7 @@
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-info: #a78bfa;
 
   /* Component specific */
   --color-overlay: rgba(0, 0, 0, 0.7);
