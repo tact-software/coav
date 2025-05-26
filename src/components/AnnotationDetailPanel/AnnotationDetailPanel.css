@@ -1,0 +1,203 @@
+.annotation-detail-panel {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+/* Detail sections */
+.detail-section {
+  margin-bottom: 1.5rem;
+}
+
+.detail-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.detail-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.detail-section-toggle {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.detail-section-header.collapsed .detail-section-toggle {
+  transform: rotate(-90deg);
+}
+
+.detail-section-content {
+  display: block;
+}
+
+.detail-section-header.collapsed + .detail-section-content {
+  display: none;
+}
+
+/* Field display */
+.detail-field {
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.detail-field-label {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  min-width: 120px;
+}
+
+.detail-field-value {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  font-family: 'Monaco', 'Consolas', monospace;
+  word-break: break-word;
+}
+
+.detail-field-copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease;
+}
+
+.detail-field:hover .detail-field-copy {
+  opacity: 1;
+}
+
+.detail-field-copy:hover {
+  color: var(--color-brand-primary);
+}
+
+/* JSON view */
+.detail-json-view {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  color: var(--color-text-primary);
+}
+
+/* JSON field */
+.detail-field-json {
+  margin-bottom: 1rem;
+}
+
+.detail-field-json .detail-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.detail-field-json-content {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* View mode toggle */
+.detail-view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.detail-view-toggle button {
+  flex: 1;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+  border-radius: 2px;
+}
+
+.detail-view-toggle button.active {
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+}
+
+/* Multiple selection */
+.detail-multi-select-info {
+  background: var(--color-bg-accent);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+/* Empty state */
+.detail-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+}
+
+.detail-empty-state p {
+  color: var(--color-text-secondary);
+  margin: 0.5rem 0;
+}
+
+/* Segmentation points */
+.segmentation-points {
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-family: 'Monaco', 'Consolas', monospace;
+  color: var(--color-text-primary);
+}
+
+.segmentation-summary {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}

@@ -1,0 +1,100 @@
+/* Light theme (default) */
+:root,
+[data-theme='light'] {
+  /* Brand colors */
+  --color-brand-primary: #3b82f6;
+  --color-brand-primary-dark: #2563eb;
+  --color-brand-primary-alpha: rgba(59, 130, 246, 0.1);
+
+  /* Background colors - matching modern.css naming */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+
+  /* Surface colors */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-surface-tertiary: #f3f4f6;
+
+  /* Text colors */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-text-inverse: #ffffff;
+
+  /* Border colors - matching modern.css naming */
+  --color-border-primary: #e5e7eb;
+  --color-border-secondary: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+
+  /* Status colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Component specific */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-shadow: rgba(0, 0, 0, 0.1);
+
+  /* Shadows - matching modern.css naming */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark theme */
+[data-theme='dark'] {
+  /* Brand colors */
+  --color-brand-primary: #60a5fa;
+  --color-brand-primary-dark: #3b82f6;
+  --color-brand-primary-alpha: rgba(96, 165, 250, 0.1);
+
+  /* Background colors - matching modern.css naming */
+  --color-bg-primary: #1f2937;
+  --color-bg-secondary: #111827;
+  --color-bg-tertiary: #374151;
+
+  /* Surface colors */
+  --color-surface: #1f2937;
+  --color-surface-secondary: #111827;
+  --color-surface-tertiary: #374151;
+
+  /* Text colors */
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-tertiary: #9ca3af;
+  --color-text-inverse: #111827;
+
+  /* Border colors - matching modern.css naming */
+  --color-border-primary: #374151;
+  --color-border-secondary: #4b5563;
+  --color-border: #374151;
+  --color-border-light: #4b5563;
+
+  /* Status colors */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+
+  /* Component specific */
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-shadow: rgba(0, 0, 0, 0.3);
+
+  /* Shadows - matching modern.css naming */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.38);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth transition for theme changes */
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}

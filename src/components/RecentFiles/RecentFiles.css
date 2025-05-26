@@ -1,0 +1,122 @@
+.recent-files {
+  padding: var(--spacing-md);
+}
+
+.recent-files-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.recent-files-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: between;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.clear-btn:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+}
+
+.recent-file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 2px;
+}
+
+.recent-file-item:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.recent-file-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.recent-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-file-name {
+  font-size: 0.8rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-file-path {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-file-time {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recent-file-item:hover .remove-btn {
+  opacity: 1;
+}
+
+.remove-btn:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+}
+
+.no-recent-files {
+  color: var(--color-text-tertiary);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: var(--spacing-lg);
+  font-style: italic;
+}

@@ -1,0 +1,5 @@
+[tools]
+act = "latest"
+bun = "1.2.4"
+node = "22.15.1"
+rust = "1.82.0"

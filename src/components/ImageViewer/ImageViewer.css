@@ -1,0 +1,29 @@
+.image-viewer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.image-viewer.error,
+.image-viewer.loading,
+.image-viewer.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.image-viewer.error p {
+  color: var(--error);
+  margin: 0;
+}
+
+.image-viewer.loading p,
+.image-viewer.empty p {
+  color: var(--text);
+  margin: 0;
+}

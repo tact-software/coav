@@ -1,0 +1,33 @@
+
+      <svg width="240" height="64" viewBox="0 0 240 64" xmlns="http://www.w3.org/2000/svg">
+        <rect width="240" height="64" fill="#1A1A1A" />
+        <g transform="translate(0, 0)">
+          
+        <path d="M 32,5.120000000000001 L 55.27876285372571,18.560000000000002 L 55.27876285372571,45.44 L 32,58.879999999999995 L 8.721237146274294,45.44000000000001 L 8.72123714627428,18.560000000000016 Z" fill="none" stroke="#8B5CF6" 
+              stroke-width="1.28" 
+              stroke-dasharray="5.12 2.56" 
+              stroke-linecap="round" />
+        <circle cx="32" cy="5.120000000000001" r="1.6" fill="#8B5CF6" />
+<circle cx="55.27876285372571" cy="18.560000000000002" r="1.6" fill="#8B5CF6" />
+<circle cx="55.27876285372571" cy="45.44" r="1.6" fill="#8B5CF6" />
+<circle cx="32" cy="58.879999999999995" r="1.6" fill="#8B5CF6" />
+<circle cx="8.721237146274294" cy="45.44000000000001" r="1.6" fill="#8B5CF6" />
+<circle cx="8.72123714627428" cy="18.560000000000016" r="1.6" fill="#8B5CF6" />
+        <text x="32" y="37.12" 
+              font-family="Inter, -apple-system, sans-serif" 
+              font-size="14.08" font-weight="600" 
+              text-anchor="middle" fill="#1F2937">
+          CO<tspan fill="#8B5CF6" font-weight="300">|</tspan>AV
+        </text>
+      
+        </g>
+        <text x="83.2" y="28.8" 
+              font-family="Inter, -apple-system, sans-serif" 
+              font-size="20.48" font-weight="700" 
+              fill="#1F2937">COAV</text>
+        <text x="83.2" y="48" 
+              font-family="Inter, -apple-system, sans-serif" 
+              font-size="14.08" font-weight="400" 
+              fill="#1F2937" opacity="0.8">Annotation Viewer</text>
+      </svg>
+    

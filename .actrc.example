@@ -1,0 +1,15 @@
+# Act設定のテンプレート
+# このファイルを .actrc にコピーして使用してください
+# cp .actrc.example .actrc
+
+# デフォルトのDockerイメージ設定
+# Intel Mac/Linux
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+-P ubuntu-22.04=catthehacker/ubuntu:act-22.04
+-P ubuntu-20.04=catthehacker/ubuntu:act-20.04
+-P windows-latest=catthehacker/ubuntu:act-latest
+-P windows-2022=catthehacker/ubuntu:act-latest
+-P windows-2019=catthehacker/ubuntu:act-latest
+
+# 共通オプション
+--container-architecture linux/amd64

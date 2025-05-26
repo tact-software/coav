@@ -1,0 +1,14 @@
+[toolchain]
+# Rust ツールチェーンのバージョンを指定
+# 例: "1.70.0" または "nightly"
+channel = "1.82.0"
+
+# 必要なコンポーネントを明示的に指定
+components = ["rustfmt", "clippy"]
+
+# Rust バックエンド用
+[tool.clippy]
+# 追加設定が必要な場合はここに記載
+
+[tool.rustfmt]
+edition = "2021"

@@ -1,0 +1,25 @@
+
+      <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        
+        <g transform="translate(0, 0)">
+          
+        <path d="M 4.8,0.7679999999999998 L 8.291814428058856,2.784 L 8.291814428058856,6.815999999999999 L 4.8,8.832 L 1.3081855719411437,6.816000000000001 L 1.3081855719411415,2.7840000000000025 Z" fill="none" stroke="#8B5CF6" 
+              stroke-width="0.192" 
+              stroke-dasharray="0.768 0.384" 
+              stroke-linecap="round" />
+        <circle cx="4.8" cy="0.7679999999999998" r="0.24" fill="#8B5CF6" />
+<circle cx="8.291814428058856" cy="2.784" r="0.24" fill="#8B5CF6" />
+<circle cx="8.291814428058856" cy="6.815999999999999" r="0.24" fill="#8B5CF6" />
+<circle cx="4.8" cy="8.832" r="0.24" fill="#8B5CF6" />
+<circle cx="1.3081855719411437" cy="6.816000000000001" r="0.24" fill="#8B5CF6" />
+<circle cx="1.3081855719411415" cy="2.7840000000000025" r="0.24" fill="#8B5CF6" />
+        <text x="4.8" y="5.568" 
+              font-family="Inter, -apple-system, sans-serif" 
+              font-size="2.112" font-weight="600" 
+              text-anchor="middle" fill="#1F2937">
+          CO<tspan fill="#8B5CF6" font-weight="300">|</tspan>AV
+        </text>
+      
+        </g>
+      </svg>
+    

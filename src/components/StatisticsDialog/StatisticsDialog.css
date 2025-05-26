@@ -1,0 +1,225 @@
+/* Overlay */
+.statistics-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+/* Dialog */
+.statistics-dialog {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.statistics-dialog-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statistics-dialog-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.statistics-dialog-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  transition: color 0.2s ease;
+}
+
+.statistics-dialog-close:hover {
+  color: var(--color-text-primary);
+}
+
+/* Content */
+.statistics-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+/* Statistics Section */
+.statistics-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.statistics-section:last-child {
+  margin-bottom: 0;
+}
+
+.statistics-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Statistics Grid */
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Statistic Card */
+.statistic-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.statistic-card:hover {
+  border-color: var(--color-brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.statistic-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.statistic-label {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.statistic-percentage {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-xs);
+}
+
+/* Category Distribution */
+.category-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.category-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.category-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-name {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.category-count {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.category-bar-container {
+  position: relative;
+  height: 24px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.category-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: var(--color-brand-primary);
+  transition: width 0.3s ease;
+}
+
+.category-percentage {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Footer */
+.statistics-dialog-footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border-primary);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+/* Empty State */
+.statistics-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statistics-dialog {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .statistics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .statistic-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .statistics-dialog-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .statistic-card {
+    background: var(--color-bg-tertiary);
+  }
+
+  .category-bar-container {
+    background: var(--color-bg-tertiary);
+  }
+}
