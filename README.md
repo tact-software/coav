@@ -2,8 +2,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/coav-logo-horizontal-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/logo/coav-logo-horizontal-dark.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/coav-logo-horizontal-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo/coav-logo-horizontal-light.svg">
     <img alt="COAV Logo" src="./assets/logo/coav-logo-horizontal-light.svg" width="400">
   </picture>
 </p>
