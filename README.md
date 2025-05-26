@@ -58,6 +58,7 @@ mise install
 ```bash
 # 依存関係のインストール
 bun install
+cd src-tauri
 cargo fetch
 
 # 開発モード
@@ -66,6 +67,29 @@ bun tauri dev
 # プロダクションビルド
 bun tauri build
 ```
+
+ubuntuの場合、以下のコマンドで必要なライブラリをインストールしてください：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libwebkit2gtk-4.1-dev \
+   build-essential \
+   curl \
+   wget \
+   file \
+   libssl-dev \
+   libayatana-appindicator3-dev \
+   librsvg2-dev
+```
+
+#### ビルド成果物のインストール
+
+- Windows
+  `src-tauri/target/release/bundle/nsis/coav-setup-<version>.exe` を実行
+- Ubuntu
+  `apt install ./src-tauri/target/release/bundle/deb/coav_<version>_amd64.deb` を実行
+- macOS
+  `./src-tauri/target/release/bundle/dmg/coav-<version>.dmg` をダブルクリックでインストール
 
 ## 使い方
 
