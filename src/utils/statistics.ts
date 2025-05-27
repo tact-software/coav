@@ -33,16 +33,19 @@ export interface AnnotationStatistics {
 
 export function calculateAnnotationStatistics(
   cocoData: COCOData | null,
-  imageId: number,
+  imageId: number | null,
   visibleCategoryIds: number[],
   selectedAnnotationIds: number[]
 ): AnnotationStatistics | null {
   if (!cocoData) return null;
 
-  const image = cocoData.images.find((img) => img.id === imageId);
-  if (!image) return null;
+  // If imageId is null, calculate statistics for all images
+  const imageAnnotations = imageId
+    ? cocoData.annotations.filter((ann) => ann.image_id === imageId)
+    : cocoData.annotations;
 
-  const imageAnnotations = cocoData.annotations.filter((ann) => ann.image_id === imageId);
+  // Get image dimensions for coverage calculation
+  const image = imageId ? cocoData.images.find((img) => img.id === imageId) : null;
   const visibleAnnotations = imageAnnotations.filter((ann) =>
     visibleCategoryIds.includes(ann.category_id)
   );
@@ -99,9 +102,21 @@ export function calculateAnnotationStatistics(
   }
 
   // Calculate coverage percentage
-  const imageArea = image.width * image.height;
-  const totalAnnotationArea = imageAnnotations.reduce((sum, ann) => sum + ann.area, 0);
-  const coveragePercentage = (totalAnnotationArea / imageArea) * 100;
+  let coveragePercentage = 0;
+  if (image) {
+    const imageArea = image.width * image.height;
+    const totalAnnotationArea = imageAnnotations.reduce((sum, ann) => sum + ann.area, 0);
+    coveragePercentage = (totalAnnotationArea / imageArea) * 100;
+  } else if (imageId === null && cocoData.images.length > 0) {
+    // For all images, calculate average coverage
+    const totalCoverage = cocoData.images.reduce((sum, img) => {
+      const imgAnnotations = cocoData.annotations.filter((ann) => ann.image_id === img.id);
+      const imgArea = img.width * img.height;
+      const annotationArea = imgAnnotations.reduce((aSum, ann) => aSum + ann.area, 0);
+      return sum + (annotationArea / imgArea) * 100;
+    }, 0);
+    coveragePercentage = totalCoverage / cocoData.images.length;
+  }
 
   // Calculate overlapping annotations
   const overlappingCount = countOverlappingAnnotations(imageAnnotations);

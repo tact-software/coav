@@ -26,7 +26,8 @@ const ImageViewer: React.FC = () => {
     error,
   } = useImageStore();
 
-  const { cocoData, selectedAnnotationIds, shouldCenterOnSelection } = useAnnotationStore();
+  const { cocoData, selectedAnnotationIds, shouldCenterOnSelection, currentImageId } =
+    useAnnotationStore();
 
   // Calculate viewport for culling
   const getViewport = useCallback(() => {
@@ -205,12 +206,8 @@ const ImageViewer: React.FC = () => {
           <Layer>
             <KonvaImage image={image} width={imageSize.width} height={imageSize.height} />
           </Layer>
-          {cocoData && cocoData.images.length > 0 && (
-            <AnnotationLayer
-              imageId={cocoData.images[0].id}
-              scale={zoom}
-              viewport={getViewport()}
-            />
+          {cocoData && currentImageId && (
+            <AnnotationLayer imageId={currentImageId} scale={zoom} viewport={getViewport()} />
           )}
         </Stage>
       )}

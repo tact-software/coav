@@ -19,6 +19,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
   const { t } = useTranslation();
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
+  const [imageCount, setImageCount] = useState(1);
   const [classCount, setClassCount] = useState(4);
   const [annotationCount, setAnnotationCount] = useState(10);
   const [filename, setFilename] = useState('sample');
@@ -26,6 +27,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
   const [allowOverlap, setAllowOverlap] = useState(true);
   const [includeLicenses, setIncludeLicenses] = useState(false);
   const [includeOption, setIncludeOption] = useState(false);
+  const [includeMultiPolygon, setIncludeMultiPolygon] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
@@ -58,6 +60,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
           width,
           height,
           output_dir: outputDir,
+          image_count: imageCount,
           class_count: classCount,
           annotation_count: annotationCount,
           filename,
@@ -65,13 +68,18 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
           allow_overlap: allowOverlap,
           include_licenses: includeLicenses,
           include_option: includeOption,
+          include_multi_polygon: includeMultiPolygon,
         },
       });
 
       alert(t('success.sampleGenerated'));
 
       // Automatically load the generated files
-      const imagePath = `${outputDir}/${filename}-image.png`;
+      // For multiple images, load the first one
+      const imagePath =
+        imageCount === 1
+          ? `${outputDir}/${filename}-image.png`
+          : `${outputDir}/${filename}-image-1.png`;
       const jsonPath = `${outputDir}/${filename}-annotation.json`;
       onGenerated(imagePath, jsonPath);
       onClose();
@@ -147,6 +155,21 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
           </div>
 
           <div className="form-group">
+            <label htmlFor="imageCount">{t('sampleGenerator.imageCount')}</label>
+            <input
+              id="imageCount"
+              type="number"
+              className="input"
+              value={imageCount}
+              onChange={(e) =>
+                setImageCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))
+              }
+              min="1"
+              max="10"
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="classCount">{t('sampleGenerator.numClassesMax')}</label>
             <input
               id="classCount"
@@ -217,6 +240,17 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
                 onChange={(e) => setIncludeOption(e.target.checked)}
               />
               {t('sampleGenerator.includeOption')}
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={includeMultiPolygon}
+                onChange={(e) => setIncludeMultiPolygon(e.target.checked)}
+              />
+              {t('sampleGenerator.includeMultiPolygon')}
             </label>
           </div>
 

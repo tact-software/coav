@@ -94,11 +94,6 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
   // Performance monitoring in development
   useEffect(() => {
     renderCountRef.current++;
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `AnnotationLayer render #${renderCountRef.current}, visible annotations: ${annotations.length}`
-      );
-    }
   });
 
   // Determine LOD based on zoom level

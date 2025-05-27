@@ -74,7 +74,14 @@
     "coverageAnalysis": "カバレッジ分析",
     "coverage": "カバレッジ",
     "overlapping": "重複",
-    "moreCategories": "+{{count}}個のカテゴリ"
+    "moreCategories": "+{{count}}個のカテゴリ",
+    "imageNotFound": "画像が見つかりません",
+    "selectImageFile": "画像ファイルを手動で選択してください",
+    "viewMode": "表示モード",
+    "currentImageOnly": "現在の画像のみ",
+    "allImages": "すべての画像",
+    "imageIdSelected": "画像IDが選択されました",
+    "pleaseOpenImage": "対応する画像ファイルを開いてください"
   },
   "detail": {
     "title": "アノテーション詳細",
@@ -135,6 +142,7 @@
     "description": "COCOフォーマットのサンプルデータを生成します",
     "imageWidth": "画像の幅",
     "imageHeight": "画像の高さ",
+    "imageCount": "画像数",
     "numClasses": "クラス数",
     "numClassesMax": "クラス数（最大: 10）",
     "numAnnotations": "アノテーション数",
@@ -145,6 +153,7 @@
     "allowOverlap": "オブジェクトの重なりを許可",
     "includeLicenses": "アノテーションにライセンス情報を含める",
     "includeOption": "各アノテーションにカスタムオプションフィールドを追加",
+    "includeMultiPolygon": "マルチポリゴンアノテーションを含める（ランダムな副ポリゴン）",
     "generate": "生成",
     "cancel": "キャンセル",
     "generating": "生成中...",
@@ -173,7 +182,8 @@
     "largest": "最大",
     "average": "平均",
     "close": "閉じる",
-    "copy": "コピー"
+    "copy": "コピー",
+    "annotationStatistics": "アノテーション統計"
   },
   "settings": {
     "title": "設定",
@@ -195,5 +205,12 @@
     "cancel": "キャンセル",
     "reset": "リセット",
     "confirmReset": "すべての設定をリセットしてもよろしいですか？"
+  },
+  "imageSelection": {
+    "title": "画像を選択",
+    "description": "このアノテーションファイルには複数の画像が含まれています。表示する画像を選択してください。",
+    "noImages": "利用可能な画像がありません",
+    "cancel": "キャンセル",
+    "select": "選択"
   }
 }

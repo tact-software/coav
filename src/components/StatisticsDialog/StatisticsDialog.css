@@ -63,6 +63,49 @@
   padding: var(--spacing-lg);
 }
 
+/* View Mode Section */
+.view-mode-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.view-mode-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* View Mode Toggle */
+.view-mode-toggle {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.view-mode-toggle button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.view-mode-toggle button:hover {
+  color: var(--color-text-primary);
+}
+
+.view-mode-toggle button.active {
+  background: var(--color-brand-primary);
+  color: white;
+}
+
 /* Statistics Section */
 .statistics-section {
   margin-bottom: var(--spacing-2xl);

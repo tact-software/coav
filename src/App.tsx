@@ -11,6 +11,7 @@ import SampleGeneratorDialog from './components/SampleGeneratorDialog';
 import StatisticsDialog from './components/StatisticsDialog';
 import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SettingsModal from './components/SettingsModal';
+import ImageSelectionDialog from './components/ImageSelectionDialog';
 import { ToastContainer } from './components/Toast';
 import {
   useAnnotationStore,
@@ -29,7 +30,7 @@ import { useTranslation } from 'react-i18next';
 
 function App() {
   const { t } = useTranslation();
-  const { cocoData, setCocoData, clearCocoData } = useAnnotationStore();
+  const { cocoData, setCocoData, clearCocoData, setCurrentImageId } = useAnnotationStore();
   const {
     setImagePath,
     setImageData,
@@ -48,6 +49,11 @@ function App() {
   const [unifiedPanelVisible, setUnifiedPanelVisible] = useState(false);
   const [showSampleGenerator, setShowSampleGenerator] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showImageSelection, setShowImageSelection] = useState(false);
+  const [tempCocoData, setTempCocoData] = useState<{
+    data: COCOData;
+    annotationDir: string;
+  } | null>(null);
 
   // Responsive layout hook
   const {
@@ -66,6 +72,13 @@ function App() {
     isMediumScreen,
     isLargeScreen,
   } = useResponsiveLayout();
+
+  // Show image selection dialog when tempCocoData is set
+  useEffect(() => {
+    if (tempCocoData) {
+      setShowImageSelection(true);
+    }
+  }, [tempCocoData]);
 
   const handleOpenImage = useCallback(async () => {
     try {
@@ -139,12 +152,35 @@ function App() {
 
       const jsonPath = selected as string;
 
+      // Reset state first
+      setShowImageSelection(false);
+      setTempCocoData(null);
+
       const data = await invoke<COCOData>('load_annotations', { filePath: jsonPath });
-      setCocoData(data);
+
+      // Store the annotation file path for later use
+      const annotationDir =
+        jsonPath.substring(0, jsonPath.lastIndexOf('/')) ||
+        jsonPath.substring(0, jsonPath.lastIndexOf('\\'));
+
+      // Check if there are multiple images
+      if (data.images && data.images.length > 1) {
+        // Store data temporarily but don't set it in the store yet
+        setTempCocoData({ data, annotationDir });
+        // Dialog will be shown by useEffect when tempCocoData is set
+      } else if (data.images && data.images.length === 1) {
+        // Single image, set it immediately
+        setCocoData(data);
+        setCurrentImageId(data.images[0].id);
+      } else {
+        // No images, just set the data
+        setCocoData(data);
+      }
+
       // Add to recent files
       addRecentFile({
         path: jsonPath,
-        name: jsonPath.split('/').pop() || 'Unknown',
+        name: jsonPath.split('/').pop() || jsonPath.split('\\').pop() || 'Unknown',
         type: 'annotation',
       });
       toast.success(
@@ -162,7 +198,7 @@ function App() {
       setError(errorMessage);
       toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
     }
-  }, [setCocoData, setError, addRecentFile]);
+  }, [setCocoData, setCurrentImageId, setError, addRecentFile, t]);
 
   const handleGenerateSample = useCallback(() => {
     setShowSampleGenerator(true);
@@ -229,6 +265,9 @@ function App() {
     async (imagePath: string) => {
       try {
         setLoading(true);
+        // Reset dialog state when loading new image
+        setShowImageSelection(false);
+        setTempCocoData(null);
         const imageBytes = await invoke<number[]>('load_image', { filePath: imagePath });
         const uint8Array = new Uint8Array(imageBytes);
         const blob = new Blob([uint8Array]);
@@ -269,8 +308,31 @@ function App() {
   const loadAnnotationsFromPath = useCallback(
     async (jsonPath: string) => {
       try {
+        // Reset previous state
+        setShowImageSelection(false);
+        setTempCocoData(null);
+
         const data = await invoke<COCOData>('load_annotations', { filePath: jsonPath });
-        setCocoData(data);
+
+        // Store the annotation file path for later use
+        const annotationDir =
+          jsonPath.substring(0, jsonPath.lastIndexOf('/')) ||
+          jsonPath.substring(0, jsonPath.lastIndexOf('\\'));
+
+        // Check if there are multiple images
+        if (data.images && data.images.length > 1) {
+          // Store data temporarily but don't set it in the store yet
+          setTempCocoData({ data, annotationDir });
+          // Dialog will be shown by useEffect when tempCocoData is set
+        } else if (data.images && data.images.length === 1) {
+          // Single image, set it immediately
+          setCocoData(data);
+          setCurrentImageId(data.images[0].id);
+        } else {
+          // No images, just set the data
+          setCocoData(data);
+        }
+
         // Add to recent files
         addRecentFile({
           path: jsonPath,
@@ -293,7 +355,7 @@ function App() {
         toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
       }
     },
-    [setCocoData, setError, addRecentFile]
+    [setCocoData, setError, addRecentFile, loadImageFromPath]
   );
 
   // Listen for menu events
@@ -682,6 +744,33 @@ function App() {
       <StatisticsDialog isOpen={showStatistics} onClose={() => setShowStatistics(false)} />
 
       <SettingsModal isOpen={isSettingsModalOpen} onClose={closeSettingsModal} />
+
+      <ImageSelectionDialog
+        isOpen={showImageSelection}
+        onClose={() => {
+          setShowImageSelection(false);
+          setTempCocoData(null);
+        }}
+        images={tempCocoData?.data.images || []}
+        currentImageFileName={
+          useImageStore.getState().imagePath?.split('/').pop() ||
+          useImageStore.getState().imagePath?.split('\\').pop()
+        }
+        onSelect={async (image) => {
+          if (tempCocoData) {
+            // Set the COCO data now that user has selected an image
+            setCocoData(tempCocoData.data);
+            setCurrentImageId(image.id);
+            setShowImageSelection(false);
+
+            // Clear temporary data
+            setTempCocoData(null);
+
+            // Notify user that they need to open the actual image file
+            toast.info(t('info.imageIdSelected'), t('info.pleaseOpenImage'));
+          }
+        }}
+      />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>

@@ -74,7 +74,14 @@
     "coverageAnalysis": "Coverage Analysis",
     "coverage": "Coverage",
     "overlapping": "Overlapping",
-    "moreCategories": "+{{count}} more categories"
+    "moreCategories": "+{{count}} more categories",
+    "imageNotFound": "Image not found",
+    "selectImageFile": "Please select the image file manually",
+    "viewMode": "View Mode",
+    "currentImageOnly": "Current Image",
+    "allImages": "All Images",
+    "imageIdSelected": "Image ID selected",
+    "pleaseOpenImage": "Please open the corresponding image file"
   },
   "detail": {
     "title": "Annotation Details",
@@ -135,6 +142,7 @@
     "description": "Generate sample data in COCO format",
     "imageWidth": "Image Width",
     "imageHeight": "Image Height",
+    "imageCount": "Number of Images",
     "numClasses": "Number of Classes",
     "numClassesMax": "Number of Classes (Max: 10)",
     "numAnnotations": "Number of Annotations",
@@ -145,6 +153,7 @@
     "allowOverlap": "Allow objects to overlap",
     "includeLicenses": "Include licenses in annotations",
     "includeOption": "Include custom option fields for each annotation",
+    "includeMultiPolygon": "Include multi-polygon annotations (random secondary polygons)",
     "extendedFields": "Extended Fields",
     "generate": "Generate",
     "cancel": "Cancel",
@@ -174,7 +183,8 @@
     "largest": "Largest",
     "average": "Average",
     "close": "Close",
-    "copy": "Copy"
+    "copy": "Copy",
+    "annotationStatistics": "Annotation Statistics"
   },
   "settings": {
     "title": "Settings",
@@ -196,5 +206,12 @@
     "cancel": "Cancel",
     "reset": "Reset",
     "confirmReset": "Are you sure you want to reset all settings?"
+  },
+  "imageSelection": {
+    "title": "Select Image",
+    "description": "This annotation file contains multiple images. Please select an image to display.",
+    "noImages": "No images available",
+    "cancel": "Cancel",
+    "select": "Select"
   }
 }

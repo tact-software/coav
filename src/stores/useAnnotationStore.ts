@@ -6,6 +6,7 @@ interface AnnotationState {
   selectedAnnotationIds: number[];
   visibleCategoryIds: number[];
   hoveredAnnotationId: number | null;
+  currentImageId: number | null;
 
   // Detail panel state
   isDetailPanelOpen: boolean;
@@ -39,10 +40,14 @@ interface AnnotationState {
   prevSearchResult: () => void;
   clearSearch: () => void;
 
+  // Image actions
+  setCurrentImageId: (id: number | null) => void;
+
   // Getters
   getVisibleAnnotations: () => COCOAnnotation[];
   getSelectedAnnotations: () => COCOAnnotation[];
   getCategoryById: (id: number) => COCOCategory | undefined;
+  getAnnotationsForCurrentImage: () => COCOAnnotation[];
 }
 
 export const useAnnotationStore = create<AnnotationState>((set, get) => ({
@@ -50,6 +55,7 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
   selectedAnnotationIds: [],
   visibleCategoryIds: [],
   hoveredAnnotationId: null,
+  currentImageId: null,
   isDetailPanelOpen: false,
   detailPanelWidth: 350,
   searchQuery: '',
@@ -72,6 +78,7 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
       selectedAnnotationIds: [],
       visibleCategoryIds: [],
       hoveredAnnotationId: null,
+      currentImageId: null,
     });
   },
 
@@ -221,9 +228,15 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
     const state = get();
     if (!state.cocoData) return [];
 
-    return state.cocoData.annotations.filter((ann) =>
-      state.visibleCategoryIds.includes(ann.category_id)
-    );
+    return state.cocoData.annotations.filter((ann) => {
+      // Filter by category visibility
+      const categoryVisible = state.visibleCategoryIds.includes(ann.category_id);
+
+      // Filter by current image if set
+      const imageMatch = state.currentImageId ? ann.image_id === state.currentImageId : true;
+
+      return categoryVisible && imageMatch;
+    });
   },
 
   getSelectedAnnotations: () => {
@@ -236,5 +249,16 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
   getCategoryById: (id) => {
     const state = get();
     return state.cocoData?.categories.find((cat) => cat.id === id);
+  },
+
+  setCurrentImageId: (id) => {
+    set({ currentImageId: id });
+  },
+
+  getAnnotationsForCurrentImage: () => {
+    const state = get();
+    if (!state.cocoData || !state.currentImageId) return [];
+
+    return state.cocoData.annotations.filter((ann) => ann.image_id === state.currentImageId);
   },
 }));

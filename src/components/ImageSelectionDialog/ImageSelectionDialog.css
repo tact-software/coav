@@ -1,0 +1,69 @@
+/* Image Selection Dialog specific styles */
+.image-selection-dialog {
+  max-width: 600px;
+  width: 90%;
+}
+
+.dialog-description {
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-secondary);
+}
+
+.image-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.image-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-item:hover {
+  border-color: var(--color-brand-primary);
+  background: var(--color-bg-secondary);
+}
+
+.image-item.selected {
+  border-color: var(--color-brand-primary);
+  background: var(--color-brand-light);
+}
+
+.image-radio {
+  margin-right: var(--spacing-md);
+}
+
+.image-radio input[type='radio'] {
+  cursor: pointer;
+}
+
+.image-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.image-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.image-details {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.no-images-message {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}

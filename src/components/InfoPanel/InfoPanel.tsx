@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAnnotationStore, useImageStore, RecentFile } from '../../stores';
 import { RecentFiles } from '../RecentFiles';
@@ -11,8 +11,10 @@ interface InfoPanelProps {
 
 const InfoPanel: React.FC<InfoPanelProps> = ({ onRecentFileSelect }) => {
   const { t } = useTranslation();
-  const { cocoData, selectedAnnotationIds, visibleCategoryIds } = useAnnotationStore();
+  const { cocoData, selectedAnnotationIds, visibleCategoryIds, currentImageId } =
+    useAnnotationStore();
   const { imagePath } = useImageStore();
+  const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
 
   // Get current image from COCO data
   const currentImage = useMemo(() => {
@@ -23,14 +25,21 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ onRecentFileSelect }) => {
   }, [cocoData, imagePath]);
 
   const statistics = useMemo(() => {
-    if (!currentImage?.id || !cocoData) return null;
+    if (!cocoData) return null;
+
+    // Use currentImageId if viewing current image only, otherwise null for all images
+    const imageIdToUse = viewMode === 'current' && currentImageId ? currentImageId : null;
+
     return calculateAnnotationStatistics(
       cocoData,
-      currentImage.id,
+      imageIdToUse,
       visibleCategoryIds,
       selectedAnnotationIds
     );
-  }, [cocoData, currentImage?.id, visibleCategoryIds, selectedAnnotationIds]);
+  }, [cocoData, currentImageId, viewMode, visibleCategoryIds, selectedAnnotationIds]);
+
+  // Check if there are multiple images
+  const hasMultipleImages = cocoData && cocoData.images && cocoData.images.length > 1;
 
   // Show recent files when no image is loaded
   if (!currentImage || !cocoData) {
@@ -88,6 +97,29 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ onRecentFileSelect }) => {
             </div>
           </div>
         </div>
+
+        {/* View Mode Toggle - only show if multiple images */}
+        {hasMultipleImages && (
+          <div className="info-section">
+            <div className="section-header">
+              <h4>{t('info.viewMode')}</h4>
+            </div>
+            <div className="view-mode-toggle">
+              <button
+                className={`toggle-btn ${viewMode === 'current' ? 'active' : ''}`}
+                onClick={() => setViewMode('current')}
+              >
+                {t('info.currentImageOnly')}
+              </button>
+              <button
+                className={`toggle-btn ${viewMode === 'all' ? 'active' : ''}`}
+                onClick={() => setViewMode('all')}
+              >
+                {t('info.allImages')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Annotation Statistics */}
         {statistics && (
