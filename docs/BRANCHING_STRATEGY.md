@@ -395,9 +395,70 @@ gantt
 3. **安定性**: mainブランチは常に安定
 4. **柔軟性**: 機能の完成順序に依存しない
 
+## ブランチの削除ポリシー
+
+### 🗑️ 削除するブランチ
+
+マージ後は以下のブランチを削除します：
+
+- **`feature/*`** - マージ後即削除
+- **`fix/*`** - マージ後即削除
+- **`docs/*`** - マージ後即削除
+- **`refactor/*`** - マージ後即削除
+- **`test/*`** - マージ後即削除
+- **`chore/*`** - マージ後即削除
+- **`hotfix/*`** - マージ後即削除
+- **`release/*`** - マージ後即削除
+
+### 🔒 保持するブランチ
+
+以下のブランチは削除しません：
+
+- **`main`** - 永続的
+- **`develop`** - 永続的
+
+### 削除の実行方法
+
+#### GitHub上での自動削除（推奨）
+PRマージ時に「Delete branch」ボタンで削除、または自動削除を設定：
+
+```
+リポジトリ設定 → General → Pull Requests
+☑️ Automatically delete head branches
+```
+
+#### ローカルでの削除
+
+```bash
+# リモートブランチの削除（マージ済み）
+git push origin --delete feature/your-feature
+
+# ローカルブランチの削除
+git branch -d feature/your-feature
+
+# マージされていないブランチの強制削除（注意）
+git branch -D feature/your-feature
+
+# 削除済みリモートブランチの追跡を削除
+git fetch --prune
+```
+
+#### 一括クリーンアップ
+
+```bash
+# マージ済みのローカルブランチを一覧表示
+git branch --merged develop | grep -v -E "(main|develop)"
+
+# マージ済みのローカルブランチを一括削除
+git branch --merged develop | grep -v -E "(main|develop)" | xargs -n 1 git branch -d
+
+# リモートの削除済みブランチをローカルから削除
+git remote prune origin
+```
+
 ## 注意点
 
 - `develop`ブランチは定期的に`main`の変更を取り込む
 - 長期間のfeatureブランチは定期的に`develop`をマージ
 - コンフリクトは早期に解決
-- 各ブランチは用途に応じて適切に削除
+- マージ完了したブランチは速やかに削除してリポジトリを整理
