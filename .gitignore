@@ -28,5 +28,21 @@ dist-ssr
 .act/
 act-*.log
 
-CLAUDE.md
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files
 tmp.txt
+*.tmp
+*.temp
+
+# IDE specific
+CLAUDE.md

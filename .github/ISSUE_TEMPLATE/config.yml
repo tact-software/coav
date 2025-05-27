@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Community Discussions
+    url: https://github.com/tact-software/coav/discussions
+    about: Please ask and answer general questions here
+  - name: Documentation
+    url: https://github.com/tact-software/coav/wiki
+    about: Check our documentation for guides and tutorials

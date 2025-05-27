@@ -2,6 +2,21 @@
   "name": "coav",
   "private": true,
   "version": "1.0.0",
+  "description": "COCO Annotation Viewer - A modern desktop application for viewing and analyzing COCO dataset annotations",
+  "license": "MIT",
+  "author": "COAV Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tact-software/coav.git"
+  },
+  "keywords": [
+    "coco",
+    "annotation",
+    "viewer",
+    "dataset",
+    "computer-vision",
+    "tauri"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +33,9 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:coverage": "vitest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "version:update": "node script/update-version.js",
+    "version:update:sh": "bash script/update-version.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
