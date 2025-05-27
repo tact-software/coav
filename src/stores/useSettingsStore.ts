@@ -16,6 +16,16 @@ interface DetailSettings {
   promotedFields: string[]; // Promoted field paths like "option.detection.confidence"
 }
 
+export type TabType = 'control' | 'info' | 'detail' | 'files';
+export type PanelSide = 'left' | 'right';
+
+interface PanelLayoutSettings {
+  leftPanelTabs: TabType[];
+  rightPanelTabs: TabType[];
+  defaultLeftTab: TabType;
+  defaultRightTab: TabType;
+}
+
 interface SettingsState {
   // General settings
   language: Language;
@@ -26,6 +36,9 @@ interface SettingsState {
 
   // Detail settings
   detail: DetailSettings;
+
+  // Panel layout settings
+  panelLayout: PanelLayoutSettings;
 
   // Modal state
   isSettingsModalOpen: boolean;
@@ -38,6 +51,8 @@ interface SettingsState {
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
   resetSettings: () => void;
+  updatePanelLayout: (layout: Partial<PanelLayoutSettings>) => void;
+  moveTabToPanel: (tab: TabType, side: PanelSide) => void;
 }
 
 const defaultSettings: Omit<
@@ -49,6 +64,8 @@ const defaultSettings: Omit<
   | 'openSettingsModal'
   | 'closeSettingsModal'
   | 'resetSettings'
+  | 'updatePanelLayout'
+  | 'moveTabToPanel'
 > = {
   language: 'ja',
   theme: 'system',
@@ -60,6 +77,12 @@ const defaultSettings: Omit<
   },
   detail: {
     promotedFields: [],
+  },
+  panelLayout: {
+    leftPanelTabs: ['control', 'files'],
+    rightPanelTabs: ['info', 'detail'],
+    defaultLeftTab: 'control',
+    defaultRightTab: 'info',
   },
   isSettingsModalOpen: false,
 };
@@ -109,6 +132,30 @@ export const useSettingsStore = create<SettingsState>()(
         set(defaultSettings);
         i18n.changeLanguage(defaultSettings.language);
       },
+
+      updatePanelLayout: (layout) => {
+        set((state) => ({
+          panelLayout: { ...state.panelLayout, ...layout },
+        }));
+      },
+
+      moveTabToPanel: (tab, side) => {
+        set((state) => {
+          const newLayout = { ...state.panelLayout };
+          // Remove tab from both panels
+          newLayout.leftPanelTabs = newLayout.leftPanelTabs.filter((t) => t !== tab);
+          newLayout.rightPanelTabs = newLayout.rightPanelTabs.filter((t) => t !== tab);
+
+          // Add to target panel
+          if (side === 'left') {
+            newLayout.leftPanelTabs.push(tab);
+          } else {
+            newLayout.rightPanelTabs.push(tab);
+          }
+
+          return { panelLayout: newLayout };
+        });
+      },
     }),
     {
       name: 'coav-settings',
@@ -117,6 +164,7 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         display: state.display,
         detail: state.detail,
+        panelLayout: state.panelLayout,
       }),
     }
   )

@@ -10,14 +10,40 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const { language, theme, display, setLanguage, setTheme, updateDisplaySettings, resetSettings } =
-    useSettingsStore();
+
+  // Helper to get tab name
+  const getTabName = (tab: string) => {
+    switch (tab) {
+      case 'control':
+        return t('controls.title');
+      case 'info':
+        return t('info.title');
+      case 'detail':
+        return t('detail.title');
+      case 'files':
+        return t('files.recentFiles');
+      default:
+        return tab;
+    }
+  };
+  const {
+    language,
+    theme,
+    display,
+    panelLayout,
+    setLanguage,
+    setTheme,
+    updateDisplaySettings,
+    updatePanelLayout,
+    resetSettings,
+  } = useSettingsStore();
 
   // Local state for form
   const [localSettings, setLocalSettings] = useState({
     language,
     theme,
     display: { ...display },
+    panelLayout: { ...panelLayout },
   });
 
   // Update local state when store changes
@@ -26,8 +52,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
       language,
       theme,
       display: { ...display },
+      panelLayout: { ...panelLayout },
     });
-  }, [language, theme, display]);
+  }, [language, theme, display, panelLayout]);
 
   if (!isOpen) return null;
 
@@ -35,6 +62,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     setLanguage(localSettings.language);
     setTheme(localSettings.theme);
     updateDisplaySettings(localSettings.display);
+    updatePanelLayout(localSettings.panelLayout);
     onClose();
   };
 
@@ -211,6 +239,63 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       })
                     }
                   />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Panel Layout Settings */}
+          <section className="settings-section">
+            <h3>{t('settings.panelLayout')}</h3>
+
+            <div className="panel-layout-settings">
+              <div className="panel-config">
+                <h4>{t('settings.leftPanel')}</h4>
+                <div className="tab-list">
+                  {localSettings.panelLayout.leftPanelTabs.map((tab) => (
+                    <div key={tab} className="tab-item">
+                      <span>{getTabName(tab)}</span>
+                      <button
+                        className="btn-icon"
+                        onClick={() => {
+                          const newLayout = { ...localSettings.panelLayout };
+                          newLayout.leftPanelTabs = newLayout.leftPanelTabs.filter(
+                            (t) => t !== tab
+                          );
+                          newLayout.rightPanelTabs.push(tab);
+                          setLocalSettings({ ...localSettings, panelLayout: newLayout });
+                        }}
+                        title={t('settings.moveToRightPanel')}
+                      >
+                        →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel-config">
+                <h4>{t('settings.rightPanel')}</h4>
+                <div className="tab-list">
+                  {localSettings.panelLayout.rightPanelTabs.map((tab) => (
+                    <div key={tab} className="tab-item">
+                      <span>{getTabName(tab)}</span>
+                      <button
+                        className="btn-icon"
+                        onClick={() => {
+                          const newLayout = { ...localSettings.panelLayout };
+                          newLayout.rightPanelTabs = newLayout.rightPanelTabs.filter(
+                            (t) => t !== tab
+                          );
+                          newLayout.leftPanelTabs.push(tab);
+                          setLocalSettings({ ...localSettings, panelLayout: newLayout });
+                        }}
+                        title={t('settings.moveToLeftPanel')}
+                      >
+                        ←
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

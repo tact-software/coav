@@ -136,7 +136,8 @@
 /* Statistics */
 .stats-grid {
   display: grid;
-  gap: var(--spacing-md);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
 }
 
 .stat-card {

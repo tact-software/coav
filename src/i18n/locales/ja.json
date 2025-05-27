@@ -201,6 +201,11 @@
     "enableCulling": "ビューポートカリングを有効化",
     "enableLOD": "詳細レベル（LOD）を有効化",
     "maxRenderAnnotations": "最大表示アノテーション数",
+    "panelLayout": "パネルレイアウト",
+    "leftPanel": "左パネル",
+    "rightPanel": "右パネル",
+    "moveToLeftPanel": "左パネルに移動",
+    "moveToRightPanel": "右パネルに移動",
     "save": "保存",
     "cancel": "キャンセル",
     "reset": "リセット",
@@ -212,5 +217,8 @@
     "noImages": "利用可能な画像がありません",
     "cancel": "キャンセル",
     "select": "選択"
+  },
+  "files": {
+    "recentFiles": "ファイル"
   }
 }

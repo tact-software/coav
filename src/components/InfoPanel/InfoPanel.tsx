@@ -1,15 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAnnotationStore, useImageStore, RecentFile } from '../../stores';
-import { RecentFiles } from '../RecentFiles';
+import { useAnnotationStore, useImageStore } from '../../stores';
 import { calculateAnnotationStatistics, formatNumber } from '../../utils/statistics';
 import './InfoPanel.css';
 
-interface InfoPanelProps {
-  onRecentFileSelect?: (file: RecentFile) => void;
-}
-
-const InfoPanel: React.FC<InfoPanelProps> = ({ onRecentFileSelect }) => {
+const InfoPanel: React.FC = () => {
   const { t } = useTranslation();
   const { cocoData, selectedAnnotationIds, visibleCategoryIds, currentImageId } =
     useAnnotationStore();
@@ -41,16 +36,10 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ onRecentFileSelect }) => {
   // Check if there are multiple images
   const hasMultipleImages = cocoData && cocoData.images && cocoData.images.length > 1;
 
-  // Show recent files when no image is loaded
+  // Show empty state when no image is loaded
   if (!currentImage || !cocoData) {
     return (
       <div className="info-panel">
-        <div className="panel-section">
-          <div className="section-header">
-            <h4>{t('info.recentFiles')}</h4>
-          </div>
-          {onRecentFileSelect && <RecentFiles onFileSelect={onRecentFileSelect} />}
-        </div>
         <div className="empty-panel">
           <svg
             width="48"

@@ -14,37 +14,39 @@ export const useMenuEvents = (
   const { showAllCategories, hideAllCategories, clearCocoData } = useAnnotationStore();
 
   useEffect(() => {
-    const unsubscribers: Array<Promise<() => void>> = [];
+    const unsubscribers: Array<() => void> = [];
+    let isSubscribed = true;
 
-    // File menu events
-    unsubscribers.push(
-      listen('menu-open_image', onOpenImage),
-      listen('menu-open_annotations', onOpenAnnotations),
-      listen('menu-generate_sample', onGenerateSample),
-      listen('menu-export_annotations', onExportAnnotations),
+    const setupListeners = async () => {
+      if (!isSubscribed) return;
 
-      // View menu events
-      listen('menu-zoom_in', zoomIn),
-      listen('menu-zoom_out', zoomOut),
-      listen('menu-zoom_fit', fitToWindow),
-      listen('menu-zoom_100', resetView),
+      // File menu events
+      unsubscribers.push(
+        await listen('menu-open_image', onOpenImage),
+        await listen('menu-open_annotations', onOpenAnnotations),
+        await listen('menu-generate_sample', onGenerateSample),
+        await listen('menu-export_annotations', onExportAnnotations),
 
-      // Tools menu events
-      listen('menu-statistics', onShowStatistics),
-      listen('menu-settings', onShowSettings),
-      listen('menu-show_all_categories', showAllCategories),
-      listen('menu-hide_all_categories', hideAllCategories),
-      listen('menu-clear_data', clearCocoData)
-    );
+        // View menu events
+        await listen('menu-zoom_in', zoomIn),
+        await listen('menu-zoom_out', zoomOut),
+        await listen('menu-zoom_fit', fitToWindow),
+        await listen('menu-zoom_100', resetView),
 
-    // Setup cleanup
-    const cleanup = async () => {
-      const unlisteners = await Promise.all(unsubscribers);
-      unlisteners.forEach((unlisten) => unlisten());
+        // Tools menu events
+        await listen('menu-statistics', onShowStatistics),
+        await listen('menu-settings', onShowSettings),
+        await listen('menu-show_all_categories', showAllCategories),
+        await listen('menu-hide_all_categories', hideAllCategories),
+        await listen('menu-clear_data', clearCocoData)
+      );
     };
 
+    setupListeners();
+
     return () => {
-      cleanup();
+      isSubscribed = false;
+      unsubscribers.forEach((unlisten) => unlisten());
     };
   }, [
     onOpenImage,

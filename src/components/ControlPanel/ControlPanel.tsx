@@ -11,6 +11,7 @@ const ControlPanel: React.FC = () => {
 
   const {
     cocoData,
+    currentImageId,
     visibleCategoryIds,
     toggleCategoryVisibility,
     showAllCategories,
@@ -36,14 +37,19 @@ const ControlPanel: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const annotationCounts =
-    cocoData?.annotations.reduce(
-      (acc, ann) => {
-        acc[ann.category_id] = (acc[ann.category_id] || 0) + 1;
-        return acc;
-      },
-      {} as Record<number, number>
-    ) || {};
+  // Filter annotations by current image
+  const currentImageAnnotations = useMemo(() => {
+    if (!cocoData?.annotations || !currentImageId) return [];
+    return cocoData.annotations.filter((ann) => ann.image_id === currentImageId);
+  }, [cocoData, currentImageId]);
+
+  const annotationCounts = currentImageAnnotations.reduce(
+    (acc, ann) => {
+      acc[ann.category_id] = (acc[ann.category_id] || 0) + 1;
+      return acc;
+    },
+    {} as Record<number, number>
+  );
 
   // Extract available fields from first annotation
   const availableFields = useMemo(() => {
@@ -178,31 +184,36 @@ const ControlPanel: React.FC = () => {
               </div>
             </div>
             <div className="category-list">
-              {cocoData.categories.map((category) => {
-                const count = annotationCounts[category.id] || 0;
-                const isVisible = visibleCategoryIds.includes(category.id);
-                const hue = (category.id * 137.5) % 360;
+              {cocoData.categories
+                .filter((category) => {
+                  // Only show categories that have annotations in the current image
+                  return annotationCounts[category.id] > 0;
+                })
+                .map((category) => {
+                  const count = annotationCounts[category.id] || 0;
+                  const isVisible = visibleCategoryIds.includes(category.id);
+                  const hue = (category.id * 137.5) % 360;
 
-                return (
-                  <label
-                    key={category.id}
-                    className={`category-item ${!isVisible ? 'disabled' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={isVisible}
-                      onChange={() => toggleCategoryVisibility(category.id)}
-                    />
-                    <div
-                      className="category-color"
-                      style={{ backgroundColor: `hsl(${hue}, 50%, 50%)` }}
-                    />
-                    <span className="category-name">{category.name}</span>
-                    <span className="category-count badge">{count}</span>
-                  </label>
-                );
-              })}
+                  return (
+                    <label
+                      key={category.id}
+                      className={`category-item ${!isVisible ? 'disabled' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={isVisible}
+                        onChange={() => toggleCategoryVisibility(category.id)}
+                      />
+                      <div
+                        className="category-color"
+                        style={{ backgroundColor: `hsl(${hue}, 50%, 50%)` }}
+                      />
+                      <span className="category-name">{category.name}</span>
+                      <span className="category-count badge">{count}</span>
+                    </label>
+                  );
+                })}
             </div>
           </div>
 
@@ -221,31 +232,11 @@ const ControlPanel: React.FC = () => {
                     stroke="currentColor"
                     strokeWidth="2"
                   >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                </div>
-                <div className="stat-content">
-                  <div className="stat-value">{cocoData.images.length}</div>
-                  <div className="stat-label">{t('controls.images')}</div>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 </div>
                 <div className="stat-content">
-                  <div className="stat-value">{cocoData.annotations.length}</div>
+                  <div className="stat-value">{currentImageAnnotations.length}</div>
                   <div className="stat-label">{t('controls.annotations')}</div>
                 </div>
               </div>
@@ -263,7 +254,7 @@ const ControlPanel: React.FC = () => {
                   </svg>
                 </div>
                 <div className="stat-content">
-                  <div className="stat-value">{cocoData.categories.length}</div>
+                  <div className="stat-value">{Object.keys(annotationCounts).length}</div>
                   <div className="stat-label">{t('controls.categories')}</div>
                 </div>
               </div>

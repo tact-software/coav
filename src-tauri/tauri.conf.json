@@ -13,8 +13,12 @@
     "windows": [
       {
         "title": "COAV",
-        "width": 800,
-        "height": 600
+        "width": 1280,
+        "height": 800,
+        "center": true,
+        "resizable": true,
+        "minWidth": 600,
+        "minHeight": 400
       }
     ],
     "security": {

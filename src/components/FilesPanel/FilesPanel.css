@@ -1,0 +1,46 @@
+.files-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.files-panel__actions {
+  padding: var(--spacing-md);
+  display: flex;
+  gap: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.files-panel__actions button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 14px;
+}
+
+.files-panel__actions button svg {
+  flex-shrink: 0;
+}
+
+.files-panel__header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.files-panel__header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.files-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}

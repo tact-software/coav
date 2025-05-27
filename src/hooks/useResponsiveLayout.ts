@@ -131,6 +131,22 @@ export const useResponsiveLayout = () => {
     }));
   };
 
+  // Show left panel
+  const showLeftPanel = () => {
+    setState((prev) => ({
+      ...prev,
+      leftPanelVisible: true,
+    }));
+  };
+
+  // Show right panel
+  const showRightPanel = () => {
+    setState((prev) => ({
+      ...prev,
+      rightPanelVisible: true,
+    }));
+  };
+
   // Check if panels should be rendered
   const shouldRenderLeftPanel = state.leftPanelLayout === 'sidebar' || state.leftPanelVisible;
   const shouldRenderRightPanel = state.rightPanelLayout === 'sidebar' || state.rightPanelVisible;
@@ -141,6 +157,8 @@ export const useResponsiveLayout = () => {
     toggleRightPanel,
     hideAllPanels,
     showRightPanelForSelection,
+    showLeftPanel,
+    showRightPanel,
     shouldRenderLeftPanel,
     shouldRenderRightPanel,
     isSmallScreen: state.screenSize === 'small',

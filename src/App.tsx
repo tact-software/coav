@@ -12,6 +12,7 @@ import StatisticsDialog from './components/StatisticsDialog';
 import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
+import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
 import {
   useAnnotationStore,
@@ -21,7 +22,7 @@ import {
   useSettingsStore,
   toast,
 } from './stores';
-import type { RecentFile } from './stores';
+import type { RecentFile, TabType } from './stores';
 import { useMenuEvents } from './hooks/useMenuEvents';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
@@ -44,9 +45,13 @@ function App() {
   } = useImageStore();
   const { toasts, removeToast } = useToastStore();
   const { addRecentFile } = useRecentFilesStore();
-  const { isSettingsModalOpen, openSettingsModal, closeSettingsModal } = useSettingsStore();
-  const [activePanel, setActivePanel] = useState<'control' | 'info' | 'detail'>('control');
+  const { isSettingsModalOpen, openSettingsModal, closeSettingsModal, panelLayout } =
+    useSettingsStore();
+  const [activeLeftTab, setActiveLeftTab] = useState<string>(panelLayout.defaultLeftTab);
+  const [activeRightTab, setActiveRightTab] = useState<string>(panelLayout.defaultRightTab);
+  const prevPanelLayoutRef = useRef(panelLayout);
   const [unifiedPanelVisible, setUnifiedPanelVisible] = useState(false);
+  const [activeUnifiedTab, setActiveUnifiedTab] = useState<string>('control');
   const [showSampleGenerator, setShowSampleGenerator] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showImageSelection, setShowImageSelection] = useState(false);
@@ -54,6 +59,113 @@ function App() {
     data: COCOData;
     annotationDir: string;
   } | null>(null);
+
+  // Helper to render tab content
+  const renderTabContent = (tab: string) => {
+    switch (tab) {
+      case 'control':
+        return <ControlPanel />;
+      case 'info':
+        return <InfoPanel />;
+      case 'detail':
+        return <AnnotationDetailPanel />;
+      case 'files':
+        return (
+          <FilesPanel
+            onOpenImage={handleOpenImage}
+            onOpenAnnotations={handleOpenAnnotations}
+            onFileSelect={handleRecentFileSelect}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Helper to get tab icon
+  const getTabIcon = (tab: string) => {
+    switch (tab) {
+      case 'control':
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+          </svg>
+        );
+      case 'info':
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        );
+      case 'detail':
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+          </svg>
+        );
+      case 'files':
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Helper to get tab title
+  const getTabTitle = (tab: string) => {
+    switch (tab) {
+      case 'control':
+        return t('controls.title');
+      case 'info':
+        return t('info.title');
+      case 'detail':
+        return t('detail.title');
+      case 'files':
+        return t('files.recentFiles');
+      default:
+        return '';
+    }
+  };
 
   // Responsive layout hook
   const {
@@ -65,6 +177,8 @@ function App() {
     toggleLeftPanel,
     toggleRightPanel,
     showRightPanelForSelection,
+    showLeftPanel,
+    showRightPanel,
     shouldRenderLeftPanel,
     shouldRenderRightPanel,
     isSmallScreen,
@@ -79,6 +193,59 @@ function App() {
       setShowImageSelection(true);
     }
   }, [tempCocoData]);
+
+  // Handle panel layout changes
+  useEffect(() => {
+    const prevLayout = prevPanelLayoutRef.current;
+
+    // Check if panel layout has changed
+    if (
+      JSON.stringify(prevLayout.leftPanelTabs) !== JSON.stringify(panelLayout.leftPanelTabs) ||
+      JSON.stringify(prevLayout.rightPanelTabs) !== JSON.stringify(panelLayout.rightPanelTabs)
+    ) {
+      // Update active tabs to the first available tab in each panel
+      if (panelLayout.leftPanelTabs.length > 0) {
+        // If current active tab is not in the new layout, set to first tab
+        if (!panelLayout.leftPanelTabs.includes(activeLeftTab as TabType)) {
+          setActiveLeftTab(panelLayout.leftPanelTabs[0]);
+        }
+      }
+
+      if (panelLayout.rightPanelTabs.length > 0) {
+        // If current active tab is not in the new layout, set to first tab
+        if (!panelLayout.rightPanelTabs.includes(activeRightTab as TabType)) {
+          setActiveRightTab(panelLayout.rightPanelTabs[0]);
+        }
+      }
+
+      // Update unified panel active tab if needed
+      const allTabs = [...panelLayout.leftPanelTabs, ...panelLayout.rightPanelTabs];
+      if (!allTabs.includes(activeUnifiedTab as TabType) && allTabs.length > 0) {
+        setActiveUnifiedTab(allTabs[0]);
+      }
+
+      // Show panels after layout change
+      if (isLargeScreen) {
+        // For large screens, ensure panels are visible if they have tabs
+        if (panelLayout.leftPanelTabs.length > 0) {
+          showLeftPanel();
+        }
+        if (panelLayout.rightPanelTabs.length > 0) {
+          showRightPanel();
+        }
+      }
+
+      prevPanelLayoutRef.current = panelLayout;
+    }
+  }, [
+    panelLayout,
+    activeLeftTab,
+    activeRightTab,
+    activeUnifiedTab,
+    isLargeScreen,
+    showLeftPanel,
+    showRightPanel,
+  ]);
 
   const handleOpenImage = useCallback(async () => {
     try {
@@ -358,16 +525,6 @@ function App() {
     [setCocoData, setError, addRecentFile, loadImageFromPath]
   );
 
-  // Listen for menu events
-  useMenuEvents(
-    handleOpenImage,
-    handleOpenAnnotations,
-    handleGenerateSample,
-    handleExportAnnotations,
-    handleShowStatistics,
-    openSettingsModal
-  );
-
   // Handle recent file selection
   const handleRecentFileSelect = useCallback(
     (file: RecentFile) => {
@@ -378,6 +535,16 @@ function App() {
       }
     },
     [loadImageFromPath, loadAnnotationsFromPath]
+  );
+
+  // Listen for menu events
+  useMenuEvents(
+    handleOpenImage,
+    handleOpenAnnotations,
+    handleGenerateSample,
+    handleExportAnnotations,
+    handleShowStatistics,
+    openSettingsModal
   );
 
   // Handle drag and drop
@@ -397,10 +564,11 @@ function App() {
     // Only auto-show when going from 0 to >0 selections
     if (prevLength === 0 && currentLength > 0) {
       if (isSmallScreen || isCompactScreen || isMediumScreen) {
-        setActivePanel('detail');
+        setActiveUnifiedTab('detail');
         setUnifiedPanelVisible(true);
       } else {
         showRightPanelForSelection();
+        setActiveRightTab('detail');
       }
     }
 
@@ -499,59 +667,16 @@ function App() {
                 <div className="unified-panel-container">
                   <div className="unified-panel-header">
                     <div className="unified-panel-tabs">
-                      <button
-                        className={`tab ${activePanel === 'control' ? 'active' : ''}`}
-                        onClick={() => setActivePanel('control')}
-                      >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                      {['control', 'info', 'detail', 'files'].map((tab) => (
+                        <button
+                          key={tab}
+                          className={`tab ${activeUnifiedTab === tab ? 'active' : ''}`}
+                          onClick={() => setActiveUnifiedTab(tab)}
                         >
-                          <circle cx="12" cy="12" r="3" />
-                          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
-                        </svg>
-                        {!isMediumScreen && t('controls.title')}
-                      </button>
-                      <button
-                        className={`tab ${activePanel === 'info' ? 'active' : ''}`}
-                        onClick={() => setActivePanel('info')}
-                      >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="16" x2="12" y2="12" />
-                          <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        {!isMediumScreen && t('info.title')}
-                      </button>
-                      <button
-                        className={`tab ${activePanel === 'detail' ? 'active' : ''}`}
-                        onClick={() => setActivePanel('detail')}
-                      >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                          <line x1="9" y1="9" x2="15" y2="15" />
-                          <line x1="15" y1="9" x2="9" y2="15" />
-                        </svg>
-                        {!isMediumScreen && t('detail.title')}
-                      </button>
+                          {getTabIcon(tab)}
+                          {!isMediumScreen && getTabTitle(tab)}
+                        </button>
+                      ))}
                     </div>
                     <button
                       className="unified-panel-close"
@@ -570,18 +695,13 @@ function App() {
                       </svg>
                     </button>
                   </div>
-                  <div className="unified-panel-content">
-                    {activePanel === 'control' && <ControlPanel />}
-                    {activePanel === 'info' && (
-                      <InfoPanel onRecentFileSelect={handleRecentFileSelect} />
-                    )}
-                    {activePanel === 'detail' && <AnnotationDetailPanel />}
-                  </div>
+                  <div className="unified-panel-content">{renderTabContent(activeUnifiedTab)}</div>
                 </div>
               </aside>
             )
           : /* Left Panel for Large Screens Only */
-            shouldRenderLeftPanel && (
+            shouldRenderLeftPanel &&
+            panelLayout.leftPanelTabs.length > 0 && (
               <aside
                 className={`sidebar sidebar--${leftPanelLayout} ${leftPanelVisible ? 'sidebar--visible' : ''}`}
               >
@@ -591,50 +711,19 @@ function App() {
                 <div className="sidebar-container">
                   <div className="sidebar-header">
                     <div className="sidebar-tabs">
-                      <button
-                        className={`tab ${activePanel === 'control' ? 'active' : ''}`}
-                        onClick={() => setActivePanel('control')}
-                      >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                      {panelLayout.leftPanelTabs.map((tab) => (
+                        <button
+                          key={tab}
+                          className={`tab ${activeLeftTab === tab ? 'active' : ''}`}
+                          onClick={() => setActiveLeftTab(tab)}
                         >
-                          <circle cx="12" cy="12" r="3" />
-                          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
-                        </svg>
-                        {t('controls.title')}
-                      </button>
-                      <button
-                        className={`tab ${activePanel === 'info' ? 'active' : ''}`}
-                        onClick={() => setActivePanel('info')}
-                      >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="16" x2="12" y2="12" />
-                          <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        {t('info.title')}
-                      </button>
+                          {getTabIcon(tab)}
+                          {getTabTitle(tab)}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="sidebar-content">
-                    {activePanel === 'control' ? (
-                      <ControlPanel />
-                    ) : (
-                      <InfoPanel onRecentFileSelect={handleRecentFileSelect} />
-                    )}
-                  </div>
+                  <div className="sidebar-content">{renderTabContent(activeLeftTab)}</div>
                 </div>
               </aside>
             )}
@@ -676,7 +765,7 @@ function App() {
         </div>
 
         {/* Right Panel for Large Screens Only */}
-        {isLargeScreen && shouldRenderRightPanel && (
+        {isLargeScreen && shouldRenderRightPanel && panelLayout.rightPanelTabs.length > 0 && (
           <aside
             className={`sidebar sidebar--${rightPanelLayout} ${rightPanelVisible ? 'sidebar--visible' : ''}`}
           >
@@ -686,26 +775,19 @@ function App() {
             <div className="sidebar-container">
               <div className="sidebar-header">
                 <div className="sidebar-tabs">
-                  <button className="tab active">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+                  {panelLayout.rightPanelTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      className={`tab ${activeRightTab === tab ? 'active' : ''}`}
+                      onClick={() => setActiveRightTab(tab)}
                     >
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="9" y1="9" x2="15" y2="15" />
-                      <line x1="15" y1="9" x2="9" y2="15" />
-                    </svg>
-                    {t('detail.title')}
-                  </button>
+                      {getTabIcon(tab)}
+                      {getTabTitle(tab)}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="sidebar-content">
-                <AnnotationDetailPanel />
-              </div>
+              <div className="sidebar-content">{renderTabContent(activeRightTab)}</div>
             </div>
           </aside>
         )}
