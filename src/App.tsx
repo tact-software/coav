@@ -189,7 +189,7 @@ function App() {
 
   // Show image selection dialog when tempCocoData is set
   useEffect(() => {
-    if (tempCocoData) {
+    if (tempCocoData && tempCocoData.data.images && tempCocoData.data.images.length > 1) {
       setShowImageSelection(true);
     }
   }, [tempCocoData]);
@@ -828,7 +828,7 @@ function App() {
       <SettingsModal isOpen={isSettingsModalOpen} onClose={closeSettingsModal} />
 
       <ImageSelectionDialog
-        isOpen={showImageSelection}
+        isOpen={showImageSelection && tempCocoData !== null}
         onClose={() => {
           setShowImageSelection(false);
           setTempCocoData(null);

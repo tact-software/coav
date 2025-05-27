@@ -1,6 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAnnotationStore, useImageStore } from '../../stores';
+import {
+  useAnnotationStore,
+  useImageStore,
+  useSettingsStore,
+  generateCategoryColor,
+} from '../../stores';
 import { calculateAnnotationStatistics, formatNumber } from '../../utils/statistics';
 import './InfoPanel.css';
 
@@ -8,6 +13,7 @@ const InfoPanel: React.FC = () => {
   const { t } = useTranslation();
   const { cocoData, selectedAnnotationIds, visibleCategoryIds, currentImageId } =
     useAnnotationStore();
+  const { colors } = useSettingsStore();
   const { imagePath } = useImageStore();
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
 
@@ -151,7 +157,9 @@ const InfoPanel: React.FC = () => {
               </div>
               <div className="category-list">
                 {statistics.categoryStats.slice(0, 5).map((stat) => {
-                  const hue = (stat.categoryId * 137.5) % 360;
+                  const categoryColor =
+                    colors.categoryColors[stat.categoryId] ||
+                    generateCategoryColor(stat.categoryId);
                   const isVisible = visibleCategoryIds.includes(stat.categoryId);
 
                   return (
@@ -163,7 +171,7 @@ const InfoPanel: React.FC = () => {
                         <div className="category-stat-name">
                           <div
                             className="category-indicator"
-                            style={{ backgroundColor: `hsl(${hue}, 50%, 50%)` }}
+                            style={{ backgroundColor: categoryColor }}
                           />
                           <span>{stat.categoryName}</span>
                         </div>
@@ -176,7 +184,7 @@ const InfoPanel: React.FC = () => {
                           className="category-stat-bar-fill"
                           style={{
                             width: `${stat.percentage}%`,
-                            backgroundColor: `hsl(${hue}, 50%, 50%)`,
+                            backgroundColor: categoryColor,
                           }}
                         />
                       </div>

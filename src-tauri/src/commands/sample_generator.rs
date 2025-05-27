@@ -219,9 +219,9 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
             attempts += 1;
             let category_id = rng.gen_range(1..=num_classes) as i32;
 
-            // Generate color based on category ID using HSL
-            let hue = (category_id - 1) as f32 * 360.0 / num_classes as f32;
-            let color = hsl_to_rgb(hue, 0.7, 0.6);
+            // Use gray colors for all objects
+            let gray_value = 128; // Medium gray
+            let color = Rgb([gray_value, gray_value, gray_value]);
 
             // First generate shape without drawing to check for overlaps
             let candidate_shape = match category_id {

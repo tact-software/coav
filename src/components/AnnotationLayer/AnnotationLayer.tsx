@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Layer, Line, Rect, Text, Group } from 'react-konva';
 import Konva from 'konva';
-import { useAnnotationStore, useSettingsStore } from '../../stores';
+import { useAnnotationStore, useSettingsStore, generateCategoryColor } from '../../stores';
 import { COCOAnnotation } from '../../types/coco';
 
 interface AnnotationLayerProps {
@@ -26,20 +26,87 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     getCategoryById,
   } = useAnnotationStore();
 
-  const { display } = useSettingsStore();
+  const { display, colors } = useSettingsStore();
 
   // Performance monitoring in development
   const renderCountRef = useRef(0);
 
+  // Helper function to convert HSL to RGB
+  const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+    s /= 100;
+    l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r = 0,
+      g = 0,
+      b = 0;
+
+    if (h >= 0 && h < 60) {
+      r = c;
+      g = x;
+      b = 0;
+    } else if (h >= 60 && h < 120) {
+      r = x;
+      g = c;
+      b = 0;
+    } else if (h >= 120 && h < 180) {
+      r = 0;
+      g = c;
+      b = x;
+    } else if (h >= 180 && h < 240) {
+      r = 0;
+      g = x;
+      b = c;
+    } else if (h >= 240 && h < 300) {
+      r = x;
+      g = 0;
+      b = c;
+    } else if (h >= 300 && h < 360) {
+      r = c;
+      g = 0;
+      b = x;
+    }
+
+    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+  };
+
   const getAnnotationColor = useCallback(
-    (categoryId: number, isSelected: boolean, isHovered: boolean) => {
-      // カテゴリに基づいた色を生成
-      const hue = (categoryId * 137.5) % 360; // Golden angle approximation
-      const saturation = isSelected || isHovered ? 70 : 50;
-      const lightness = isSelected ? 60 : isHovered ? 55 : 50;
-      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    (categoryId: number, opacity: number) => {
+      // カスタムカラーがあれば使用、なければデフォルトカラーを生成
+      const baseColor = colors.categoryColors[categoryId] || generateCategoryColor(categoryId);
+
+      let r: number, g: number, b: number;
+
+      // Extract RGB values from the color
+      const hslMatch = baseColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+      if (hslMatch) {
+        const [, h, s, l] = hslMatch;
+        [r, g, b] = hslToRgb(parseInt(h), parseInt(s), parseInt(l));
+      } else if (baseColor.startsWith('#')) {
+        // Hex color
+        const hex = baseColor.substring(1);
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+      } else if (baseColor.startsWith('rgb')) {
+        // RGB or RGBA format
+        const rgbMatch = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (rgbMatch) {
+          [, r, g, b] = rgbMatch.map(Number);
+        } else {
+          // Default to gray if parsing fails
+          r = g = b = 128;
+        }
+      } else {
+        // Default to gray if color format is unknown
+        r = g = b = 128;
+      }
+
+      // Return RGBA format with the specified opacity
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     },
-    []
+    [colors.categoryColors, generateCategoryColor]
   );
 
   const handleClick = useCallback(
@@ -116,13 +183,14 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
       {/* Render non-interactive elements in batches by category */}
       {Object.entries(annotationsByCategory).map(([categoryId, categoryAnnotations]) => {
         const catId = parseInt(categoryId);
-        const baseColor = getAnnotationColor(catId, false, false);
+        const baseColor = getAnnotationColor(catId, colors.strokeOpacity);
 
         return (
           <Group key={`batch-${categoryId}`}>
             {/* Batch render bounding boxes for this category */}
             {display.showBoundingBoxes &&
               lodLevel === 'low' &&
+              colors.strokeOpacity > 0 &&
               categoryAnnotations
                 .filter(
                   (ann) => !selectedAnnotationIds.includes(ann.id) && hoveredAnnotationId !== ann.id
@@ -136,7 +204,6 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                     height={annotation.bbox[3]}
                     stroke={baseColor}
                     strokeWidth={display.lineWidth}
-                    strokeOpacity={display.annotationOpacity * 0.5}
                     fill="transparent"
                     listening={false} // Disable events for performance
                   />
@@ -150,7 +217,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
         const isSelected = selectedAnnotationIds.includes(annotation.id);
         const isHovered = hoveredAnnotationId === annotation.id;
         const category = getCategoryById(annotation.category_id);
-        const color = getAnnotationColor(annotation.category_id, isSelected, isHovered);
+        // We'll calculate the actual color with opacity in the polygon rendering
 
         // Always render selected or hovered annotations at full detail
         const forceHighDetail = isSelected || isHovered;
@@ -176,16 +243,50 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                         ? points.filter((_, index) => index % 2 === 0)
                         : points;
 
+                    const currentFillOpacity = isSelected
+                      ? colors.selectedFillOpacity
+                      : isHovered
+                        ? colors.hoverFillOpacity
+                        : colors.fillOpacity;
+                    const currentStrokeOpacity = colors.strokeOpacity;
+
+                    // Skip rendering if both fill and stroke are transparent
+                    if (currentFillOpacity === 0 && currentStrokeOpacity === 0) {
+                      return null;
+                    }
+
+                    // Get colors with opacity already included
+                    const fillColor = getAnnotationColor(
+                      annotation.category_id,
+                      currentFillOpacity
+                    );
+                    const strokeColor = getAnnotationColor(
+                      annotation.category_id,
+                      currentStrokeOpacity
+                    );
+
+                    // Debug logging
+                    if (annotation.id === annotations[0]?.id) {
+                      // Log only for first annotation to avoid spam
+                      console.log('Annotation colors:', {
+                        annotationId: annotation.id,
+                        isSelected,
+                        isHovered,
+                        fillColor,
+                        strokeColor,
+                        fillOpacity: currentFillOpacity,
+                        strokeOpacity: currentStrokeOpacity,
+                      });
+                    }
+
                     return (
                       <Line
                         key={`${annotation.id}-poly-${idx}`}
                         points={simplifiedPoints}
                         closed
-                        fill={color}
-                        fillOpacity={display.annotationOpacity * 0.5}
-                        stroke={color}
+                        fill={fillColor}
+                        stroke={strokeColor}
                         strokeWidth={isSelected ? display.lineWidth + 1 : display.lineWidth}
-                        strokeOpacity={isSelected || isHovered ? 1 : display.annotationOpacity}
                         tension={effectiveLod === 'medium' ? 0.2 : 0} // Smooth curves for medium LOD
                       />
                     );
@@ -194,23 +295,20 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
               )}
 
             {/* Bounding box rendering - skip if already rendered in batch */}
-            {display.showBoundingBoxes && (effectiveLod !== 'low' || forceHighDetail) && (
-              <Rect
-                x={annotation.bbox[0]}
-                y={annotation.bbox[1]}
-                width={annotation.bbox[2]}
-                height={annotation.bbox[3]}
-                stroke={color}
-                strokeWidth={isSelected ? display.lineWidth + 1 : display.lineWidth}
-                strokeOpacity={
-                  effectiveLod === 'low'
-                    ? display.annotationOpacity * 0.5
-                    : display.annotationOpacity
-                }
-                dash={effectiveLod !== 'low' ? [5, 5] : undefined}
-                fill="transparent"
-              />
-            )}
+            {display.showBoundingBoxes &&
+              (effectiveLod !== 'low' || forceHighDetail) &&
+              colors.strokeOpacity > 0 && (
+                <Rect
+                  x={annotation.bbox[0]}
+                  y={annotation.bbox[1]}
+                  width={annotation.bbox[2]}
+                  height={annotation.bbox[3]}
+                  stroke={getAnnotationColor(annotation.category_id, colors.strokeOpacity)}
+                  strokeWidth={isSelected ? display.lineWidth + 1 : display.lineWidth}
+                  dash={effectiveLod !== 'low' ? [5, 5] : undefined}
+                  fill="transparent"
+                />
+              )}
 
             {/* Label rendering - only show for selected/hovered or at higher zoom levels */}
             {display.showLabels && category && (forceHighDetail || effectiveLod === 'high') && (
@@ -220,7 +318,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                   y={annotation.bbox[1] - 20}
                   width={category.name.length * 8 + 10}
                   height={20}
-                  fill={color}
+                  fill={getAnnotationColor(annotation.category_id, 0.8)}
                   cornerRadius={3}
                 />
                 <Text

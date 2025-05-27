@@ -195,7 +195,6 @@
     "display": "表示",
     "showLabels": "ラベルを表示",
     "showBoundingBoxes": "バウンディングボックスを表示",
-    "opacity": "不透明度",
     "lineWidth": "線の太さ",
     "performance": "パフォーマンス",
     "enableCulling": "ビューポートカリングを有効化",
@@ -209,7 +208,22 @@
     "save": "保存",
     "cancel": "キャンセル",
     "reset": "リセット",
-    "confirmReset": "すべての設定をリセットしてもよろしいですか？"
+    "confirmReset": "すべての設定をリセットしてもよろしいですか？",
+    "general": "一般",
+    "colors": "カラー設定"
+  },
+  "colorSettings": {
+    "categoryColors": "カテゴリカラー",
+    "noCategories": "カテゴリがありません",
+    "opacitySettings": "不透明度設定",
+    "fillOpacity": "塗りつぶし不透明度",
+    "selectedFillOpacity": "選択時の塗りつぶし不透明度",
+    "hoverFillOpacity": "ホバー時の塗りつぶし不透明度",
+    "strokeOpacity": "線の不透明度",
+    "resetToDefault": "デフォルトに戻す",
+    "confirmReset": "すべてのカテゴリカラーをデフォルトに戻しますか？",
+    "transparent": "透明",
+    "opaque": "不透明"
   },
   "imageSelection": {
     "title": "画像を選択",

@@ -8,7 +8,6 @@ export type Theme = 'light' | 'dark' | 'system';
 interface DisplaySettings {
   showLabels: boolean;
   showBoundingBoxes: boolean;
-  annotationOpacity: number;
   lineWidth: number;
 }
 
@@ -26,6 +25,16 @@ interface PanelLayoutSettings {
   defaultRightTab: TabType;
 }
 
+interface ColorSettings {
+  // Category colors (categoryId -> hex color)
+  categoryColors: Record<number, string>;
+  // Global opacity settings (0-1)
+  fillOpacity: number;
+  selectedFillOpacity: number;
+  hoverFillOpacity: number;
+  strokeOpacity: number;
+}
+
 interface SettingsState {
   // General settings
   language: Language;
@@ -40,6 +49,9 @@ interface SettingsState {
   // Panel layout settings
   panelLayout: PanelLayoutSettings;
 
+  // Color settings
+  colors: ColorSettings;
+
   // Modal state
   isSettingsModalOpen: boolean;
 
@@ -53,7 +65,16 @@ interface SettingsState {
   resetSettings: () => void;
   updatePanelLayout: (layout: Partial<PanelLayoutSettings>) => void;
   moveTabToPanel: (tab: TabType, side: PanelSide) => void;
+  updateColorSettings: (settings: Partial<ColorSettings>) => void;
+  setCategoryColor: (categoryId: number, color: string) => void;
+  resetCategoryColors: () => void;
 }
+
+// Helper function to generate color from category ID
+export const generateCategoryColor = (categoryId: number): string => {
+  const hue = (categoryId * 137.5) % 360;
+  return `hsl(${hue}, 50%, 50%)`;
+};
 
 const defaultSettings: Omit<
   SettingsState,
@@ -66,13 +87,15 @@ const defaultSettings: Omit<
   | 'resetSettings'
   | 'updatePanelLayout'
   | 'moveTabToPanel'
+  | 'updateColorSettings'
+  | 'setCategoryColor'
+  | 'resetCategoryColors'
 > = {
   language: 'ja',
   theme: 'system',
   display: {
     showLabels: true,
     showBoundingBoxes: true,
-    annotationOpacity: 0.6,
     lineWidth: 2,
   },
   detail: {
@@ -83,6 +106,13 @@ const defaultSettings: Omit<
     rightPanelTabs: ['info', 'detail'],
     defaultLeftTab: 'control',
     defaultRightTab: 'info',
+  },
+  colors: {
+    categoryColors: {},
+    fillOpacity: 0.3,
+    selectedFillOpacity: 0.5,
+    hoverFillOpacity: 0.4,
+    strokeOpacity: 1.0,
   },
   isSettingsModalOpen: false,
 };
@@ -156,6 +186,33 @@ export const useSettingsStore = create<SettingsState>()(
           return { panelLayout: newLayout };
         });
       },
+
+      updateColorSettings: (settings) => {
+        set((state) => ({
+          colors: { ...state.colors, ...settings },
+        }));
+      },
+
+      setCategoryColor: (categoryId, color) => {
+        set((state) => ({
+          colors: {
+            ...state.colors,
+            categoryColors: {
+              ...state.colors.categoryColors,
+              [categoryId]: color,
+            },
+          },
+        }));
+      },
+
+      resetCategoryColors: () => {
+        set((state) => ({
+          colors: {
+            ...state.colors,
+            categoryColors: {},
+          },
+        }));
+      },
     }),
     {
       name: 'coav-settings',
@@ -165,6 +222,7 @@ export const useSettingsStore = create<SettingsState>()(
         display: state.display,
         detail: state.detail,
         panelLayout: state.panelLayout,
+        colors: state.colors,
       }),
     }
   )

@@ -188,6 +188,8 @@
   },
   "settings": {
     "title": "Settings",
+    "general": "General",
+    "colors": "Colors",
     "language": "Language",
     "theme": "Theme",
     "themeLight": "Light",
@@ -196,7 +198,6 @@
     "display": "Display",
     "showLabels": "Show Labels",
     "showBoundingBoxes": "Show Bounding Boxes",
-    "opacity": "Opacity",
     "lineWidth": "Line Width",
     "performance": "Performance",
     "enableCulling": "Enable Viewport Culling",
@@ -211,6 +212,19 @@
     "cancel": "Cancel",
     "reset": "Reset",
     "confirmReset": "Are you sure you want to reset all settings?"
+  },
+  "colorSettings": {
+    "categoryColors": "Category Colors",
+    "noCategories": "No categories available",
+    "opacitySettings": "Opacity Settings",
+    "fillOpacity": "Fill Opacity",
+    "selectedFillOpacity": "Selected Fill Opacity",
+    "hoverFillOpacity": "Hover Fill Opacity",
+    "strokeOpacity": "Stroke Opacity",
+    "resetToDefault": "Reset to Default",
+    "confirmReset": "Reset all category colors to default?",
+    "transparent": "Transparent",
+    "opaque": "Opaque"
   },
   "imageSelection": {
     "title": "Select Image",

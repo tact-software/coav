@@ -1,6 +1,11 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAnnotationStore, useImageStore, useSettingsStore } from '../../stores';
+import {
+  useAnnotationStore,
+  useImageStore,
+  useSettingsStore,
+  generateCategoryColor,
+} from '../../stores';
 import { extractFieldsFromAnnotation, groupFieldsByCategory } from '../../utils';
 import SearchBox, { SearchBoxRef } from '../SearchBox/SearchBox';
 import './ControlPanel.css';
@@ -20,7 +25,7 @@ const ControlPanel: React.FC = () => {
 
   const { imageSize, zoom, zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
 
-  const { detail, updateDetailSettings } = useSettingsStore();
+  const { detail, updateDetailSettings, colors } = useSettingsStore();
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['option']));
 
@@ -192,7 +197,8 @@ const ControlPanel: React.FC = () => {
                 .map((category) => {
                   const count = annotationCounts[category.id] || 0;
                   const isVisible = visibleCategoryIds.includes(category.id);
-                  const hue = (category.id * 137.5) % 360;
+                  const categoryColor =
+                    colors.categoryColors[category.id] || generateCategoryColor(category.id);
 
                   return (
                     <label
@@ -205,10 +211,7 @@ const ControlPanel: React.FC = () => {
                         checked={isVisible}
                         onChange={() => toggleCategoryVisibility(category.id)}
                       />
-                      <div
-                        className="category-color"
-                        style={{ backgroundColor: `hsl(${hue}, 50%, 50%)` }}
-                      />
+                      <div className="category-color" style={{ backgroundColor: categoryColor }} />
                       <span className="category-name">{category.name}</span>
                       <span className="category-count badge">{count}</span>
                     </label>
