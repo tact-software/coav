@@ -11,7 +11,8 @@
     "copiedToClipboard": "Copied to clipboard",
     "id": "ID",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "cancel": "Cancel"
   },
   "menu": {
     "file": "File",
@@ -46,7 +47,17 @@
     "annotations": "Annotations",
     "detailDisplay": "Detail Display",
     "selectAll": "Select All",
-    "selectNone": "Select None"
+    "selectNone": "Select None",
+    "comparison": "Comparison",
+    "openComparisonFile": "Open Comparison File",
+    "comparingFiles": "Comparing Files",
+    "endComparison": "End Comparison",
+    "changeComparisonSettings": "Change Settings",
+    "truePositiveGt": "TP-GroundTruth",
+    "truePositivePred": "TP-Prediction",
+    "falsePositive": "FP",
+    "falseNegative": "FN",
+    "comparisonFilterInfo": "Category filters are disabled during comparison mode"
   },
   "search": {
     "clear": "Clear search",
@@ -112,7 +123,17 @@
     "otherFields": "Other Fields",
     "extendedFields": "Extended Fields",
     "multipleSelected": "{{count}} annotations selected",
-    "annotation": "Annotation"
+    "annotation": "Annotation",
+    "comparisonResult": "Comparison Result",
+    "type": "Type",
+    "role": "Role",
+    "groundTruth": "Ground Truth",
+    "prediction": "Prediction",
+    "matches": "Matches",
+    "noMatchingPartner": "No matching partner",
+    "groundTruthAnnotation": "Ground Truth Annotation",
+    "predictionAnnotation": "Prediction Annotation",
+    "belowThreshold": "below threshold"
   },
   "empty": {
     "noImageLoaded": "No Image Loaded",
@@ -154,6 +175,16 @@
     "includeLicenses": "Include licenses in annotations",
     "includeOption": "Include custom option fields for each annotation",
     "includeMultiPolygon": "Include multi-polygon annotations (random secondary polygons)",
+    "includePairJson": "Generate pair JSON (for comparison testing)",
+    "maxPairMatches": "Max pair matches per annotation",
+    "maxPairMatchesDescription": "Number of matching pairs for each annotation (1-5)",
+    "distributionSettings": "Distribution Settings",
+    "distributionDescription": "Adjust the distribution of annotation types in the pair JSON. Values will automatically adjust to total 100%.",
+    "perfectMatch": "Perfect Match",
+    "partialMatch": "Partial Overlap",
+    "noMatch": "No Match (FN)",
+    "additional": "Additional (FP)",
+    "total": "Total",
     "extendedFields": "Extended Fields",
     "generate": "Generate",
     "cancel": "Cancel",
@@ -165,6 +196,7 @@
     "objectsWithAspectRatio": "Objects with 1:1 aspect ratio, max size: {{size}}px",
     "availableShapes": "Available shapes: rectangle, triangle, star, pentagon, hexagon, diamond, cross, arrow, house, octagon",
     "outputFiles": "Output files: {{name}}-image.png and {{name}}-annotation.json",
+    "pairJsonOutput": "Pair JSON output: {{name}}-pair.json (with random modifications)",
     "generationFailed": "Failed to generate sample data"
   },
   "statistics": {
@@ -235,5 +267,44 @@
   },
   "files": {
     "recentFiles": "Files"
+  },
+  "comparison": {
+    "title": "Comparison Settings",
+    "fileSelection": "Comparison File",
+    "selectFile": "Select File...",
+    "usingCurrentFile": "Using current comparison file",
+    "fileInfo": "{{images}} images, {{annotations}} annotations",
+    "roleSelection": "File Roles",
+    "currentAsGT": "Current file = Ground Truth, Comparison file = Prediction",
+    "currentAsPred": "Current file = Prediction, Comparison file = Ground Truth",
+    "categoryMapping": "Category Mapping",
+    "currentFile": "Current File",
+    "comparisonFile": "Comparison File",
+    "noMapping": "No mapping",
+    "matchingSettings": "Matching Settings",
+    "iouThreshold": "IoU Threshold",
+    "maxMatchesPerAnnotation": "Max Matches per Annotation",
+    "maxMatchesDescription": "Maximum number of matches allowed for each annotation (1-5)",
+    "startComparison": "Start Comparison",
+    "fileLoadError": "Failed to load comparison file",
+    "selectedImage": "Selected Image",
+    "imageSelection": "Image Selection",
+    "selectImage": "Please select an image",
+    "selectedImageAnnotations": "Annotations in selected image",
+    "currentFileInfo": "Current File",
+    "currentImage": "Current Image",
+    "colorSettings": "Color Settings",
+    "groundTruth": "Ground Truth",
+    "prediction": "Prediction",
+    "truePositive": "True Positive",
+    "falsePositive": "False Positive",
+    "falseNegative": "False Negative",
+    "displaySettings": "Display Settings",
+    "showBoundingBoxes": "Show Bounding Boxes",
+    "showLabels": "Show Labels",
+    "iouMethod": "IoU Calculation Method",
+    "bboxIoU": "Bounding Box",
+    "polygonIoU": "Polygon (Segmentation)",
+    "iouMethodDescription": "Select how to calculate IoU between annotations"
   }
 }

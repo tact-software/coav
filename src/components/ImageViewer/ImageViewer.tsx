@@ -26,7 +26,7 @@ const ImageViewer: React.FC = () => {
     error,
   } = useImageStore();
 
-  const { cocoData, selectedAnnotationIds, shouldCenterOnSelection, currentImageId } =
+  const { cocoData, selectedAnnotationIds, shouldCenterOnSelection, currentImageId, isComparing } =
     useAnnotationStore();
 
   // Calculate viewport for culling
@@ -207,7 +207,12 @@ const ImageViewer: React.FC = () => {
             <KonvaImage image={image} width={imageSize.width} height={imageSize.height} />
           </Layer>
           {cocoData && currentImageId && (
-            <AnnotationLayer imageId={currentImageId} scale={zoom} viewport={getViewport()} />
+            <AnnotationLayer
+              key={`annotation-layer-${currentImageId}-${isComparing ? 'comparing' : 'normal'}`} // Force remount on comparison state change
+              imageId={currentImageId}
+              scale={zoom}
+              viewport={getViewport()}
+            />
           )}
         </Stage>
       )}

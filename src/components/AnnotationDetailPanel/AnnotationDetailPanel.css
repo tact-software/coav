@@ -128,6 +128,113 @@
   margin: 0;
 }
 
+/* Comparison mode styles */
+.comparison-result {
+  border: 2px solid var(--color-brand-primary);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.result-type,
+.result-role,
+.result-matches,
+.result-no-match {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.result-tp {
+  background: #22c55e;
+  color: white;
+}
+
+.result-fp {
+  background: #ef4444;
+  color: white;
+}
+
+.result-fn {
+  background: #f97316;
+  color: white;
+}
+
+.role-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.role-badge.gt {
+  background: #3b82f6;
+  color: white;
+}
+
+.role-badge.pred {
+  background: #8b5cf6;
+  color: white;
+}
+
+.match-iou {
+  font-family: monospace;
+  background: var(--color-bg-secondary);
+  padding: 0.25rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+.no-match-text {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.partner-iou {
+  margin-left: auto;
+  font-family: monospace;
+  font-size: 0.75rem;
+  background: var(--color-bg-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+.no-partner-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.annotation-basic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.bbox-info {
+  margin-bottom: 1rem;
+  font-family: monospace;
+}
+
+.segmentation-info {
+  margin-bottom: 1rem;
+}
+
 /* View mode toggle */
 .detail-view-toggle {
   display: flex;

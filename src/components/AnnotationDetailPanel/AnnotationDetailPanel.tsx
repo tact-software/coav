@@ -9,15 +9,217 @@ type ViewMode = 'formatted' | 'json';
 
 const AnnotationDetailPanel: React.FC = () => {
   const { t } = useTranslation();
-  const { selectedAnnotationIds, cocoData, getCategoryById } = useAnnotationStore();
+  const {
+    selectedAnnotationIds,
+    cocoData,
+    getCategoryById,
+    isComparing,
+    comparisonData,
+    diffResults,
+    comparisonSettings,
+  } = useAnnotationStore();
   const { detail } = useSettingsStore();
 
   const [viewMode, setViewMode] = useState<ViewMode>('formatted');
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
-  // Get selected annotations
-  const selectedAnnotations =
-    cocoData?.annotations.filter((ann) => selectedAnnotationIds.includes(ann.id)) || [];
+  // Get selected annotations and comparison info
+  const { selectedAnnotations, comparisonInfo } = React.useMemo(() => {
+    if (!cocoData) return { selectedAnnotations: [], comparisonInfo: null };
+
+    const allAnnotations = [...cocoData.annotations];
+    if (isComparing && comparisonData) {
+      // Add comparison annotations with source tags
+      const comparisonAnnotations = comparisonData.annotations.map((ann) => ({
+        ...ann,
+        _source: 'comparison' as const,
+      }));
+      allAnnotations.push(...comparisonAnnotations);
+    }
+
+    // Tag primary annotations with source (don't overwrite existing _source)
+    const taggedAnnotations = allAnnotations.map((ann) => ({
+      ...ann,
+      _source: ann._source ? ann._source : ('primary' as const),
+    }));
+
+    const selected = taggedAnnotations.filter((ann) => {
+      for (const selectedId of selectedAnnotationIds) {
+        if (typeof selectedId === 'string') {
+          // Handle unique IDs like "primary-123" or "comparison-456"
+          const [source, id] = selectedId.split('-');
+          if (ann._source === source && ann.id === parseInt(id)) {
+            return true;
+          }
+        } else {
+          // Handle direct number IDs (non-comparison mode)
+          if (ann.id === selectedId) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    // Get comparison info for the first selected annotation
+    let comparison = null;
+    if (isComparing && selected.length > 0 && diffResults && comparisonSettings) {
+      const firstAnnotation = selected[0];
+
+      // Debug: Log selected annotation info
+      console.debug('Selected annotation for detail panel:', {
+        id: firstAnnotation.id,
+        source: firstAnnotation._source,
+        category_id: firstAnnotation.category_id,
+        bbox: firstAnnotation.bbox,
+        selectedIds: selectedAnnotationIds,
+      });
+
+      const imageDiff = diffResults.get(firstAnnotation.image_id);
+
+      if (imageDiff) {
+        // Find matching pairs for this annotation
+        const matches = [];
+
+        // Determine if this is GT or Pred based on source and settings
+        const isFromGTDataset =
+          (comparisonSettings.gtFileId === 'primary' && firstAnnotation._source === 'primary') ||
+          (comparisonSettings.gtFileId === 'comparison' &&
+            firstAnnotation._source === 'comparison');
+
+        // Debug: Log comparison data
+        console.debug('Searching for matches:', {
+          annotationId: firstAnnotation.id,
+          source: firstAnnotation._source,
+          isFromGTDataset,
+          gtFileId: comparisonSettings.gtFileId,
+          truePositivesCount: imageDiff.truePositives.length,
+          belowThresholdCount: imageDiff.belowThresholdMatches?.length || 0,
+          fpCount: imageDiff.falsePositives.length,
+          fnCount: imageDiff.falseNegatives.length,
+        });
+
+        // Check TP matches - need to match both ID and source
+        for (const tp of imageDiff.truePositives) {
+          console.debug('Checking TP match:', {
+            tpGtId: tp.gtAnnotation.id,
+            tpPredId: tp.predAnnotation.id,
+            searchingId: firstAnnotation.id,
+            isFromGTDataset,
+            iou: tp.iou,
+          });
+
+          if (isFromGTDataset && tp.gtAnnotation.id === firstAnnotation.id) {
+            // This is a GT annotation, found its TP match
+            console.debug('Found GT TP match!');
+            matches.push({
+              type: 'tp' as const,
+              gtAnnotation: tp.gtAnnotation,
+              predAnnotation: tp.predAnnotation,
+              iou: tp.iou,
+            });
+          } else if (!isFromGTDataset && tp.predAnnotation.id === firstAnnotation.id) {
+            // This is a Pred annotation, found its TP match
+            console.debug('Found Pred TP match!');
+            matches.push({
+              type: 'tp' as const,
+              gtAnnotation: tp.gtAnnotation,
+              predAnnotation: tp.predAnnotation,
+              iou: tp.iou,
+            });
+          }
+        }
+
+        // Check below threshold matches for FP/FN annotations
+        if (matches.length === 0 && imageDiff.belowThresholdMatches) {
+          console.debug(
+            'Checking below threshold matches:',
+            imageDiff.belowThresholdMatches.length
+          );
+          for (const btm of imageDiff.belowThresholdMatches) {
+            console.debug('Checking below threshold match:', {
+              btmGtId: btm.gtAnnotation.id,
+              btmPredId: btm.predAnnotation.id,
+              searchingId: firstAnnotation.id,
+              isFromGTDataset,
+              iou: btm.iou,
+            });
+
+            if (isFromGTDataset && btm.gtAnnotation.id === firstAnnotation.id) {
+              // This is a GT annotation with below threshold match
+              console.debug('Found GT below threshold match!');
+              matches.push({
+                type: 'below-threshold' as const,
+                gtAnnotation: btm.gtAnnotation,
+                predAnnotation: btm.predAnnotation,
+                iou: btm.iou,
+              });
+            } else if (!isFromGTDataset && btm.predAnnotation.id === firstAnnotation.id) {
+              // This is a Pred annotation with below threshold match
+              console.debug('Found Pred below threshold match!');
+              matches.push({
+                type: 'below-threshold' as const,
+                gtAnnotation: btm.gtAnnotation,
+                predAnnotation: btm.predAnnotation,
+                iou: btm.iou,
+              });
+            }
+          }
+        }
+
+        // Check FP (only for Pred annotations)
+        const isFP =
+          !isFromGTDataset && imageDiff.falsePositives.some((fp) => fp.id === firstAnnotation.id);
+
+        // Check FN (only for GT annotations)
+        const isFN =
+          isFromGTDataset && imageDiff.falseNegatives.some((fn) => fn.id === firstAnnotation.id);
+
+        // Determine annotation type
+        // Only consider TP if there are matches above threshold (not below-threshold matches)
+        const hasTPMatch = matches.some((m) => m.type === 'tp');
+
+        let annotationType: 'tp' | 'fp' | 'fn' = 'fp';
+        if (hasTPMatch) {
+          annotationType = 'tp';
+        } else if (isFN) {
+          annotationType = 'fn';
+        } else if (isFP) {
+          annotationType = 'fp';
+        }
+
+        console.debug('Final match results:', {
+          annotationType,
+          hasTPMatch,
+          isFP,
+          isFN,
+          matchesFound: matches.length,
+          matches: matches.map((m) => ({
+            type: m.type,
+            iou: m.iou,
+            gtId: m.gtAnnotation.id,
+            predId: m.predAnnotation.id,
+          })),
+        });
+
+        comparison = {
+          type: annotationType,
+          isGT: isFromGTDataset,
+          matches,
+          annotation: firstAnnotation,
+        };
+      }
+    }
+
+    return { selectedAnnotations: selected, comparisonInfo: comparison };
+  }, [
+    selectedAnnotationIds,
+    cocoData,
+    isComparing,
+    comparisonData,
+    diffResults,
+    comparisonSettings,
+  ]);
 
   // Toggle section collapse
   const toggleSection = (section: string) => {
@@ -255,6 +457,12 @@ const AnnotationDetailPanel: React.FC = () => {
       );
     }
 
+    // Show comparison sections if in comparison mode
+    if (isComparing && comparisonInfo) {
+      return renderComparisonSections();
+    }
+
+    // Single mode or non-comparison
     if (selectedAnnotations.length === 1) {
       return renderAnnotationDetails(selectedAnnotations[0]);
     }
@@ -277,10 +485,164 @@ const AnnotationDetailPanel: React.FC = () => {
     );
   };
 
+  // Render comparison mode result section
+  const renderComparisonResultSection = () => {
+    if (!comparisonInfo) return null;
+
+    const { type, isGT, matches } = comparisonInfo;
+
+    return (
+      <div className="detail-section comparison-result">
+        <div className="detail-section-header">
+          <h3 className="detail-section-title">{t('detail.comparisonResult')}</h3>
+        </div>
+        <div className="detail-section-content">
+          <div className="result-info">
+            <div className="result-type">
+              <strong>{t('detail.type')}: </strong>
+              <span className={`result-badge result-${type}`}>{type.toUpperCase()}</span>
+            </div>
+            <div className="result-role">
+              <strong>{t('detail.role')}: </strong>
+              <span className={`role-badge ${isGT ? 'gt' : 'pred'}`}>
+                {isGT ? t('detail.groundTruth') : t('detail.prediction')}
+              </span>
+            </div>
+            {matches.length > 0 && (
+              <div className="result-matches">
+                <strong>{t('detail.matches')}: </strong>
+                {matches.map((match, idx) => (
+                  <span key={idx} className="match-iou">
+                    IoU: {match.iou.toFixed(3)}
+                    {idx < matches.length - 1 && ', '}
+                  </span>
+                ))}
+              </div>
+            )}
+            {matches.length === 0 && (
+              <div className="result-no-match">
+                <span className="no-match-text">{t('detail.noMatchingPartner')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render GT/Pred sections for comparison mode
+  const renderComparisonSections = () => {
+    if (!comparisonInfo) return null;
+
+    const { matches, annotation, isGT } = comparisonInfo;
+
+    return (
+      <>
+        {/* Current annotation section */}
+        <div className="detail-section">
+          <div className="detail-section-header">
+            <h3 className="detail-section-title">
+              {isGT ? t('detail.groundTruthAnnotation') : t('detail.predictionAnnotation')}
+            </h3>
+          </div>
+          <div className="detail-section-content">
+            {renderAnnotationContent(annotation as COCOAnnotation & { _source?: string })}
+          </div>
+        </div>
+
+        {/* Matching partner sections */}
+        {matches.length > 0 ? (
+          matches.map((match, idx) => {
+            const partnerAnnotation = isGT ? match.predAnnotation : match.gtAnnotation;
+            const partnerLabel = isGT
+              ? t('detail.predictionAnnotation')
+              : t('detail.groundTruthAnnotation');
+
+            return (
+              <div key={idx} className="detail-section">
+                <div className="detail-section-header">
+                  <h3 className="detail-section-title">
+                    {partnerLabel} {matches.length > 1 ? `(${idx + 1})` : ''}
+                    <span className="partner-iou">IoU: {match.iou.toFixed(3)}</span>
+                  </h3>
+                </div>
+                <div className="detail-section-content">
+                  {renderAnnotationContent(
+                    partnerAnnotation as COCOAnnotation & { _source?: string }
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="detail-section">
+            <div className="detail-section-header">
+              <h3 className="detail-section-title">
+                {isGT ? t('detail.predictionAnnotation') : t('detail.groundTruthAnnotation')}
+              </h3>
+            </div>
+            <div className="detail-section-content">
+              <div className="no-partner-message">{t('detail.noMatchingPartner')}</div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // Render annotation content (used for both single and comparison modes)
+  const renderAnnotationContent = (annotation: COCOAnnotation & { _source?: string }) => {
+    const category = getCategoryById(annotation.category_id);
+
+    return (
+      <>
+        {/* Basic info */}
+        <div className="annotation-basic-info">
+          <div>
+            <strong>{t('detail.id')}: </strong>
+            {annotation.id}
+          </div>
+          <div>
+            <strong>{t('detail.category')}: </strong>
+            {category?.name || annotation.category_id}
+          </div>
+          <div>
+            <strong>{t('detail.area')}: </strong>
+            {annotation.area?.toFixed(2) || 'N/A'}
+          </div>
+          <div>
+            <strong>{t('detail.iscrowd')}: </strong>
+            {annotation.iscrowd ? t('detail.yes') : t('detail.no')}
+          </div>
+        </div>
+
+        {/* Bounding box */}
+        <div className="bbox-info">
+          <strong>{t('detail.boundingBox')}: </strong>[
+          {annotation.bbox.map((val: number) => val.toFixed(1)).join(', ')}]
+        </div>
+
+        {/* Segmentation */}
+        {annotation.segmentation && annotation.segmentation.length > 0 && (
+          <div className="segmentation-info">
+            <strong>{t('detail.segmentation')}: </strong>
+            {renderSegmentation(annotation.segmentation)}
+          </div>
+        )}
+
+        {/* Custom fields */}
+        {detail.promotedFields.map((field) => renderPromotedField(field, annotation))}
+      </>
+    );
+  };
+
   return (
     <div className="annotation-detail-panel">
       {selectedAnnotations.length > 0 && (
         <>
+          {/* Show comparison result section if in comparison mode */}
+          {isComparing && comparisonInfo && renderComparisonResultSection()}
+
           <div className="detail-view-toggle">
             <button
               className={viewMode === 'formatted' ? 'active' : ''}

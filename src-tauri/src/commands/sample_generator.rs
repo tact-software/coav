@@ -32,6 +32,12 @@ pub struct SampleGeneratorParams {
     pub include_licenses: Option<bool>,
     pub include_option: Option<bool>,
     pub include_multi_polygon: Option<bool>,
+    pub include_pair_json: Option<bool>,
+    pub max_pair_matches: Option<u32>, // Maximum number of matching pairs per annotation (for pair generation)
+    pub pair_perfect_match_ratio: Option<f32>, // Ratio of perfect matches (0.0-1.0)
+    pub pair_partial_match_ratio: Option<f32>, // Ratio of partial matches (0.0-1.0)
+    pub pair_no_match_ratio: Option<f32>, // Ratio of no matches/FN (0.0-1.0)
+    pub pair_additional_ratio: Option<f32>, // Ratio of additional objects/FP (0.0-1.0)
 }
 
 #[tauri::command]
@@ -366,12 +372,219 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
         .map_err(|e| format!("Failed to serialize COCO data: {}", e))?;
     fs::write(&json_path, json_content).map_err(|e| format!("Failed to save JSON file: {}", e))?;
 
+    // Generate pair JSON if requested
+    if params.include_pair_json.unwrap_or(false) {
+        let max_pair_matches = params.max_pair_matches.unwrap_or(1);
+        let distribution = (
+            params.pair_perfect_match_ratio.unwrap_or(0.25),
+            params.pair_partial_match_ratio.unwrap_or(0.35),
+            params.pair_no_match_ratio.unwrap_or(0.20),
+            params.pair_additional_ratio.unwrap_or(0.20),
+        );
+        let pair_coco_data =
+            generate_pair_json(&coco_data, &mut rng, max_pair_matches, distribution);
+        let pair_json_filename = format!("{}-pair.json", base_filename);
+        let pair_json_path = Path::new(&output_dir).join(&pair_json_filename);
+        let pair_json_content = serde_json::to_string_pretty(&pair_coco_data)
+            .map_err(|e| format!("Failed to serialize pair COCO data: {}", e))?;
+        fs::write(&pair_json_path, pair_json_content)
+            .map_err(|e| format!("Failed to save pair JSON file: {}", e))?;
+    }
+
     let total_annotations = coco_data.annotations.len();
     let message = format!(
         "Sample data generated successfully in {} with {} images, {} classes and {} total annotations",
         output_dir, num_images, num_classes, total_annotations
     );
     Ok(message)
+}
+
+fn generate_pair_json(
+    original_data: &COCOData,
+    rng: &mut rand::rngs::ThreadRng,
+    max_pair_matches: u32,
+    distribution: (f32, f32, f32, f32),
+) -> COCOData {
+    let mut pair_annotations = Vec::new();
+    let mut annotation_id_counter = 1;
+
+    println!(
+        "Generating pair JSON with max_pair_matches: {}",
+        max_pair_matches
+    );
+
+    // Define distribution of matching patterns using the provided tuple
+    let (perfect_ratio, partial_ratio, no_match_ratio, additional_ratio) = distribution;
+    let total_annotations = original_data.annotations.len();
+    let perfect_match_count = (total_annotations as f32 * perfect_ratio).round() as usize;
+    let partial_match_count = (total_annotations as f32 * partial_ratio).round() as usize;
+    let no_match_count = (total_annotations as f32 * no_match_ratio).round() as usize;
+    let additional_count = (total_annotations as f32 * additional_ratio).round() as usize;
+
+    println!(
+        "Distribution: {} perfect, {} partial, {} no match, {} additional",
+        perfect_match_count, partial_match_count, no_match_count, additional_count
+    );
+
+    let mut annotation_indices: Vec<usize> = (0..original_data.annotations.len()).collect();
+    use rand::seq::SliceRandom;
+    annotation_indices.shuffle(rng);
+
+    let mut processed = 0;
+
+    // Process annotations with different matching patterns
+    for annotation in original_data.annotations.iter() {
+        if processed < perfect_match_count {
+            // Perfect match - exact copy
+            let mut pair_annotation = annotation.clone();
+            pair_annotation.id = annotation_id_counter;
+            annotation_id_counter += 1;
+            pair_annotations.push(pair_annotation);
+            processed += 1;
+        } else if processed < perfect_match_count + partial_match_count {
+            // Partial match - shift to create partial overlap
+            let mut pair_annotation = annotation.clone();
+            pair_annotation.id = annotation_id_counter;
+            annotation_id_counter += 1;
+
+            // Shift by 30-60% of the object size to create partial overlap
+            let shift_factor = rng.gen_range(0.3..0.6);
+            let shift_x = pair_annotation.bbox[2]
+                * shift_factor
+                * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
+            let shift_y = pair_annotation.bbox[3]
+                * shift_factor
+                * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
+
+            pair_annotation.bbox[0] += shift_x;
+            pair_annotation.bbox[1] += shift_y;
+
+            // Also shift segmentation if present
+            if let Some(segmentation) = &mut pair_annotation.segmentation {
+                for polygon in segmentation.iter_mut() {
+                    for i in (0..polygon.len()).step_by(2) {
+                        polygon[i] += shift_x;
+                        if i + 1 < polygon.len() {
+                            polygon[i + 1] += shift_y;
+                        }
+                    }
+                }
+            }
+
+            pair_annotations.push(pair_annotation);
+            processed += 1;
+        } else if processed < perfect_match_count + partial_match_count + no_match_count {
+            // No match - skip this annotation (creates FN in original)
+            processed += 1;
+        } else {
+            // For remaining annotations, create multiple matches if configured
+            let num_matches = if max_pair_matches > 1 && rng.gen_bool(0.3) {
+                rng.gen_range(2..=max_pair_matches)
+            } else {
+                1
+            };
+
+            for match_idx in 0..num_matches {
+                // Multiple matches with variations
+                let operation = if match_idx == 0 {
+                    rng.gen_range(0..2) // First match: exact or shift
+                } else {
+                    1 // Additional matches: always shift
+                };
+
+                match operation {
+                    0 => {
+                        // Exact match - copy annotation as-is
+                        let mut pair_annotation = annotation.clone();
+                        pair_annotation.id = annotation_id_counter;
+                        annotation_id_counter += 1;
+                        pair_annotations.push(pair_annotation);
+                    }
+                    1 => {
+                        // Slight shift - move the annotation by a small amount
+                        let mut pair_annotation = annotation.clone();
+                        pair_annotation.id = annotation_id_counter;
+                        annotation_id_counter += 1;
+
+                        // Shift bbox by different amounts based on match index
+                        // Additional matches get progressively larger shifts for better visibility
+                        let base_shift = 10.0 + (match_idx as f64 * 5.0);
+                        let shift_x = rng.gen_range(-base_shift..base_shift);
+                        let shift_y = rng.gen_range(-base_shift..base_shift);
+
+                        pair_annotation.bbox[0] += shift_x;
+                        pair_annotation.bbox[1] += shift_y;
+
+                        // Also shift segmentation if present
+                        if let Some(segmentation) = &mut pair_annotation.segmentation {
+                            for polygon in segmentation.iter_mut() {
+                                for i in (0..polygon.len()).step_by(2) {
+                                    polygon[i] += shift_x;
+                                    if i + 1 < polygon.len() {
+                                        polygon[i + 1] += shift_y;
+                                    }
+                                }
+                            }
+                        }
+
+                        pair_annotations.push(pair_annotation);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+            processed += 1;
+        }
+    }
+
+    // Add additional annotations (FP) that don't exist in original
+    for _ in 0..additional_count {
+        // Create a new annotation at a random position
+        let x = rng.gen_range(50.0..original_data.images[0].width as f64 - 100.0);
+        let y = rng.gen_range(50.0..original_data.images[0].height as f64 - 100.0);
+        let width = rng.gen_range(30.0..80.0);
+        let height = rng.gen_range(30.0..80.0);
+
+        let new_annotation = COCOAnnotation {
+            id: annotation_id_counter,
+            image_id: original_data.annotations[0].image_id,
+            category_id: original_data.categories[rng.gen_range(0..original_data.categories.len())]
+                .id,
+            bbox: vec![x, y, width, height],
+            area: width * height,
+            segmentation: Some(vec![vec![
+                x,
+                y,
+                x + width,
+                y,
+                x + width,
+                y + height,
+                x,
+                y + height,
+            ]]),
+            iscrowd: 0,
+            option: None,
+            extra: HashMap::new(),
+        };
+
+        annotation_id_counter += 1;
+        pair_annotations.push(new_annotation);
+    }
+
+    println!(
+        "Generated {} pair annotations from {} original annotations",
+        pair_annotations.len(),
+        original_data.annotations.len()
+    );
+
+    // Create a new COCO data structure with the modified annotations
+    COCOData {
+        info: original_data.info.clone(),
+        images: original_data.images.clone(),
+        annotations: pair_annotations,
+        categories: original_data.categories.clone(),
+        licenses: original_data.licenses.clone(),
+        extra: original_data.extra.clone(),
+    }
 }
 
 #[allow(dead_code)]

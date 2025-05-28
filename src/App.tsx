@@ -555,7 +555,7 @@ function App() {
 
   // Auto-show right panel when annotation is selected
   const { selectedAnnotationIds } = useAnnotationStore();
-  const prevSelectedAnnotationIdsRef = useRef<number[]>([]);
+  const prevSelectedAnnotationIdsRef = useRef<(number | string)[]>([]);
 
   useEffect(() => {
     const prevLength = prevSelectedAnnotationIdsRef.current.length;

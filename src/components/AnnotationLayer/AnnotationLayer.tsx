@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo } from 'react';
 import { Layer, Line, Rect, Text, Group } from 'react-konva';
 import Konva from 'konva';
 import { useAnnotationStore, useSettingsStore, generateCategoryColor } from '../../stores';
 import { COCOAnnotation } from '../../types/coco';
+import { DiffFilter } from '../../types/diff';
 
 interface AnnotationLayerProps {
   imageId: number;
@@ -18,15 +19,26 @@ interface AnnotationLayerProps {
 const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, viewport }) => {
   const {
     cocoData,
+    comparisonData,
+    comparisonSettings,
     selectedAnnotationIds,
     hoveredAnnotationId,
     visibleCategoryIds,
     selectAnnotation,
     setHoveredAnnotation,
     getCategoryById,
+    isComparing,
+    diffResults,
+    diffFilters,
   } = useAnnotationStore();
 
-  const { display, colors } = useSettingsStore();
+  const settingsStore = useSettingsStore();
+  // Use comparison display settings if in comparison mode, otherwise use regular display settings
+  const display =
+    isComparing && comparisonSettings?.displaySettings
+      ? { ...settingsStore.display, ...comparisonSettings.displaySettings }
+      : settingsStore.display;
+  const colors = settingsStore.colors;
 
   // Performance monitoring in development
   const renderCountRef = useRef(0);
@@ -71,10 +83,158 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
   };
 
+  // Get diff status for an annotation
+  const getDiffStatus = useCallback(
+    (
+      annotation: COCOAnnotation & { _source?: 'primary' | 'comparison' }
+    ): { status: 'tp' | 'fp' | 'fn' | null; isGT: boolean } => {
+      // Early return for non-comparison mode
+      if (!isComparing || !diffResults || !comparisonSettings) {
+        return { status: null, isGT: false };
+      }
+
+      const imageDiff = diffResults.get(annotation.image_id);
+      if (!imageDiff) return { status: null, isGT: false };
+
+      // Use the source tag to determine if this annotation is from GT or Pred
+      let isFromGTDataset = false;
+      if (annotation._source) {
+        isFromGTDataset =
+          (comparisonSettings.gtFileId === 'primary' && annotation._source === 'primary') ||
+          (comparisonSettings.gtFileId === 'comparison' && annotation._source === 'comparison');
+      } else {
+        // Fallback to old method if no source tag
+        if (comparisonSettings.gtFileId === 'primary') {
+          isFromGTDataset = cocoData?.annotations.some((ann) => ann.id === annotation.id) || false;
+        } else {
+          isFromGTDataset =
+            comparisonData?.annotations.some((ann) => ann.id === annotation.id) || false;
+        }
+      }
+
+      // Debug logging for TP annotations
+      if (annotation.id <= 3) {
+        // Log first few annotations to avoid spam
+        console.debug(`getDiffStatus for annotation ${annotation.id}:`, {
+          gtFileId: comparisonSettings.gtFileId,
+          source: annotation._source,
+          isFromGTDataset,
+          annotationSource: annotation._source || 'no-source',
+        });
+      }
+
+      // Check if annotation is in true positives
+      const tpMatch = imageDiff.truePositives.find((match) => {
+        if (isFromGTDataset) {
+          return match.gtAnnotation.id === annotation.id;
+        } else {
+          return match.predAnnotation.id === annotation.id;
+        }
+      });
+      if (tpMatch) {
+        // For TP, use the source information to determine GT/Pred
+        // If the annotation is from the GT dataset, it's the GT annotation
+        const isThisGT = isFromGTDataset;
+
+        // Debug logging for TP matching
+        if (annotation.id <= 3) {
+          console.debug(`TP match found for annotation ${annotation.id}:`, {
+            isThisGT,
+            isFromGTDataset,
+            annotationSource: annotation._source,
+            gtId: tpMatch.gtAnnotation.id,
+            predId: tpMatch.predAnnotation.id,
+            gtFileId: comparisonSettings.gtFileId,
+          });
+        }
+
+        return { status: 'tp', isGT: isThisGT };
+      }
+
+      // Check if annotation is in false positives
+      // FP annotations are always from the Pred dataset
+      if (imageDiff.falsePositives.some((ann) => ann.id === annotation.id)) {
+        // Debug logging for FP detection
+        if (annotation.id <= 3) {
+          console.debug(`FP check for annotation ${annotation.id}:`, {
+            isFromGTDataset,
+            shouldBeFP: !isFromGTDataset,
+            annotationSource: annotation._source,
+            fpIds: imageDiff.falsePositives.map((a) => a.id),
+          });
+        }
+        // Only return FP if this annotation is from the Pred dataset
+        if (!isFromGTDataset) {
+          return { status: 'fp', isGT: false };
+        }
+      }
+
+      // Check if annotation is in false negatives
+      // FN annotations are always from the GT dataset
+      if (imageDiff.falseNegatives.some((ann) => ann.id === annotation.id)) {
+        // Only return FN if this annotation is from the GT dataset
+        if (isFromGTDataset) {
+          return { status: 'fn', isGT: true };
+        }
+      }
+
+      // Debug: Log unmatched annotations
+      if (annotation.id === 1) {
+        // Log only for annotation ID 1 to avoid spam
+        console.debug('Unmatched annotation:', {
+          id: annotation.id,
+          isGT: isFromGTDataset,
+          tpCount: imageDiff.truePositives.length,
+          fpCount: imageDiff.falsePositives.length,
+          fnCount: imageDiff.falseNegatives.length,
+        });
+      }
+
+      return { status: null, isGT: isFromGTDataset };
+    },
+    [isComparing, diffResults, comparisonSettings, cocoData, comparisonData]
+  );
+
   const getAnnotationColor = useCallback(
-    (categoryId: number, opacity: number) => {
-      // カスタムカラーがあれば使用、なければデフォルトカラーを生成
-      const baseColor = colors.categoryColors[categoryId] || generateCategoryColor(categoryId);
+    (
+      categoryId: number,
+      opacity: number,
+      diffInfo?: { status: 'tp' | 'fp' | 'fn' | null; isGT: boolean }
+    ) => {
+      let baseColor: string;
+
+      // If in comparison mode and has diff status, use diff colors
+      if (isComparing && diffInfo?.status && comparisonSettings) {
+        const { status, isGT } = diffInfo;
+        switch (status) {
+          case 'tp':
+            baseColor = isGT
+              ? comparisonSettings.colorSettings.gtColors.tp
+              : comparisonSettings.colorSettings.predColors.tp;
+
+            // Debug logging for TP color application (only log first few to avoid spam)
+            if (categoryId <= 2) {
+              console.debug(`TP color for category ${categoryId}:`, {
+                isGT,
+                gtColor: comparisonSettings.colorSettings.gtColors.tp,
+                predColor: comparisonSettings.colorSettings.predColors.tp,
+                selectedColor: baseColor,
+              });
+            }
+            break;
+          case 'fp':
+            baseColor = comparisonSettings.colorSettings.predColors.fp;
+            break;
+          case 'fn':
+            baseColor = comparisonSettings.colorSettings.gtColors.fn;
+            break;
+          default:
+            baseColor = colors.categoryColors[categoryId] || generateCategoryColor(categoryId);
+        }
+      } else {
+        // Use normal category color
+        baseColor = colors.categoryColors[categoryId] || generateCategoryColor(categoryId);
+      }
 
       let r: number, g: number, b: number;
 
@@ -106,20 +266,26 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
       // Return RGBA format with the specified opacity
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     },
-    [colors.categoryColors, generateCategoryColor]
+    [colors.categoryColors, generateCategoryColor, isComparing]
   );
 
   const handleClick = useCallback(
-    (annotation: COCOAnnotation, e: Konva.KonvaEventObject<MouseEvent>) => {
+    (
+      annotation: COCOAnnotation,
+      e: Konva.KonvaEventObject<MouseEvent>,
+      selectionId?: number | string
+    ) => {
       e.cancelBubble = true;
       const multiSelect = e.evt.ctrlKey || e.evt.metaKey;
-      selectAnnotation(annotation.id, multiSelect);
+      // Use provided selection ID or fall back to annotation ID
+      const idToSelect = selectionId !== undefined ? selectionId : annotation.id;
+      selectAnnotation(idToSelect, multiSelect);
     },
     [selectAnnotation]
   );
 
   const handleMouseEnter = useCallback(
-    (annotationId: number) => {
+    (annotationId: number | string) => {
       setHoveredAnnotation(annotationId);
     },
     [setHoveredAnnotation]
@@ -153,15 +319,152 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
 
   if (!cocoData) return null;
 
-  const annotations = cocoData.annotations.filter(
-    (ann) =>
-      ann.image_id === imageId && visibleCategoryIds.includes(ann.category_id) && isInViewport(ann)
-  );
+  // Immediate return for comparison mode cleanup
+  // If not comparing, only render primary data to prevent comparison polygon persistence
+  if (!isComparing && comparisonData) {
+    console.debug('Comparison ended but comparisonData still exists - forcing primary data only');
+  }
+
+  // Collect annotations from both datasets when comparing
+  // Use a more explicit approach to prevent stale data
+  const allAnnotations = useMemo(() => {
+    if (!cocoData?.annotations) return [];
+
+    // CRITICAL: Only include comparison data if ALL comparison conditions are met
+    // AND at least one filter is active
+    const shouldIncludeComparisonData =
+      isComparing === true &&
+      comparisonData?.annotations &&
+      comparisonData.annotations.length > 0 &&
+      diffResults &&
+      diffResults.size > 0 &&
+      diffFilters.size > 0; // Must have active filters
+
+    if (shouldIncludeComparisonData) {
+      // Tag annotations with their source to distinguish them
+      const taggedPrimary = cocoData.annotations.map((ann) => ({
+        ...ann,
+        _source: 'primary' as const,
+      }));
+      const taggedComparison = comparisonData.annotations.map((ann) => ({
+        ...ann,
+        _source: 'comparison' as const,
+      }));
+      const combined = [...taggedPrimary, ...taggedComparison];
+
+      console.debug('✓ Comparison mode: combining annotations', {
+        primary: cocoData.annotations.length,
+        comparison: comparisonData.annotations.length,
+        total: combined.length,
+        isComparing,
+        hasDiffResults: diffResults.size > 0,
+      });
+      return combined;
+    }
+
+    // Default to primary data only - this should clear comparison polygons
+    console.debug('✗ Non-comparison mode: primary only', {
+      primary: cocoData.annotations.length,
+      isComparing,
+      hasComparisonData: !!comparisonData?.annotations,
+      hasDiffResults: diffResults ? diffResults.size : 0,
+    });
+    return cocoData.annotations.map((ann) => ({ ...ann, _source: 'primary' as const }));
+  }, [cocoData, comparisonData, isComparing, diffResults, diffFilters]);
+
+  const annotations = useMemo(() => {
+    return allAnnotations.filter((ann) => {
+      // Filter 1: Must be current image
+      if (ann.image_id !== imageId) {
+        return false;
+      }
+
+      // Filter 2: Must be in viewport
+      if (!isInViewport(ann)) {
+        return false;
+      }
+
+      // For comparison mode, apply specialized filtering
+      if (isComparing) {
+        // In comparison mode: ONLY use comparison result filters, ignore categories
+        // CRITICAL: If no filters are selected in comparison mode, show nothing
+        if (diffFilters.size === 0) {
+          return false;
+        }
+
+        // Apply comparison result filter
+        const diffInfo = getDiffStatus(ann);
+        if (!diffInfo.status) return false;
+
+        // Map diff status to the appropriate filter based on GT/Pred role
+        let requiredFilter: string | null = null;
+
+        if (diffInfo.status === 'tp') {
+          // For TP annotations, distinguish between GT and Pred
+          requiredFilter = diffInfo.isGT ? 'tp-gt' : 'tp-pred';
+
+          // Debug logging for TP filtering
+          if (ann.id <= 3) {
+            console.debug(`TP filtering for annotation ${ann.id}:`, {
+              isGT: diffInfo.isGT,
+              requiredFilter,
+              hasFilter: diffFilters.has(requiredFilter as DiffFilter),
+              allFilters: Array.from(diffFilters),
+            });
+          }
+        } else if (diffInfo.status === 'fp') {
+          // FP are always on prediction side
+          requiredFilter = 'fp';
+        } else if (diffInfo.status === 'fn') {
+          // FN are always on ground truth side
+          requiredFilter = 'fn';
+        }
+
+        if (!requiredFilter || !diffFilters.has(requiredFilter as DiffFilter)) {
+          return false;
+        }
+      } else {
+        // Non-comparison mode: use category filtering
+        if (!visibleCategoryIds.includes(ann.category_id)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    allAnnotations,
+    imageId,
+    isComparing,
+    diffFilters,
+    visibleCategoryIds,
+    comparisonData,
+    comparisonSettings,
+    viewport,
+    isInViewport,
+  ]);
 
   // Performance monitoring in development
   useEffect(() => {
     renderCountRef.current++;
   });
+
+  // Force re-render when comparison state changes
+  useEffect(() => {
+    // This effect ensures the component re-renders when entering/exiting comparison mode
+    console.log('🎨 AnnotationLayer state change:', {
+      isComparing,
+      hasComparisonData: !!comparisonData,
+      comparisonDataSize: comparisonData?.annotations?.length || 0,
+      diffFiltersSize: diffFilters.size,
+      diffResultsSize: diffResults.size,
+      allAnnotationsLength: allAnnotations.length,
+    });
+
+    if (!isComparing && comparisonData) {
+      console.warn('⚠️ isComparing=false but comparisonData still exists!');
+    }
+  }, [isComparing, comparisonData, diffFilters, diffResults, allAnnotations]);
 
   // Determine LOD based on zoom level
   const lodLevel = scale > 2 ? 'high' : scale > 0.5 ? 'medium' : 'low';
@@ -178,13 +481,47 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     {} as Record<number, COCOAnnotation[]>
   );
 
+  // Final check before rendering
+  if (annotations.length > 0) {
+    const comparisonIds = comparisonData?.annotations.map((a) => a.id) || [];
+    const renderingIds = annotations.map((a) => a.id);
+
+    const renderingComparisonData = renderingIds.filter((id) => comparisonIds.includes(id));
+
+    if (renderingComparisonData.length > 0 && !isComparing) {
+      console.error('🚨 PROBLEM FOUND: Rendering comparison data while not comparing!', {
+        isComparing,
+        renderingComparisonCount: renderingComparisonData.length,
+        renderingComparisonIds: renderingComparisonData.slice(0, 5), // first 5 IDs
+        totalRendering: annotations.length,
+      });
+    }
+  }
+
+  // Generate unique keys for comparison mode to prevent React key conflicts
+  const getUniqueKey = (
+    annotation: COCOAnnotation & { _source?: 'primary' | 'comparison' },
+    suffix: string = ''
+  ) => {
+    if (isComparing && annotation._source) {
+      // Use the source tag for uniqueness
+      return `${annotation._source}-${annotation.id}${suffix}`;
+    }
+    return `${annotation.id}${suffix}`;
+  };
+
+  // Get selection ID (for store operations)
+  const getSelectionId = (annotation: COCOAnnotation & { _source?: 'primary' | 'comparison' }) => {
+    if (isComparing && annotation._source) {
+      return `${annotation._source}-${annotation.id}`;
+    }
+    return annotation.id; // Return number for single mode
+  };
+
   return (
     <Layer>
       {/* Render non-interactive elements in batches by category */}
       {Object.entries(annotationsByCategory).map(([categoryId, categoryAnnotations]) => {
-        const catId = parseInt(categoryId);
-        const baseColor = getAnnotationColor(catId, colors.strokeOpacity);
-
         return (
           <Group key={`batch-${categoryId}`}>
             {/* Batch render bounding boxes for this category */}
@@ -193,31 +530,59 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
               colors.strokeOpacity > 0 &&
               categoryAnnotations
                 .filter(
-                  (ann) => !selectedAnnotationIds.includes(ann.id) && hoveredAnnotationId !== ann.id
+                  (ann) =>
+                    !selectedAnnotationIds.includes(getSelectionId(ann)) &&
+                    hoveredAnnotationId !== getSelectionId(ann)
                 )
-                .map((annotation) => (
-                  <Rect
-                    key={`bbox-${annotation.id}`}
-                    x={annotation.bbox[0]}
-                    y={annotation.bbox[1]}
-                    width={annotation.bbox[2]}
-                    height={annotation.bbox[3]}
-                    stroke={baseColor}
-                    strokeWidth={display.lineWidth}
-                    fill="transparent"
-                    listening={false} // Disable events for performance
-                  />
-                ))}
+                .map((annotation) => {
+                  const diffInfo = getDiffStatus(annotation);
+                  const strokeColor = getAnnotationColor(
+                    annotation.category_id,
+                    colors.strokeOpacity,
+                    diffInfo
+                  );
+
+                  const strokeWidth = display.lineWidth;
+
+                  return (
+                    <Rect
+                      key={getUniqueKey(annotation, '-bbox')}
+                      x={annotation.bbox[0]}
+                      y={annotation.bbox[1]}
+                      width={annotation.bbox[2]}
+                      height={annotation.bbox[3]}
+                      stroke={strokeColor}
+                      strokeWidth={strokeWidth}
+                      fill="transparent"
+                      listening={false} // Disable events for performance
+                    />
+                  );
+                })}
           </Group>
         );
       })}
 
       {/* Render interactive elements individually */}
       {annotations.map((annotation) => {
-        const isSelected = selectedAnnotationIds.includes(annotation.id);
-        const isHovered = hoveredAnnotationId === annotation.id;
+        // Use selection ID for store operations, unique key for React
+        const selectionId = getSelectionId(annotation);
+        const uniqueKey = getUniqueKey(annotation);
+        const isSelected = selectedAnnotationIds.includes(selectionId);
+        const isHovered = hoveredAnnotationId === selectionId;
         const category = getCategoryById(annotation.category_id);
         // We'll calculate the actual color with opacity in the polygon rendering
+
+        // Debug logging for interactive rendering
+        if (annotation.id <= 3 && isComparing) {
+          console.debug(`Rendering interactive annotation ${annotation.id}:`, {
+            selectionId,
+            uniqueKey,
+            isSelected,
+            isHovered,
+            source: (annotation as COCOAnnotation & { _source?: string })._source,
+            diffStatus: getDiffStatus(annotation),
+          });
+        }
 
         // Always render selected or hovered annotations at full detail
         const forceHighDetail = isSelected || isHovered;
@@ -225,9 +590,9 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
 
         return (
           <Group
-            key={annotation.id}
-            onClick={(e) => handleClick(annotation, e)}
-            onMouseEnter={() => handleMouseEnter(annotation.id)}
+            key={uniqueKey}
+            onClick={(e) => handleClick(annotation, e, selectionId)}
+            onMouseEnter={() => handleMouseEnter(selectionId)}
             onMouseLeave={handleMouseLeave}
           >
             {/* Polygon rendering - only in medium/high LOD or for selected/hovered */}
@@ -255,14 +620,19 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                       return null;
                     }
 
+                    // Get diff status for comparison mode
+                    const diffInfo = getDiffStatus(annotation);
+
                     // Get colors with opacity already included
                     const fillColor = getAnnotationColor(
                       annotation.category_id,
-                      currentFillOpacity
+                      currentFillOpacity,
+                      diffInfo
                     );
                     const strokeColor = getAnnotationColor(
                       annotation.category_id,
-                      currentStrokeOpacity
+                      currentStrokeOpacity,
+                      diffInfo
                     );
 
                     // Debug logging
@@ -281,7 +651,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
 
                     return (
                       <Line
-                        key={`${annotation.id}-poly-${idx}`}
+                        key={getUniqueKey(annotation, `-poly-${idx}`)}
                         points={simplifiedPoints}
                         closed
                         fill={fillColor}
@@ -303,7 +673,11 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                   y={annotation.bbox[1]}
                   width={annotation.bbox[2]}
                   height={annotation.bbox[3]}
-                  stroke={getAnnotationColor(annotation.category_id, colors.strokeOpacity)}
+                  stroke={getAnnotationColor(
+                    annotation.category_id,
+                    colors.strokeOpacity,
+                    getDiffStatus(annotation)
+                  )}
                   strokeWidth={isSelected ? display.lineWidth + 1 : display.lineWidth}
                   dash={effectiveLod !== 'low' ? [5, 5] : undefined}
                   fill="transparent"
@@ -318,7 +692,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                   y={annotation.bbox[1] - 20}
                   width={category.name.length * 8 + 10}
                   height={20}
-                  fill={getAnnotationColor(annotation.category_id, 0.8)}
+                  fill={getAnnotationColor(annotation.category_id, 0.8, getDiffStatus(annotation))} // Label background uses fixed opacity for readability
                   cornerRadius={3}
                 />
                 <Text
