@@ -611,6 +611,12 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                 </label>
               </div>
               <div className="setting-description">{t('comparison.iouMethodDescription')}</div>
+              {iouMethod === 'polygon' && (
+                <div className="polygon-iou-warning">
+                  <i className="warning-icon">⚠️</i>
+                  {t('comparison.polygonIoUWarning')}
+                </div>
+              )}
             </div>
           </div>
 

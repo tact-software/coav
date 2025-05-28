@@ -321,6 +321,7 @@
     "iouMethod": "IoU計算方法",
     "bboxIoU": "バウンディングボックス",
     "polygonIoU": "ポリゴン（セグメンテーション）",
-    "iouMethodDescription": "アノテーション間のIoU計算方法を選択"
+    "iouMethodDescription": "アノテーション間のIoU計算方法を選択",
+    "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。"
   }
 }

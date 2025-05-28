@@ -322,6 +322,7 @@
     "iouMethod": "IoU Calculation Method",
     "bboxIoU": "Bounding Box",
     "polygonIoU": "Polygon (Segmentation)",
-    "iouMethodDescription": "Select how to calculate IoU between annotations"
+    "iouMethodDescription": "Select how to calculate IoU between annotations",
+    "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance."
   }
 }
