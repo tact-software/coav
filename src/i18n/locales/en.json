@@ -177,6 +177,8 @@
     "includeLicenses": "Include licenses in annotations",
     "includeOption": "Include custom option fields for each annotation",
     "includeMultiPolygon": "Include multi-polygon annotations (random secondary polygons)",
+    "generating": "Generating sample data...",
+    "generatingSubMessage": "Creating {{images}} images and {{annotations}} annotations",
     "includePairJson": "Generate pair JSON (for comparison testing)",
     "maxPairMatches": "Max pair matches per annotation",
     "maxPairMatchesDescription": "Number of matching pairs for each annotation (1-5)",
@@ -323,6 +325,8 @@
     "bboxIoU": "Bounding Box",
     "polygonIoU": "Polygon (Segmentation)",
     "iouMethodDescription": "Select how to calculate IoU between annotations",
-    "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance."
+    "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance.",
+    "processing": "Processing comparison...",
+    "processingSubMessage": "Analyzing annotations and calculating matches"
   }
 }

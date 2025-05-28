@@ -14,12 +14,14 @@ import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import {
   useAnnotationStore,
   useImageStore,
   useToastStore,
   useRecentFilesStore,
   useSettingsStore,
+  useLoadingStore,
   toast,
 } from './stores';
 import type { RecentFile, TabType } from './stores';
@@ -48,6 +50,7 @@ function App() {
   const { addRecentFile } = useRecentFilesStore();
   const { isSettingsModalOpen, openSettingsModal, closeSettingsModal, panelLayout } =
     useSettingsStore();
+  const { isLoading, message, subMessage, progress } = useLoadingStore();
   const [activeLeftTab, setActiveLeftTab] = useState<string>(panelLayout.defaultLeftTab);
   const [activeRightTab, setActiveRightTab] = useState<string>(panelLayout.defaultRightTab);
   const prevPanelLayoutRef = useRef(panelLayout);
@@ -883,6 +886,12 @@ function App() {
       />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <LoadingOverlay
+        isLoading={isLoading}
+        message={message}
+        subMessage={subMessage}
+        progress={progress}
+      />
     </div>
   );
 }

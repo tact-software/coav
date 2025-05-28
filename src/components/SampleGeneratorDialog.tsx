@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { dirname } from '@tauri-apps/api/path';
 import { useTranslation } from 'react-i18next';
+import { useLoadingStore } from '../stores/useLoadingStore';
 import './SampleGeneratorDialog.css';
 
 interface SampleGeneratorDialogProps {
@@ -17,6 +18,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
   onGenerated,
 }) => {
   const { t } = useTranslation();
+  const { setLoading } = useLoadingStore();
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const [imageCount, setImageCount] = useState(1);
@@ -97,6 +99,14 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
   const handleGenerate = async () => {
     try {
       setIsGenerating(true);
+      setLoading(
+        true,
+        t('sampleGenerator.generating'),
+        t('sampleGenerator.generatingSubMessage', {
+          images: imageCount,
+          annotations: annotationCount * imageCount,
+        })
+      );
 
       // Select output file (we'll use its directory)
       const outputPath = await save({
@@ -158,6 +168,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
       alert(`${t('sampleGenerator.generationFailed')}: ${error}`);
     } finally {
       setIsGenerating(false);
+      setLoading(false);
     }
   };
 

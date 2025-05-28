@@ -177,6 +177,8 @@
     "includeLicenses": "アノテーションにライセンス情報を含める",
     "includeOption": "各アノテーションにカスタムオプションフィールドを追加",
     "includeMultiPolygon": "マルチポリゴンアノテーションを含める（ランダムな副ポリゴン）",
+    "generating": "サンプルデータを生成中...",
+    "generatingSubMessage": "{{images}}枚の画像と{{annotations}}個のアノテーションを生成しています",
     "includePairJson": "ペアJSONを生成（比較テスト用）",
     "maxPairMatches": "アノテーションごとの最大ペア数",
     "maxPairMatchesDescription": "各アノテーションのマッチングペア数（1-5）",
@@ -322,6 +324,8 @@
     "bboxIoU": "バウンディングボックス",
     "polygonIoU": "ポリゴン（セグメンテーション）",
     "iouMethodDescription": "アノテーション間のIoU計算方法を選択",
-    "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。"
+    "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。",
+    "processing": "比較処理中...",
+    "processingSubMessage": "アノテーションを分析してマッチングを計算しています"
   }
 }

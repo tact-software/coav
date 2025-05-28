@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAnnotationStore } from '../../stores/useAnnotationStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { toast } from '../../stores/useToastStore';
+import { useLoadingStore } from '../../stores/useLoadingStore';
 import type { COCOData } from '../../types/coco';
 import type { ComparisonSettings, DiffDisplaySettings } from '../../types/diff';
 import './ComparisonDialog.css';
@@ -25,6 +26,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     comparisonSettings: currentComparisonSettings,
   } = useAnnotationStore();
   const { colors: colorSettings } = useSettingsStore();
+  const { setLoading } = useLoadingStore();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [comparisonData, setComparisonData] = useState<COCOData | null>(null);
@@ -175,11 +177,11 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       console.error('Error loading comparison file:', error);
       const errorMessage = error instanceof Error ? error.message : t('comparison.fileLoadError');
       toast.error(t('comparison.fileLoadError'), errorMessage);
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCompare = () => {
+  const handleCompare = async () => {
     console.debug('handleCompare called with current state:', {
       hasCocoData: !!cocoData,
       hasComparisonData: !!comparisonData,
@@ -197,6 +199,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       });
       return;
     }
+
+    setLoading(true, t('comparison.processing'), t('comparison.processingSubMessage'));
 
     console.debug('Starting comparison:', {
       selectedImageId,
@@ -250,8 +254,13 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
     // Always use the loaded comparison file data, not current data
     // The role selection determines which is GT and which is Pred in settings
-    setStoreComparisonData(filteredComparisonData, settings);
-    onClose();
+
+    // Use setTimeout to ensure the loading overlay appears before heavy computation
+    setTimeout(() => {
+      setStoreComparisonData(filteredComparisonData, settings);
+      setLoading(false);
+      onClose();
+    }, 100);
   };
 
   const invertMapping = (mapping: Map<number, number[]>): Map<number, number[]> => {
