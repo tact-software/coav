@@ -430,109 +430,159 @@ fn generate_pair_json(
     use rand::seq::SliceRandom;
     annotation_indices.shuffle(rng);
 
-    let mut processed = 0;
+    // Process each original annotation according to the distribution
+    for (ann_idx, annotation) in original_data.annotations.iter().enumerate() {
+        let match_type = if ann_idx < perfect_match_count {
+            "perfect"
+        } else if ann_idx < perfect_match_count + partial_match_count {
+            "partial"
+        } else if ann_idx < perfect_match_count + partial_match_count + no_match_count {
+            "no_match"
+        } else {
+            "multiple"
+        };
 
-    // Process annotations with different matching patterns
-    for annotation in original_data.annotations.iter() {
-        if processed < perfect_match_count {
-            // Perfect match - exact copy
-            let mut pair_annotation = annotation.clone();
-            pair_annotation.id = annotation_id_counter;
-            annotation_id_counter += 1;
-            pair_annotations.push(pair_annotation);
-            processed += 1;
-        } else if processed < perfect_match_count + partial_match_count {
-            // Partial match - shift to create partial overlap
-            let mut pair_annotation = annotation.clone();
-            pair_annotation.id = annotation_id_counter;
-            annotation_id_counter += 1;
+        println!("Processing annotation {} as {}", ann_idx, match_type);
 
-            // Shift by 30-60% of the object size to create partial overlap
-            let shift_factor = rng.gen_range(0.3..0.6);
-            let shift_x = pair_annotation.bbox[2]
-                * shift_factor
-                * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
-            let shift_y = pair_annotation.bbox[3]
-                * shift_factor
-                * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
+        match match_type {
+            "perfect" => {
+                // Perfect match - exact copy with same category and shape
+                let mut pair_annotation = annotation.clone();
+                pair_annotation.id = annotation_id_counter;
+                annotation_id_counter += 1;
+                pair_annotations.push(pair_annotation);
+            }
+            "partial" => {
+                // Partial match - shift to create partial overlap but keep same category
+                let mut pair_annotation = annotation.clone();
+                pair_annotation.id = annotation_id_counter;
+                annotation_id_counter += 1;
 
-            pair_annotation.bbox[0] += shift_x;
-            pair_annotation.bbox[1] += shift_y;
+                // Shift by 30-60% of the object size to create partial overlap
+                let shift_factor = rng.gen_range(0.3..0.6);
+                let shift_x = pair_annotation.bbox[2]
+                    * shift_factor
+                    * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
+                let shift_y = pair_annotation.bbox[3]
+                    * shift_factor
+                    * (if rng.gen_bool(0.5) { 1.0 } else { -1.0 });
 
-            // Also shift segmentation if present
-            if let Some(segmentation) = &mut pair_annotation.segmentation {
-                for polygon in segmentation.iter_mut() {
-                    for i in (0..polygon.len()).step_by(2) {
-                        polygon[i] += shift_x;
-                        if i + 1 < polygon.len() {
-                            polygon[i + 1] += shift_y;
+                // Calculate actual shift applied after bounds checking
+                let original_x = annotation.bbox[0];
+                let original_y = annotation.bbox[1];
+
+                // Apply shift with bounds checking
+                pair_annotation.bbox[0] = (pair_annotation.bbox[0] + shift_x)
+                    .max(0.0)
+                    .min(original_data.images[0].width as f64 - pair_annotation.bbox[2]);
+                pair_annotation.bbox[1] = (pair_annotation.bbox[1] + shift_y)
+                    .max(0.0)
+                    .min(original_data.images[0].height as f64 - pair_annotation.bbox[3]);
+
+                let actual_shift_x = pair_annotation.bbox[0] - original_x;
+                let actual_shift_y = pair_annotation.bbox[1] - original_y;
+
+                // Also shift segmentation if present using actual shift amounts
+                if let Some(segmentation) = &mut pair_annotation.segmentation {
+                    for polygon in segmentation.iter_mut() {
+                        for i in (0..polygon.len()).step_by(2) {
+                            polygon[i] += actual_shift_x;
+                            if i + 1 < polygon.len() {
+                                polygon[i + 1] += actual_shift_y;
+                            }
                         }
                     }
                 }
+
+                // Recalculate area after transformation
+                pair_annotation.area = pair_annotation.bbox[2] * pair_annotation.bbox[3];
+
+                pair_annotations.push(pair_annotation);
             }
-
-            pair_annotations.push(pair_annotation);
-            processed += 1;
-        } else if processed < perfect_match_count + partial_match_count + no_match_count {
-            // No match - skip this annotation (creates FN in original)
-            processed += 1;
-        } else {
-            // For remaining annotations, create multiple matches if configured
-            let num_matches = if max_pair_matches > 1 && rng.gen_bool(0.3) {
-                rng.gen_range(2..=max_pair_matches)
-            } else {
-                1
-            };
-
-            for match_idx in 0..num_matches {
-                // Multiple matches with variations
-                let operation = if match_idx == 0 {
-                    rng.gen_range(0..2) // First match: exact or shift
+            "no_match" => {
+                // No match - skip this annotation (creates FN in original)
+                // Do nothing, this creates a false negative
+            }
+            "multiple" => {
+                // For remaining annotations, create multiple matches if configured
+                let num_matches = if max_pair_matches > 1 && rng.gen_bool(0.3) {
+                    rng.gen_range(2..=max_pair_matches)
                 } else {
-                    1 // Additional matches: always shift
+                    1
                 };
 
-                match operation {
-                    0 => {
-                        // Exact match - copy annotation as-is
-                        let mut pair_annotation = annotation.clone();
-                        pair_annotation.id = annotation_id_counter;
-                        annotation_id_counter += 1;
-                        pair_annotations.push(pair_annotation);
-                    }
-                    1 => {
-                        // Slight shift - move the annotation by a small amount
-                        let mut pair_annotation = annotation.clone();
-                        pair_annotation.id = annotation_id_counter;
-                        annotation_id_counter += 1;
+                println!(
+                    "Creating {} matches for annotation {}",
+                    num_matches, ann_idx
+                );
 
-                        // Shift bbox by different amounts based on match index
-                        // Additional matches get progressively larger shifts for better visibility
-                        let base_shift = 10.0 + (match_idx as f64 * 5.0);
-                        let shift_x = rng.gen_range(-base_shift..base_shift);
-                        let shift_y = rng.gen_range(-base_shift..base_shift);
+                for match_idx in 0..num_matches {
+                    // Multiple matches with variations
+                    let operation = if match_idx == 0 {
+                        0 // First match: exact copy
+                    } else {
+                        1 // Additional matches: always shift
+                    };
 
-                        pair_annotation.bbox[0] += shift_x;
-                        pair_annotation.bbox[1] += shift_y;
+                    match operation {
+                        0 => {
+                            // Exact match - copy annotation as-is with same category
+                            let mut pair_annotation = annotation.clone();
+                            pair_annotation.id = annotation_id_counter;
+                            annotation_id_counter += 1;
+                            pair_annotations.push(pair_annotation);
+                        }
+                        1 => {
+                            // Slight shift - move the annotation by a small amount but keep same category
+                            let mut pair_annotation = annotation.clone();
+                            pair_annotation.id = annotation_id_counter;
+                            annotation_id_counter += 1;
 
-                        // Also shift segmentation if present
-                        if let Some(segmentation) = &mut pair_annotation.segmentation {
-                            for polygon in segmentation.iter_mut() {
-                                for i in (0..polygon.len()).step_by(2) {
-                                    polygon[i] += shift_x;
-                                    if i + 1 < polygon.len() {
-                                        polygon[i + 1] += shift_y;
+                            // Shift bbox by different amounts based on match index
+                            let base_shift = 10.0 + (match_idx as f64 * 5.0);
+                            let shift_x = rng.gen_range(-base_shift..base_shift);
+                            let shift_y = rng.gen_range(-base_shift..base_shift);
+
+                            // Calculate actual shift applied after bounds checking
+                            let original_x = annotation.bbox[0];
+                            let original_y = annotation.bbox[1];
+
+                            // Apply shift with bounds checking
+                            pair_annotation.bbox[0] =
+                                (pair_annotation.bbox[0] + shift_x).max(0.0).min(
+                                    original_data.images[0].width as f64 - pair_annotation.bbox[2],
+                                );
+                            pair_annotation.bbox[1] =
+                                (pair_annotation.bbox[1] + shift_y).max(0.0).min(
+                                    original_data.images[0].height as f64 - pair_annotation.bbox[3],
+                                );
+
+                            let actual_shift_x = pair_annotation.bbox[0] - original_x;
+                            let actual_shift_y = pair_annotation.bbox[1] - original_y;
+
+                            // Also shift segmentation if present using actual shift amounts
+                            if let Some(segmentation) = &mut pair_annotation.segmentation {
+                                for polygon in segmentation.iter_mut() {
+                                    for i in (0..polygon.len()).step_by(2) {
+                                        polygon[i] += actual_shift_x;
+                                        if i + 1 < polygon.len() {
+                                            polygon[i + 1] += actual_shift_y;
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        pair_annotations.push(pair_annotation);
+                            // Recalculate area after transformation
+                            pair_annotation.area =
+                                pair_annotation.bbox[2] * pair_annotation.bbox[3];
+
+                            pair_annotations.push(pair_annotation);
+                        }
+                        _ => unreachable!(),
                     }
-                    _ => unreachable!(),
                 }
             }
-            processed += 1;
+            _ => unreachable!(),
         }
     }
 
@@ -547,8 +597,8 @@ fn generate_pair_json(
         let new_annotation = COCOAnnotation {
             id: annotation_id_counter,
             image_id: original_data.annotations[0].image_id,
-            category_id: original_data.categories[rng.gen_range(0..original_data.categories.len())]
-                .id,
+            // category_idはrectangle固定とする
+            category_id: 1, // Assuming category_id 1 is "rectangle"
             bbox: vec![x, y, width, height],
             area: width * height,
             segmentation: Some(vec![vec![
@@ -575,6 +625,53 @@ fn generate_pair_json(
         pair_annotations.len(),
         original_data.annotations.len()
     );
+
+    // Debug: Check for category and shape consistency
+    println!("Debug: Checking pair annotation consistency...");
+    println!(
+        "Perfect matches: {}, Partial matches: {}, No matches: {}, Additional: {}",
+        perfect_match_count, partial_match_count, no_match_count, additional_count
+    );
+
+    let mut category_mismatches = 0;
+    let mut shape_mismatches = 0;
+
+    for (i, pair_ann) in pair_annotations.iter().enumerate() {
+        // Only check the first perfect_match_count + partial_match_count annotations
+        // as they should correspond to original annotations
+        if i < perfect_match_count + partial_match_count && i < original_data.annotations.len() {
+            let original_ann = &original_data.annotations[i];
+
+            // Check category consistency
+            if pair_ann.category_id != original_ann.category_id {
+                category_mismatches += 1;
+                println!(
+                    "Warning: Category mismatch in annotation {} - original: {}, pair: {}",
+                    i, original_ann.category_id, pair_ann.category_id
+                );
+            }
+
+            // Check if both have segmentation or both don't
+            let original_has_seg = original_ann.segmentation.is_some();
+            let pair_has_seg = pair_ann.segmentation.is_some();
+            if original_has_seg != pair_has_seg {
+                shape_mismatches += 1;
+                println!(
+                    "Warning: Shape type mismatch in annotation {} - original has segmentation: {}, pair has segmentation: {}",
+                    i, original_has_seg, pair_has_seg
+                );
+            }
+        }
+    }
+
+    if category_mismatches == 0 && shape_mismatches == 0 {
+        println!("✓ All matched annotations have consistent categories and shapes");
+    } else {
+        println!(
+            "⚠ Found {} category mismatches and {} shape mismatches",
+            category_mismatches, shape_mismatches
+        );
+    }
 
     // Create a new COCO data structure with the modified annotations
     COCOData {

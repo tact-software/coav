@@ -141,7 +141,7 @@ function findOverlappingAnnotationsMultiple(
   datasetA: COCOAnnotation[],
   datasetB: COCOAnnotation[],
   iouThreshold: number,
-  categoryMapping: Map<number, number>,
+  categoryMapping: Map<number, number[]>,
   maxMatchesPerAnnotation: number = 1,
   iouMethod: IoUMethod = 'bbox'
 ): {
@@ -184,10 +184,15 @@ function findOverlappingAnnotationsMultiple(
     datasetB.forEach((annB) => {
       totalComparisons++;
 
-      // Check category mapping
-      const mappedCategory = categoryMapping.get(annA.category_id);
-      if (mappedCategory !== undefined && mappedCategory !== annB.category_id) return;
-      if (mappedCategory === undefined && annA.category_id !== annB.category_id) return;
+      // Check category mapping (1対多対応)
+      const mappedCategories = categoryMapping.get(annA.category_id);
+      if (mappedCategories !== undefined) {
+        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
+        if (!mappedCategories.includes(annB.category_id)) return;
+      } else {
+        // マッピングが設定されていない場合は評価対象外（スキップ）
+        return;
+      }
 
       // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);
@@ -288,7 +293,7 @@ function findOverlappingAnnotations(
   datasetA: COCOAnnotation[],
   datasetB: COCOAnnotation[],
   iouThreshold: number,
-  categoryMapping: Map<number, number>,
+  categoryMapping: Map<number, number[]>,
   iouMethod: IoUMethod = 'bbox'
 ): {
   matches: { annotationA: COCOAnnotation; annotationB: COCOAnnotation; iou: number }[];
@@ -317,10 +322,15 @@ function findOverlappingAnnotations(
       // Skip if already matched
       if (usedB.has(annB.id)) return;
 
-      // Check category mapping
-      const mappedCategory = categoryMapping.get(annA.category_id);
-      if (mappedCategory !== undefined && mappedCategory !== annB.category_id) return;
-      if (mappedCategory === undefined && annA.category_id !== annB.category_id) return;
+      // Check category mapping (1対多対応)
+      const mappedCategories = categoryMapping.get(annA.category_id);
+      if (mappedCategories !== undefined) {
+        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
+        if (!mappedCategories.includes(annB.category_id)) return;
+      } else {
+        // マッピングが設定されていない場合は評価対象外（スキップ）
+        return;
+      }
 
       // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);
@@ -350,10 +360,15 @@ function findOverlappingAnnotations(
   // Find below threshold matches among unmatched annotations
   unmatchedA.forEach((annA) => {
     unmatchedB.forEach((annB) => {
-      // Check category mapping
-      const mappedCategory = categoryMapping.get(annA.category_id);
-      if (mappedCategory !== undefined && mappedCategory !== annB.category_id) return;
-      if (mappedCategory === undefined && annA.category_id !== annB.category_id) return;
+      // Check category mapping (1対多対応)
+      const mappedCategories = categoryMapping.get(annA.category_id);
+      if (mappedCategories !== undefined) {
+        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
+        if (!mappedCategories.includes(annB.category_id)) return;
+      } else {
+        // マッピングが設定されていない場合は評価対象外（スキップ）
+        return;
+      }
 
       // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);

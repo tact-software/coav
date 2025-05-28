@@ -31,7 +31,8 @@ import { useTranslation } from 'react-i18next';
 
 function App() {
   const { t } = useTranslation();
-  const { cocoData, setCocoData, clearCocoData, setCurrentImageId } = useAnnotationStore();
+  const { cocoData, setCocoData, clearCocoData, setCurrentImageId, isComparing, clearComparison } =
+    useAnnotationStore();
   const {
     setImagePath,
     setImageData,
@@ -445,6 +446,11 @@ function App() {
           setImagePath(imagePath);
           setImageData(dataUrl, { width: img.width, height: img.height });
           clearCocoData();
+
+          // Exit comparison mode if active
+          if (isComparing) {
+            clearComparison();
+          }
           // Add to recent files
           addRecentFile({
             path: imagePath,
@@ -468,7 +474,16 @@ function App() {
         toast.error(t('errors.loadImageFailed'), errorMessage);
       }
     },
-    [setImagePath, setImageData, setLoading, setError, clearCocoData, addRecentFile]
+    [
+      setImagePath,
+      setImageData,
+      setLoading,
+      setError,
+      clearCocoData,
+      addRecentFile,
+      isComparing,
+      clearComparison,
+    ]
   );
 
   // Common function to load annotations from path
@@ -485,6 +500,11 @@ function App() {
         const annotationDir =
           jsonPath.substring(0, jsonPath.lastIndexOf('/')) ||
           jsonPath.substring(0, jsonPath.lastIndexOf('\\'));
+
+        // Exit comparison mode if active
+        if (isComparing) {
+          clearComparison();
+        }
 
         // Check if there are multiple images
         if (data.images && data.images.length > 1) {
@@ -522,7 +542,15 @@ function App() {
         toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
       }
     },
-    [setCocoData, setError, addRecentFile, loadImageFromPath]
+    [
+      setCocoData,
+      setError,
+      addRecentFile,
+      loadImageFromPath,
+      isComparing,
+      clearComparison,
+      setCurrentImageId,
+    ]
   );
 
   // Handle recent file selection

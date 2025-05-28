@@ -206,27 +206,34 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
       // If in comparison mode and has diff status, use diff colors
       if (isComparing && diffInfo?.status && comparisonSettings) {
         const { status, isGT } = diffInfo;
+        const comparisonColors = colors.comparison || {
+          gtColors: { tp: '#4caf50', fn: '#ff9800' },
+          predColors: { tp: '#66bb6a', fp: '#f44336' },
+        };
+
         switch (status) {
           case 'tp':
-            baseColor = isGT
-              ? comparisonSettings.colorSettings.gtColors.tp
-              : comparisonSettings.colorSettings.predColors.tp;
+            baseColor = isGT ? comparisonColors.gtColors.tp : comparisonColors.predColors.tp;
 
             // Debug logging for TP color application (only log first few to avoid spam)
             if (categoryId <= 2) {
               console.debug(`TP color for category ${categoryId}:`, {
                 isGT,
-                gtColor: comparisonSettings.colorSettings.gtColors.tp,
-                predColor: comparisonSettings.colorSettings.predColors.tp,
+                status,
+                gtColor: comparisonColors.gtColors.tp,
+                predColor: comparisonColors.predColors.tp,
                 selectedColor: baseColor,
+                isComparing,
+                hasComparisonSettings: !!comparisonSettings,
+                hasDiffInfo: !!diffInfo,
               });
             }
             break;
           case 'fp':
-            baseColor = comparisonSettings.colorSettings.predColors.fp;
+            baseColor = comparisonColors.predColors.fp;
             break;
           case 'fn':
-            baseColor = comparisonSettings.colorSettings.gtColors.fn;
+            baseColor = comparisonColors.gtColors.fn;
             break;
           default:
             baseColor = colors.categoryColors[categoryId] || generateCategoryColor(categoryId);
@@ -266,7 +273,13 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
       // Return RGBA format with the specified opacity
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     },
-    [colors.categoryColors, generateCategoryColor, isComparing]
+    [
+      colors.categoryColors,
+      colors.comparison,
+      generateCategoryColor,
+      isComparing,
+      comparisonSettings,
+    ]
   );
 
   const handleClick = useCallback(
@@ -442,6 +455,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     comparisonSettings,
     viewport,
     isInViewport,
+    getDiffStatus,
   ]);
 
   // Performance monitoring in development

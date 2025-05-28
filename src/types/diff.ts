@@ -53,7 +53,7 @@ export interface ComparisonSettings {
   gtFileId: string;
   predFileId: string;
   iouThreshold: number;
-  categoryMapping: Map<number, number>; // GT category ID -> Pred category ID
+  categoryMapping: Map<number, number[]>; // GT category ID -> Pred category IDs (1対多)
   colorSettings: DiffColorSettings;
   displaySettings: DiffDisplaySettings;
   maxMatchesPerAnnotation?: number; // Maximum number of matches allowed per annotation (default: 1)

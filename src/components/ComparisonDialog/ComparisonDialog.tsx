@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { useAnnotationStore } from '../../stores/useAnnotationStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 import { toast } from '../../stores/useToastStore';
 import type { COCOData } from '../../types/coco';
-import type { ComparisonSettings, DiffColorSettings, DiffDisplaySettings } from '../../types/diff';
+import type { ComparisonSettings, DiffDisplaySettings } from '../../types/diff';
 import './ComparisonDialog.css';
 
 interface Props {
@@ -23,28 +24,21 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     comparisonData: currentComparisonData,
     comparisonSettings: currentComparisonSettings,
   } = useAnnotationStore();
+  const { colors: colorSettings } = useSettingsStore();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [comparisonData, setComparisonData] = useState<COCOData | null>(null);
   const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
   const [roleSelection, setRoleSelection] = useState<'current_gt' | 'current_pred'>('current_gt');
   const [iouThreshold, setIouThreshold] = useState(0.5);
-  const [categoryMapping, setCategoryMapping] = useState<Map<number, number>>(new Map());
+  const [categoryMapping, setCategoryMapping] = useState<Map<number, number[]>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [maxMatchesPerAnnotation, setMaxMatchesPerAnnotation] = useState(1);
   const [iouMethod, setIouMethod] = useState<'bbox' | 'polygon'>('bbox');
 
-  // Color settings
-  const [colorSettings, setColorSettings] = useState<DiffColorSettings>({
-    gtColors: {
-      tp: '#4caf50', // Green
-      fn: '#ff9800', // Orange
-    },
-    predColors: {
-      tp: '#66bb6a', // Light Green (different from GT)
-      fp: '#f44336', // Red
-    },
-  });
+  // Category selection dialog state
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [currentGtCategoryId, setCurrentGtCategoryId] = useState<number | null>(null);
 
   // Display settings
   const [displaySettings, setDisplaySettings] = useState<DiffDisplaySettings>({
@@ -52,24 +46,25 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     showLabels: true,
   });
 
-  // Initialize state when dialog opens for the first time
-  const [hasInitialized, setHasInitialized] = useState(false);
-
   useEffect(() => {
-    if (isOpen && !hasInitialized) {
-      setHasInitialized(true);
-
+    if (isOpen) {
       if (isComparing && currentComparisonData && currentComparisonSettings) {
         // In comparison mode: load current settings
+        console.log('Loading existing comparison settings:', {
+          categoryMapping: currentComparisonSettings.categoryMapping,
+          iouThreshold: currentComparisonSettings.iouThreshold,
+          roleSelection:
+            currentComparisonSettings.gtFileId === 'primary' ? 'current_gt' : 'current_pred',
+        });
+
         setComparisonData(currentComparisonData);
         setSelectedImageId(currentImageId);
         setRoleSelection(
           currentComparisonSettings.gtFileId === 'primary' ? 'current_gt' : 'current_pred'
         );
         setIouThreshold(currentComparisonSettings.iouThreshold);
-        setCategoryMapping(currentComparisonSettings.categoryMapping);
-        setColorSettings(currentComparisonSettings.colorSettings);
-        setDisplaySettings(currentComparisonSettings.displaySettings);
+        setCategoryMapping(new Map(currentComparisonSettings.categoryMapping));
+        setDisplaySettings({ ...currentComparisonSettings.displaySettings });
         setMaxMatchesPerAnnotation(currentComparisonSettings.maxMatchesPerAnnotation || 1);
         setIouMethod(currentComparisonSettings.iouMethod || 'bbox');
         setSelectedFile('(Current comparison file)'); // Placeholder for current file
@@ -79,21 +74,17 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         setComparisonData(null);
         setSelectedImageId(null);
         setCategoryMapping(new Map());
+        setRoleSelection('current_gt');
+        setIouThreshold(0.5);
+        setDisplaySettings({
+          showBoundingBoxes: true,
+          showLabels: true,
+        });
+        setMaxMatchesPerAnnotation(1);
+        setIouMethod('bbox');
       }
     }
-
-    // Reset initialization flag when dialog closes
-    if (!isOpen) {
-      setHasInitialized(false);
-    }
-  }, [
-    isOpen,
-    hasInitialized,
-    isComparing,
-    currentComparisonData,
-    currentComparisonSettings,
-    currentImageId,
-  ]);
+  }, [isOpen, isComparing, currentComparisonData, currentComparisonSettings, currentImageId]);
 
   useEffect(() => {
     if (isOpen && cocoData && comparisonData) {
@@ -102,20 +93,29 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         comparisonCategories: comparisonData.categories.length,
         comparisonImages: comparisonData.images.length,
         comparisonAnnotations: comparisonData.annotations.length,
+        hasExistingMapping: categoryMapping.size > 0,
       });
 
-      // Initialize category mapping
-      const mapping = new Map<number, number>();
-      cocoData.categories.forEach((cat) => {
-        // Try to find matching category by name
-        const match = comparisonData.categories.find(
-          (compCat) => compCat.name.toLowerCase() === cat.name.toLowerCase()
-        );
-        mapping.set(cat.id, match ? match.id : cat.id);
-      });
-      setCategoryMapping(mapping);
+      // Only initialize category mapping if there's no existing mapping or we're not restoring from existing settings
+      if (categoryMapping.size === 0 && (!isComparing || !currentComparisonSettings)) {
+        console.debug('No existing mapping found, creating auto-mapping');
+        const mapping = new Map<number, number[]>();
+        cocoData.categories.forEach((cat) => {
+          // Try to find matching category by name
+          const match = comparisonData.categories.find(
+            (compCat) => compCat.name.toLowerCase() === cat.name.toLowerCase()
+          );
+          if (match) {
+            mapping.set(cat.id, [match.id]);
+          }
+          // 割り当てなしの場合はマッピングを作成しない
+        });
+        setCategoryMapping(mapping);
+      } else {
+        console.debug('Existing mapping found or restoring from settings, preserving it');
+      }
     }
-  }, [isOpen, cocoData, comparisonData]);
+  }, [isOpen, cocoData, comparisonData, categoryMapping, isComparing, currentComparisonSettings]);
 
   // Debug: Monitor selectedImageId changes
   useEffect(() => {
@@ -239,7 +239,10 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       iouThreshold,
       categoryMapping:
         roleSelection === 'current_gt' ? categoryMapping : invertMapping(categoryMapping),
-      colorSettings,
+      colorSettings: colorSettings.comparison || {
+        gtColors: { tp: '#4caf50', fn: '#ff9800' },
+        predColors: { tp: '#66bb6a', fp: '#f44336' },
+      },
       displaySettings,
       maxMatchesPerAnnotation: maxMatchesPerAnnotation > 1 ? maxMatchesPerAnnotation : undefined,
       iouMethod,
@@ -251,28 +254,85 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     onClose();
   };
 
-  const invertMapping = (mapping: Map<number, number>): Map<number, number> => {
-    const inverted = new Map<number, number>();
-    mapping.forEach((value, key) => {
-      inverted.set(value, key);
+  const invertMapping = (mapping: Map<number, number[]>): Map<number, number[]> => {
+    const inverted = new Map<number, number[]>();
+    mapping.forEach((values, key) => {
+      values.forEach((value) => {
+        const existing = inverted.get(value) || [];
+        inverted.set(value, [...existing, key]);
+      });
     });
     return inverted;
   };
 
-  const updateCategoryMapping = (gtCatId: number, predCatId: number) => {
+  const updateCategoryMapping = (gtCatId: number, predCatId: number, isAdd: boolean = true) => {
     const newMapping = new Map(categoryMapping);
-    newMapping.set(gtCatId, predCatId);
+    const currentMappings = newMapping.get(gtCatId) || [];
+
+    if (isAdd) {
+      // 追加：重複チェックして追加
+      if (!currentMappings.includes(predCatId)) {
+        newMapping.set(gtCatId, [...currentMappings, predCatId]);
+      }
+    } else {
+      // 削除：指定されたマッピングを削除
+      const filteredMappings = currentMappings.filter((id) => id !== predCatId);
+      if (filteredMappings.length > 0) {
+        newMapping.set(gtCatId, filteredMappings);
+      } else {
+        newMapping.delete(gtCatId);
+      }
+    }
+
     setCategoryMapping(newMapping);
+  };
+
+  // 指定されたカテゴリIDが他のマッピングで使用されているかチェック
+  const isPredCategoryUsed = (predCatId: number, excludeGtCatId?: number): boolean => {
+    for (const [gtId, predIds] of categoryMapping) {
+      if (excludeGtCatId && gtId === excludeGtCatId) continue;
+      if (predIds.includes(predCatId)) return true;
+    }
+    return false;
+  };
+
+  // カテゴリ選択ダイアログを開く
+  const openCategoryDialog = (gtCategoryId: number) => {
+    setCurrentGtCategoryId(gtCategoryId);
+    setShowCategoryDialog(true);
+  };
+
+  // カテゴリ選択ダイアログでカテゴリを選択
+  const handleCategorySelect = (predCategoryId: number) => {
+    if (currentGtCategoryId !== null && !isPredCategoryUsed(predCategoryId)) {
+      updateCategoryMapping(currentGtCategoryId, predCategoryId, true);
+    }
+    setShowCategoryDialog(false);
+    setCurrentGtCategoryId(null);
+  };
+
+  // ダイアログが閉じられる際の処理
+  const handleClose = () => {
+    // カテゴリ選択ダイアログも閉じる
+    setShowCategoryDialog(false);
+    setCurrentGtCategoryId(null);
+    onClose();
+  };
+
+  // 未割当のカテゴリを取得
+  const getAvailableCategories = () => {
+    if (!comparisonData) return [];
+    return comparisonData.categories.filter((cat) => !isPredCategoryUsed(cat.id));
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="comparison-dialog-overlay" onClick={onClose}>
+    <div className="comparison-dialog-overlay" onClick={handleClose}>
       <div className="comparison-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="comparison-dialog-header">
           <h2>{t('comparison.title')}</h2>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={handleClose}>
             ×
           </button>
         </div>
@@ -392,29 +452,106 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           {cocoData && comparisonData && (
             <div className="comparison-section">
               <h3>{t('comparison.categoryMapping')}</h3>
+              <div className="category-mapping-description">
+                {t('comparison.categoryMappingDescription')}
+              </div>
               <div className="category-mapping">
                 <div className="mapping-header">
                   <div>{t('comparison.currentFile')}</div>
                   <div>{t('comparison.comparisonFile')}</div>
                 </div>
-                {cocoData.categories.map((cat) => (
-                  <div key={cat.id} className="mapping-row">
-                    <div className="category-name">
-                      {cat.name} ({cat.id})
+
+                {/* 割り当て済みカテゴリ */}
+                {cocoData.categories.map((cat) => {
+                  const mappedCategories = categoryMapping.get(cat.id) || [];
+                  if (mappedCategories.length === 0) return null;
+
+                  return (
+                    <div key={cat.id} className="mapping-row">
+                      <div className="category-name">
+                        {cat.name} ({cat.id})
+                      </div>
+                      <div className="category-badge-list">
+                        {/* マッピングされたカテゴリのバッジ */}
+                        {mappedCategories.map((predCatId) => {
+                          const predCat = comparisonData.categories.find((c) => c.id === predCatId);
+                          return (
+                            <div key={predCatId} className="category-badge pred-category">
+                              <span className="badge-icon">●</span>
+                              <span className="badge-text">{predCat?.name}</span>
+                              <button
+                                type="button"
+                                className="badge-remove"
+                                onClick={() => updateCategoryMapping(cat.id, predCatId, false)}
+                                title={t('comparison.removeMapping')}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                        {/* Addバッジ */}
+                        {getAvailableCategories().length > 0 && (
+                          <button
+                            type="button"
+                            className="category-badge add-badge"
+                            onClick={() => openCategoryDialog(cat.id)}
+                            title={t('comparison.addMapping')}
+                          >
+                            <span className="badge-icon">+</span>
+                            <span className="badge-text">{t('comparison.add')}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <select
-                      value={categoryMapping.get(cat.id) || ''}
-                      onChange={(e) => updateCategoryMapping(cat.id, parseInt(e.target.value))}
-                    >
-                      <option value="">{t('comparison.noMapping')}</option>
-                      {comparisonData.categories.map((compCat) => (
-                        <option key={compCat.id} value={compCat.id}>
-                          {compCat.name} ({compCat.id})
-                        </option>
+                  );
+                })}
+
+                {/* 未割当カテゴリの行追加 */}
+                {cocoData.categories
+                  .filter(
+                    (cat) =>
+                      !categoryMapping.has(cat.id) || categoryMapping.get(cat.id)?.length === 0
+                  )
+                  .map((cat) => (
+                    <div key={cat.id} className="mapping-row">
+                      <div className="category-name">
+                        {cat.name} ({cat.id})
+                      </div>
+                      <div className="category-badge-list">
+                        {/* 追加ボタンのみ */}
+                        {getAvailableCategories().length > 0 && (
+                          <button
+                            type="button"
+                            className="category-badge add-badge"
+                            onClick={() => openCategoryDialog(cat.id)}
+                            title={t('comparison.addMapping')}
+                          >
+                            <span className="badge-icon">+</span>
+                            <span className="badge-text">{t('comparison.add')}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                {/* 比較ファイルの未割当カテゴリ */}
+                {getAvailableCategories().length > 0 && (
+                  <div className="mapping-row unassigned-comparison-row">
+                    <div className="category-name unassigned-label">
+                      {t('comparison.unassignedComparison')}
+                    </div>
+                    <div className="category-badge-list">
+                      {getAvailableCategories().map((cat) => (
+                        <div key={cat.id} className="category-badge unassigned-comparison-category">
+                          <span className="badge-icon">○</span>
+                          <span className="badge-text">{cat.name}</span>
+                        </div>
                       ))}
-                    </select>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
@@ -428,26 +565,28 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
               </label>
               <input
                 type="range"
-                min="0.1"
-                max="0.9"
+                min="0.05"
+                max="0.95"
                 step="0.05"
                 value={iouThreshold}
                 onChange={(e) => setIouThreshold(parseFloat(e.target.value))}
               />
             </div>
-            <div className="max-matches">
-              <label>
-                {t('comparison.maxMatchesPerAnnotation')}: {maxMatchesPerAnnotation}
-              </label>
+            <div className="form-group">
+              <label htmlFor="maxMatches">{t('comparison.maxMatchesPerAnnotation')}</label>
               <input
-                type="range"
+                id="maxMatches"
+                type="number"
+                className="input"
                 min="1"
-                max="5"
-                step="1"
                 value={maxMatchesPerAnnotation}
-                onChange={(e) => setMaxMatchesPerAnnotation(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1) {
+                    setMaxMatchesPerAnnotation(value);
+                  }
+                }}
               />
-              <div className="setting-description">{t('comparison.maxMatchesDescription')}</div>
             </div>
             <div className="iou-method">
               <label>{t('comparison.iouMethod')}</label>
@@ -472,71 +611,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                 </label>
               </div>
               <div className="setting-description">{t('comparison.iouMethodDescription')}</div>
-            </div>
-          </div>
-
-          {/* Color Settings */}
-          <div className="comparison-section">
-            <h3>{t('comparison.colorSettings')}</h3>
-            <div className="color-settings">
-              <div className="color-group">
-                <h4>{t('comparison.gtColors')}</h4>
-                <div className="color-item">
-                  <label>{t('comparison.truePositive')}</label>
-                  <input
-                    type="color"
-                    value={colorSettings.gtColors.tp}
-                    onChange={(e) =>
-                      setColorSettings({
-                        ...colorSettings,
-                        gtColors: { ...colorSettings.gtColors, tp: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-                <div className="color-item">
-                  <label>{t('comparison.falseNegative')}</label>
-                  <input
-                    type="color"
-                    value={colorSettings.gtColors.fn}
-                    onChange={(e) =>
-                      setColorSettings({
-                        ...colorSettings,
-                        gtColors: { ...colorSettings.gtColors, fn: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="color-group">
-                <h4>{t('comparison.predColors')}</h4>
-                <div className="color-item">
-                  <label>{t('comparison.truePositive')}</label>
-                  <input
-                    type="color"
-                    value={colorSettings.predColors.tp}
-                    onChange={(e) =>
-                      setColorSettings({
-                        ...colorSettings,
-                        predColors: { ...colorSettings.predColors, tp: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-                <div className="color-item">
-                  <label>{t('comparison.falsePositive')}</label>
-                  <input
-                    type="color"
-                    value={colorSettings.predColors.fp}
-                    onChange={(e) =>
-                      setColorSettings({
-                        ...colorSettings,
-                        predColors: { ...colorSettings.predColors, fp: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -575,7 +649,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         </div>
 
         <div className="comparison-dialog-footer">
-          <button className="cancel-button" onClick={onClose}>
+          <button className="cancel-button" onClick={handleClose}>
             {t('common.cancel')}
           </button>
           <button
@@ -594,6 +668,51 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           </button>
         </div>
       </div>
+
+      {/* カテゴリ選択ダイアログ */}
+      {showCategoryDialog && (
+        <div
+          className="category-dialog-overlay"
+          onClick={() => {
+            setShowCategoryDialog(false);
+            setCurrentGtCategoryId(null);
+          }}
+        >
+          <div className="category-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="category-dialog-header">
+              <h3>{t('comparison.selectCategory')}</h3>
+              <button
+                className="close-button"
+                onClick={() => {
+                  setShowCategoryDialog(false);
+                  setCurrentGtCategoryId(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="category-dialog-content">
+              <div className="available-categories">
+                {getAvailableCategories().map((cat) => (
+                  <button
+                    key={cat.id}
+                    className="category-option"
+                    onClick={() => handleCategorySelect(cat.id)}
+                  >
+                    <span className="category-option-icon">○</span>
+                    <span className="category-option-text">
+                      {cat.name} ({cat.id})
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {getAvailableCategories().length === 0 && (
+                <div className="no-categories">{t('comparison.noAvailableCategories')}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -149,6 +149,106 @@ export const ColorSettings: React.FC = () => {
         </div>
       </div>
 
+      <div className="color-settings-section">
+        <h3>{t('colorSettings.comparisonColors')}</h3>
+        <div className="comparison-color-settings">
+          <div className="color-group">
+            <h4>{t('colorSettings.groundTruth')}</h4>
+            <div className="comparison-color-item">
+              <label>{t('colorSettings.truePositive')}</label>
+              <input
+                type="color"
+                value={colors.comparison?.gtColors.tp || '#4caf50'}
+                onChange={(e) =>
+                  updateColorSettings({
+                    comparison: {
+                      gtColors: {
+                        tp: e.target.value,
+                        fn: colors.comparison?.gtColors.fn || '#ff9800',
+                      },
+                      predColors: colors.comparison?.predColors || {
+                        tp: '#66bb6a',
+                        fp: '#f44336',
+                      },
+                    },
+                  })
+                }
+                className="color-picker"
+              />
+            </div>
+            <div className="comparison-color-item">
+              <label>{t('colorSettings.falseNegative')}</label>
+              <input
+                type="color"
+                value={colors.comparison?.gtColors.fn || '#ff9800'}
+                onChange={(e) =>
+                  updateColorSettings({
+                    comparison: {
+                      gtColors: {
+                        tp: colors.comparison?.gtColors.tp || '#4caf50',
+                        fn: e.target.value,
+                      },
+                      predColors: colors.comparison?.predColors || {
+                        tp: '#66bb6a',
+                        fp: '#f44336',
+                      },
+                    },
+                  })
+                }
+                className="color-picker"
+              />
+            </div>
+          </div>
+          <div className="color-group">
+            <h4>{t('colorSettings.prediction')}</h4>
+            <div className="comparison-color-item">
+              <label>{t('colorSettings.truePositive')}</label>
+              <input
+                type="color"
+                value={colors.comparison?.predColors.tp || '#66bb6a'}
+                onChange={(e) =>
+                  updateColorSettings({
+                    comparison: {
+                      gtColors: colors.comparison?.gtColors || {
+                        tp: '#4caf50',
+                        fn: '#ff9800',
+                      },
+                      predColors: {
+                        tp: e.target.value,
+                        fp: colors.comparison?.predColors.fp || '#f44336',
+                      },
+                    },
+                  })
+                }
+                className="color-picker"
+              />
+            </div>
+            <div className="comparison-color-item">
+              <label>{t('colorSettings.falsePositive')}</label>
+              <input
+                type="color"
+                value={colors.comparison?.predColors.fp || '#f44336'}
+                onChange={(e) =>
+                  updateColorSettings({
+                    comparison: {
+                      gtColors: colors.comparison?.gtColors || {
+                        tp: '#4caf50',
+                        fn: '#ff9800',
+                      },
+                      predColors: {
+                        tp: colors.comparison?.predColors.tp || '#66bb6a',
+                        fp: e.target.value,
+                      },
+                    },
+                  })
+                }
+                className="color-picker"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="color-settings-actions">
         <button onClick={handleResetColors} className="reset-button">
           {t('colorSettings.resetToDefault')}

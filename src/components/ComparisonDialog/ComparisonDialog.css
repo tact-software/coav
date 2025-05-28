@@ -297,7 +297,241 @@
   height: 30px;
   border: 1px solid var(--color-border-primary);
   border-radius: 4px;
+}
+
+/* Category Mapping One-to-Many Styles */
+.category-mapping-description {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+  border-left: 3px solid var(--color-accent);
+}
+
+.mapping-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mapping-row .category-name {
+  flex: 0 0 200px;
+  font-weight: 500;
+  padding-top: 4px;
+}
+
+.category-badge-list {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.category-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 4px 8px !important;
+  border-radius: 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  border: none !important;
+  cursor: default !important;
+  transition: all 0.2s ease !important;
+  background: var(--color-bg-secondary, #f5f5f5) !important;
+  color: var(--color-text-primary, #333) !important;
+}
+
+/* 予測カテゴリ（比較ファイル） */
+.category-badge.pred-category {
+  background: var(--color-accent-bg, #e8f4fd) !important;
+  color: var(--color-accent-fg, #1976d2) !important;
+  border: 1px solid var(--color-accent, #2196f3) !important;
+}
+
+/* より具体的なセレクタでバッジスタイルを強制 */
+.category-mapping .category-badge.pred-category {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #42a5f5;
+}
+
+/* 未割当比較ファイルカテゴリの行 */
+.unassigned-comparison-row {
+  margin-top: 16px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid var(--color-border-secondary, #e0e0e0) !important;
+}
+
+.unassigned-comparison-row .unassigned-label {
+  color: var(--color-text-secondary, #666) !important;
+  font-style: italic !important;
+  font-size: 0.9rem !important;
+}
+
+/* 未割当比較ファイルカテゴリのバッジ */
+.category-badge.unassigned-comparison-category {
+  background: var(--color-bg-tertiary, #f9f9f9) !important;
+  color: var(--color-text-secondary, #666) !important;
+  border: 1px dashed var(--color-border-secondary, #ccc) !important;
+  opacity: 0.8 !important;
+}
+
+.category-badge.unassigned-comparison-category .badge-icon {
+  opacity: 0.6 !important;
+}
+
+.category-badge.add-badge {
+  background: var(--color-brand-primary, #1976d2);
+  color: white;
   cursor: pointer;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.category-badge.add-badge:hover {
+  background: var(--color-brand-primary-dark, #1565c0);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.badge-icon {
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.badge-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.badge-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0;
+  margin-left: 2px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.badge-remove:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.no-mapping-text {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* カテゴリ選択ダイアログ */
+.category-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.category-dialog {
+  background: var(--color-bg-primary);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.category-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.category-dialog-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+}
+
+.category-dialog-content {
+  padding: 20px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.available-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.category-option:hover {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.category-option-icon {
+  font-size: 14px;
+  color: var(--color-brand-primary);
+  font-weight: bold;
+}
+
+.category-option-text {
+  flex: 1;
+  text-align: left;
+}
+
+.no-categories {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: 20px;
 }
 
 /* Display Settings */
