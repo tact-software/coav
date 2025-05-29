@@ -34,11 +34,6 @@
   --color-error: #ef4444;
   --color-info: #8b5cf6;
 
-  /* Warning styles */
-  --color-warning-bg: #fef3cd;
-  --color-warning-text: #856404;
-  --color-warning-border: #ffeaa7;
-
   /* Component specific */
   --color-overlay: rgba(0, 0, 0, 0.5);
   --color-shadow: rgba(0, 0, 0, 0.1);
@@ -84,11 +79,6 @@
   --color-warning: #fbbf24;
   --color-error: #f87171;
   --color-info: #a78bfa;
-
-  /* Warning styles */
-  --color-warning-bg: #44403c;
-  --color-warning-text: #fbbf24;
-  --color-warning-border: #57534e;
 
   /* Component specific */
   --color-overlay: rgba(0, 0, 0, 0.7);

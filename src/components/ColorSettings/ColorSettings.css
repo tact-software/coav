@@ -131,37 +131,6 @@
   text-align: right;
 }
 
-.comparison-color-settings {
-  display: flex;
-  gap: 2rem;
-}
-
-.color-group {
-  flex: 1;
-}
-
-.color-group h4 {
-  margin: 0 0 0.5rem 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.comparison-color-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-secondary);
-}
-
-.comparison-color-item:last-child {
-  border-bottom: none;
-}
-
-.comparison-color-item label {
-  font-size: 0.9rem;
-}
-
 .color-settings-actions {
   display: flex;
   justify-content: flex-end;

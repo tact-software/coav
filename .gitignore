@@ -43,7 +43,6 @@ act-*.log
 tmp.txt
 *.tmp
 *.temp
-tmp.md
 
 # IDE specific
 CLAUDE.md

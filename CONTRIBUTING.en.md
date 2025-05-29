@@ -111,21 +111,11 @@ git checkout -b feature/your-feature-name
 Branch naming conventions:
 
 - `feature/` - New features
-  - Example: `feature/auto-update`, `feature/123-screenshot-tool`
 - `fix/` - Bug fixes
-  - Example: `fix/memory-leak`, `fix/456-panel-crash`
 - `docs/` - Documentation
-  - Example: `docs/api-guide`, `docs/readme-update`
 - `refactor/` - Refactoring
-  - Example: `refactor/component-structure`
 - `test/` - Adding tests
-  - Example: `test/unit-tests`, `test/e2e-setup`
 - `chore/` - Other changes
-  - Example: `chore/dependencies-update`
-- `hotfix/` - Emergency fixes (from main branch)
-  - Example: `hotfix/1.0.1-critical-bug`
-- `release/` - Release preparation
-  - Example: `release/v1.1.0`
 
 ### 2. Development
 

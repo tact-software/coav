@@ -89,59 +89,13 @@ export const useImageStore = create<ImageState>((set, get) => ({
   },
 
   zoomIn: () => {
-    const state = get();
-    const currentZoom = state.zoom;
-    const newZoom = Math.min(10, currentZoom * 1.2);
-
-    // Calculate zoom around viewport center
-    if (state.containerSize) {
-      const viewportCenter = {
-        x: state.containerSize.width / 2,
-        y: state.containerSize.height / 2,
-      };
-
-      const pointBeforeZoom = {
-        x: (viewportCenter.x - state.pan.x) / currentZoom,
-        y: (viewportCenter.y - state.pan.y) / currentZoom,
-      };
-
-      const newPan = {
-        x: viewportCenter.x - pointBeforeZoom.x * newZoom,
-        y: viewportCenter.y - pointBeforeZoom.y * newZoom,
-      };
-
-      set({ zoom: newZoom, pan: newPan });
-    } else {
-      set({ zoom: newZoom });
-    }
+    const currentZoom = get().zoom;
+    set({ zoom: Math.min(10, currentZoom * 1.2) });
   },
 
   zoomOut: () => {
-    const state = get();
-    const currentZoom = state.zoom;
-    const newZoom = Math.max(0.1, currentZoom / 1.2);
-
-    // Calculate zoom around viewport center
-    if (state.containerSize) {
-      const viewportCenter = {
-        x: state.containerSize.width / 2,
-        y: state.containerSize.height / 2,
-      };
-
-      const pointBeforeZoom = {
-        x: (viewportCenter.x - state.pan.x) / currentZoom,
-        y: (viewportCenter.y - state.pan.y) / currentZoom,
-      };
-
-      const newPan = {
-        x: viewportCenter.x - pointBeforeZoom.x * newZoom,
-        y: viewportCenter.y - pointBeforeZoom.y * newZoom,
-      };
-
-      set({ zoom: newZoom, pan: newPan });
-    } else {
-      set({ zoom: newZoom });
-    }
+    const currentZoom = get().zoom;
+    set({ zoom: Math.max(0.1, currentZoom / 1.2) });
   },
 
   fitToWindow: () => {

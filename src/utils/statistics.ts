@@ -35,7 +35,7 @@ export function calculateAnnotationStatistics(
   cocoData: COCOData | null,
   imageId: number | null,
   visibleCategoryIds: number[],
-  selectedAnnotationIds: (number | string)[]
+  selectedAnnotationIds: number[]
 ): AnnotationStatistics | null {
   if (!cocoData) return null;
 
@@ -124,15 +124,9 @@ export function calculateAnnotationStatistics(
   return {
     totalAnnotations: imageAnnotations.length,
     visibleAnnotations: visibleAnnotations.length,
-    selectedAnnotations: selectedAnnotationIds.filter((id) => {
-      // Handle both number and string IDs
-      if (typeof id === 'string') {
-        // For comparison mode unique IDs like "primary-123" or "comparison-456"
-        const numericId = id.includes('-') ? parseInt(id.split('-')[1]) : parseInt(id);
-        return imageAnnotations.some((ann) => ann.id === numericId);
-      }
-      return imageAnnotations.some((ann) => ann.id === id);
-    }).length,
+    selectedAnnotations: selectedAnnotationIds.filter((id) =>
+      imageAnnotations.some((ann) => ann.id === id)
+    ).length,
     categoryStats,
     sizeStats,
     coveragePercentage,
