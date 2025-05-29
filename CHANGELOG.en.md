@@ -11,9 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comparison Mode**
+  - Visual comparison between two COCO datasets (ground truth vs predictions)
+  - Color-coded display of TP (True Positive), FP (False Positive), and FN (False Negative)
+  - IoU threshold-based matching algorithm
+  - Category mapping between different category systems
+  - Two IoU calculation methods: Bounding box IoU and Polygon IoU (approximation)
+  - Multiple matching support (1-to-many matching configuration)
+- **Evaluation Metrics Display**
+  - Calculation and display of Precision, Recall, and F1 score
+  - Comparison results in statistics dialog
+  - Matching information in annotation detail panel
+- **Sample Data Generation Enhancement**
+  - Pair JSON generation option for comparison testing
+  - Detailed matching distribution settings
+- **Loading Overlay**
+  - Full-screen loading display for long-running operations
+
 ### Changed
 
+- Improved zoom buttons to zoom relative to viewport center
+- Auto-adjust view mode for single image datasets in statistics dialog
+
 ### Fixed
+
+- Fixed infinite loop issue after category mapping
+- Fixed comparison results not showing for single image datasets
+- Enabled comparison between datasets with different image IDs
 
 ### Removed
 
