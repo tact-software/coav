@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { COCOData, COCOAnnotation, COCOCategory } from '../types/coco';
+import { DiffResult, DiffStatistics, DiffFilter, ComparisonSettings } from '../types/diff';
 
 interface AnnotationState {
   cocoData: COCOData | null;
-  selectedAnnotationIds: number[];
+  selectedAnnotationIds: (number | string)[];
   visibleCategoryIds: number[];
-  hoveredAnnotationId: number | null;
+  hoveredAnnotationId: number | string | null;
   currentImageId: number | null;
 
   // Detail panel state
@@ -18,15 +19,23 @@ interface AnnotationState {
   currentSearchIndex: number;
   shouldCenterOnSelection: boolean;
 
+  // Comparison state
+  comparisonData: COCOData | null;
+  isComparing: boolean;
+  comparisonSettings: ComparisonSettings | null;
+  diffResults: Map<number, DiffResult>;
+  diffStatistics: DiffStatistics | null;
+  diffFilters: Set<DiffFilter>;
+
   // Actions
   setCocoData: (data: COCOData) => void;
   clearCocoData: () => void;
-  selectAnnotation: (id: number, multiSelect?: boolean) => void;
+  selectAnnotation: (id: number | string, multiSelect?: boolean) => void;
   clearSelection: () => void;
   toggleCategoryVisibility: (categoryId: number) => void;
   showAllCategories: () => void;
   hideAllCategories: () => void;
-  setHoveredAnnotation: (id: number | null) => void;
+  setHoveredAnnotation: (id: number | string | null) => void;
 
   // Detail panel actions
   setDetailPanelOpen: (open: boolean) => void;
@@ -48,6 +57,14 @@ interface AnnotationState {
   getSelectedAnnotations: () => COCOAnnotation[];
   getCategoryById: (id: number) => COCOCategory | undefined;
   getAnnotationsForCurrentImage: () => COCOAnnotation[];
+
+  // Comparison actions
+  setComparisonData: (data: COCOData, settings: ComparisonSettings) => void;
+  clearComparison: () => void;
+  calculateDiff: () => void;
+  toggleDiffFilter: (filter: DiffFilter) => void;
+  setDiffFilters: (filters: Set<DiffFilter>) => void;
+  updateComparisonSettings: (settings: ComparisonSettings) => void;
 }
 
 export const useAnnotationStore = create<AnnotationState>((set, get) => ({
@@ -62,6 +79,12 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
   searchResults: [],
   currentSearchIndex: -1,
   shouldCenterOnSelection: false,
+  comparisonData: null,
+  isComparing: false,
+  comparisonSettings: null,
+  diffResults: new Map(),
+  diffStatistics: null,
+  diffFilters: new Set<DiffFilter>(),
 
   setCocoData: (data) => {
     set({
@@ -260,5 +283,105 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
     if (!state.cocoData || !state.currentImageId) return [];
 
     return state.cocoData.annotations.filter((ann) => ann.image_id === state.currentImageId);
+  },
+
+  // Comparison actions
+  setComparisonData: (data, settings) => {
+    set({
+      comparisonData: data,
+      comparisonSettings: settings,
+      isComparing: true,
+      diffFilters: new Set(['tp-gt', 'tp-pred', 'fp', 'fn']), // Show all result types by default
+    });
+    get().calculateDiff();
+
+    console.log('🎯 COMPARISON STARTED - Auto-enabled all result filters:', {
+      diffFiltersSize: 4,
+      enabledFilters: ['tp-gt', 'tp-pred', 'fp', 'fn'],
+    });
+  },
+
+  clearComparison: () => {
+    console.log('🧹 CLEARING COMPARISON - Before:', {
+      isComparing: get().isComparing,
+      hasComparisonData: !!get().comparisonData,
+      diffResultsSize: get().diffResults.size,
+      diffFiltersSize: get().diffFilters.size,
+    });
+
+    // Get current state before clearing
+    const currentState = get();
+
+    set({
+      comparisonData: null,
+      comparisonSettings: null,
+      isComparing: false,
+      diffResults: new Map(),
+      diffStatistics: null,
+      diffFilters: new Set<DiffFilter>(),
+      // Auto-enable all categories when exiting comparison mode
+      visibleCategoryIds:
+        currentState.cocoData?.categories.map((cat) => cat.id) || currentState.visibleCategoryIds,
+    });
+
+    console.log('🧹 CLEARING COMPARISON - After:', {
+      isComparing: get().isComparing,
+      hasComparisonData: !!get().comparisonData,
+      diffResultsSize: get().diffResults.size,
+      diffFiltersSize: get().diffFilters.size,
+      visibleCategoriesCount: get().visibleCategoryIds.length,
+      autoEnabledCategories: true,
+    });
+
+    // Force a re-calculation of visible annotations by triggering a state update
+    // This ensures all comparison-related rendering is cleared immediately
+    const state = get();
+    if (state.cocoData) {
+      // Trigger a minor state update to force re-render
+      set({ selectedAnnotationIds: [...state.selectedAnnotationIds] });
+      console.log('🧹 Forced re-render by updating selectedAnnotationIds');
+    }
+  },
+
+  calculateDiff: () => {
+    const state = get();
+    if (!state.cocoData || !state.comparisonData || !state.comparisonSettings) return;
+
+    // Import diff calculation logic dynamically to avoid circular dependencies
+    import('../utils/diffCalculator').then(({ calculateDiff }) => {
+      // Use role-agnostic approach: always pass primary data as first parameter
+      const { results, statistics } = calculateDiff(
+        state.cocoData!, // dataA (primary)
+        state.comparisonData!, // dataB (comparison)
+        state.comparisonSettings!
+      );
+      set({
+        diffResults: results,
+        diffStatistics: statistics,
+      });
+    });
+  },
+
+  toggleDiffFilter: (filter) => {
+    set((state) => {
+      const newFilters = new Set(state.diffFilters);
+
+      if (newFilters.has(filter)) {
+        newFilters.delete(filter);
+      } else {
+        newFilters.add(filter);
+      }
+
+      return { diffFilters: newFilters };
+    });
+  },
+
+  setDiffFilters: (filters) => {
+    set({ diffFilters: filters });
+  },
+
+  updateComparisonSettings: (settings) => {
+    set({ comparisonSettings: settings });
+    get().calculateDiff();
   },
 }));
