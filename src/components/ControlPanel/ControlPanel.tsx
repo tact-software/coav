@@ -8,7 +8,6 @@ import {
 } from '../../stores';
 import { extractFieldsFromAnnotation, groupFieldsByCategory } from '../../utils';
 import SearchBox, { SearchBoxRef } from '../SearchBox/SearchBox';
-import { ComparisonDialog } from '../ComparisonDialog';
 import './ControlPanel.css';
 
 const ControlPanel: React.FC = () => {
@@ -22,11 +21,6 @@ const ControlPanel: React.FC = () => {
     toggleCategoryVisibility,
     showAllCategories,
     hideAllCategories,
-    isComparing,
-    clearComparison,
-    diffFilters,
-    toggleDiffFilter,
-    comparisonSettings,
   } = useAnnotationStore();
 
   const { imageSize, zoom, zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
@@ -34,7 +28,6 @@ const ControlPanel: React.FC = () => {
   const { detail, updateDetailSettings, colors } = useSettingsStore();
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['option']));
-  const [isComparisonDialogOpen, setIsComparisonDialogOpen] = useState(false);
 
   // Handle Ctrl+F keyboard shortcut
   useEffect(() => {
@@ -182,158 +175,50 @@ const ControlPanel: React.FC = () => {
             <SearchBox ref={searchBoxRef} />
           </div>
 
-          {/* Comparison Section */}
           <div className="panel-section">
             <div className="section-header">
-              <h4>{t('controls.comparison')}</h4>
-            </div>
-            {!isComparing ? (
-              <button
-                className="btn btn-secondary comparison-button"
-                onClick={() => setIsComparisonDialogOpen(true)}
-              >
-                <span className="icon">📊</span>
-                {t('controls.openComparisonFile')}
-              </button>
-            ) : (
-              <div className="comparison-controls">
-                <div className="comparison-status">{t('controls.comparingFiles')}</div>
-
-                {/* Comparison info */}
-                <div className="comparison-info">
-                  <small>{t('controls.comparisonFilterInfo')}</small>
-                </div>
-
-                {/* Comparison Result Filters */}
-                <div className="comparison-filters">
-                  <label className="category-item">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={diffFilters.has('tp-gt')}
-                      onChange={() => toggleDiffFilter('tp-gt')}
-                    />
-                    <div
-                      className="category-color"
-                      style={{
-                        backgroundColor: comparisonSettings?.colorSettings.gtColors.tp || '#4CAF50',
-                      }}
-                    />
-                    <span className="category-name">{t('controls.truePositiveGt')}</span>
-                  </label>
-
-                  <label className="category-item">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={diffFilters.has('tp-pred')}
-                      onChange={() => toggleDiffFilter('tp-pred')}
-                    />
-                    <div
-                      className="category-color"
-                      style={{
-                        backgroundColor:
-                          comparisonSettings?.colorSettings.predColors.tp || '#66bb6a',
-                      }}
-                    />
-                    <span className="category-name">{t('controls.truePositivePred')}</span>
-                  </label>
-
-                  <label className="category-item">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={diffFilters.has('fn')}
-                      onChange={() => toggleDiffFilter('fn')}
-                    />
-                    <div
-                      className="category-color"
-                      style={{
-                        backgroundColor: comparisonSettings?.colorSettings.gtColors.fn || '#FF9800',
-                      }}
-                    />
-                    <span className="category-name">{t('controls.falseNegative')}</span>
-                  </label>
-
-                  <label className="category-item">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={diffFilters.has('fp')}
-                      onChange={() => toggleDiffFilter('fp')}
-                    />
-                    <div
-                      className="category-color"
-                      style={{
-                        backgroundColor:
-                          comparisonSettings?.colorSettings.predColors.fp || '#F44336',
-                      }}
-                    />
-                    <span className="category-name">{t('controls.falsePositive')}</span>
-                  </label>
-                </div>
-
-                <button className="btn btn-primary" onClick={() => setIsComparisonDialogOpen(true)}>
-                  {t('controls.changeComparisonSettings')}
+              <h4>{t('controls.categories')}</h4>
+              <div className="section-actions">
+                <button className="btn-text" onClick={showAllCategories}>
+                  {t('controls.all')}
                 </button>
-
-                <button className="btn btn-secondary" onClick={clearComparison}>
-                  {t('controls.endComparison')}
+                <span className="separator">|</span>
+                <button className="btn-text" onClick={hideAllCategories}>
+                  {t('controls.none')}
                 </button>
               </div>
-            )}
+            </div>
+            <div className="category-list">
+              {cocoData.categories
+                .filter((category) => {
+                  // Only show categories that have annotations in the current image
+                  return annotationCounts[category.id] > 0;
+                })
+                .map((category) => {
+                  const count = annotationCounts[category.id] || 0;
+                  const isVisible = visibleCategoryIds.includes(category.id);
+                  const categoryColor =
+                    colors.categoryColors[category.id] || generateCategoryColor(category.id);
+
+                  return (
+                    <label
+                      key={category.id}
+                      className={`category-item ${!isVisible ? 'disabled' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={isVisible}
+                        onChange={() => toggleCategoryVisibility(category.id)}
+                      />
+                      <div className="category-color" style={{ backgroundColor: categoryColor }} />
+                      <span className="category-name">{category.name}</span>
+                      <span className="category-count badge">{count}</span>
+                    </label>
+                  );
+                })}
+            </div>
           </div>
-
-          {/* Hide category section during comparison mode */}
-          {!isComparing && (
-            <div className="panel-section">
-              <div className="section-header">
-                <h4>{t('controls.categories')}</h4>
-                <div className="section-actions">
-                  <button className="btn-text" onClick={showAllCategories}>
-                    {t('controls.all')}
-                  </button>
-                  <span className="separator">|</span>
-                  <button className="btn-text" onClick={hideAllCategories}>
-                    {t('controls.none')}
-                  </button>
-                </div>
-              </div>
-              <div className="category-list">
-                {cocoData.categories
-                  .filter((category) => {
-                    // Only show categories that have annotations in the current image
-                    return annotationCounts[category.id] > 0;
-                  })
-                  .map((category) => {
-                    const count = annotationCounts[category.id] || 0;
-                    const isVisible = visibleCategoryIds.includes(category.id);
-                    const categoryColor =
-                      colors.categoryColors[category.id] || generateCategoryColor(category.id);
-
-                    return (
-                      <label
-                        key={category.id}
-                        className={`category-item ${!isVisible ? 'disabled' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={isVisible}
-                          onChange={() => toggleCategoryVisibility(category.id)}
-                        />
-                        <div
-                          className="category-color"
-                          style={{ backgroundColor: categoryColor }}
-                        />
-                        <span className="category-name">{category.name}</span>
-                        <span className="category-count badge">{count}</span>
-                      </label>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
 
           <div className="panel-section">
             <div className="section-header">
@@ -490,12 +375,6 @@ const ControlPanel: React.FC = () => {
           <p>{t('info.noImageLoaded')}</p>
         </div>
       )}
-
-      {/* Comparison Dialog */}
-      <ComparisonDialog
-        isOpen={isComparisonDialogOpen}
-        onClose={() => setIsComparisonDialogOpen(false)}
-      />
     </div>
   );
 };

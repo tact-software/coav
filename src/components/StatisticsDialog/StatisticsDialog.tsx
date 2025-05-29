@@ -11,27 +11,9 @@ interface StatisticsDialogProps {
 
 const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const {
-    cocoData,
-    visibleCategoryIds,
-    selectedAnnotationIds,
-    currentImageId,
-    isComparing,
-    diffResults,
-  } = useAnnotationStore();
-  // Determine initial view mode based on dataset
-  const initialViewMode = useMemo(() => {
-    if (!cocoData) return 'all';
-    // If only one image, default to 'current' mode
-    return cocoData.images.length === 1 ? 'current' : 'all';
-  }, [cocoData]);
-
-  const [viewMode, setViewMode] = useState<'current' | 'all'>(initialViewMode);
-
-  // Update viewMode when initialViewMode changes
-  React.useEffect(() => {
-    setViewMode(initialViewMode);
-  }, [initialViewMode]);
+  const { cocoData, visibleCategoryIds, selectedAnnotationIds, currentImageId } =
+    useAnnotationStore();
+  const [viewMode, setViewMode] = useState<'current' | 'all'>('all');
 
   // Calculate statistics based on view mode
   const statistics = useMemo(() => {
@@ -81,49 +63,6 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
       avgAnnotationsPerImage,
     };
   }, [cocoData]);
-
-  // Calculate comparison metrics for current image
-  const currentImageComparisonMetrics = useMemo(() => {
-    if (!isComparing || !diffResults || !currentImageId) {
-      return null;
-    }
-
-    // Show metrics for current view or if there's only one image
-    if (viewMode !== 'current' && cocoData && cocoData.images.length > 1) {
-      return null;
-    }
-
-    // Get diff result for current image
-    let resultToUse = diffResults.get(currentImageId);
-
-    // If no result for current image, try to get the first available result
-    if (!resultToUse && diffResults.size > 0) {
-      resultToUse = Array.from(diffResults.values())[0];
-    }
-
-    if (!resultToUse) {
-      return null;
-    }
-
-    // Count each type
-    const tp = resultToUse.truePositives.length;
-    const fp = resultToUse.falsePositives.length;
-    const fn = resultToUse.falseNegatives.length;
-
-    // Calculate metrics
-    const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
-    const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
-    const f1 = precision + recall > 0 ? (2 * (precision * recall)) / (precision + recall) : 0;
-
-    return {
-      tp,
-      fp,
-      fn,
-      precision,
-      recall,
-      f1,
-    };
-  }, [isComparing, diffResults, currentImageId, viewMode]);
 
   // Calculate view-specific statistics (category distribution and sizes)
   const viewStats = useMemo(() => {
@@ -227,22 +166,6 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
       text += `Visible Annotations: ${statistics.visibleAnnotations}\n`;
       text += `Selected Annotations: ${statistics.selectedAnnotations}\n`;
       text += `Coverage: ${statistics.coveragePercentage.toFixed(1)}%\n`;
-
-      // Add comparison evaluation metrics if available
-      // Show for current view or if there's only one image (single image datasets)
-      if (
-        (viewMode === 'current' || (cocoData && cocoData.images.length === 1)) &&
-        isComparing &&
-        currentImageComparisonMetrics
-      ) {
-        text += '\n## Comparison Evaluation Metrics\n';
-        text += `True Positives (TP): ${currentImageComparisonMetrics.tp}\n`;
-        text += `False Positives (FP): ${currentImageComparisonMetrics.fp}\n`;
-        text += `False Negatives (FN): ${currentImageComparisonMetrics.fn}\n`;
-        text += `Precision: ${(currentImageComparisonMetrics.precision * 100).toFixed(1)}%\n`;
-        text += `Recall: ${(currentImageComparisonMetrics.recall * 100).toFixed(1)}%\n`;
-        text += `F1 Score: ${(currentImageComparisonMetrics.f1 * 100).toFixed(1)}%\n`;
-      }
     }
 
     return text;
@@ -292,23 +215,20 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
               {hasMultipleImages && statistics && (
                 <div className="view-mode-section">
                   <h3>{t('statistics.annotationStatistics')}</h3>
-                  {/* Only show view mode toggle for datasets with multiple images */}
-                  {hasMultipleImages && (
-                    <div className="view-mode-toggle">
-                      <button
-                        className={viewMode === 'current' ? 'active' : ''}
-                        onClick={() => setViewMode('current')}
-                      >
-                        {t('statistics.currentImage')}
-                      </button>
-                      <button
-                        className={viewMode === 'all' ? 'active' : ''}
-                        onClick={() => setViewMode('all')}
-                      >
-                        {t('statistics.allImages')}
-                      </button>
-                    </div>
-                  )}
+                  <div className="view-mode-toggle">
+                    <button
+                      className={viewMode === 'current' ? 'active' : ''}
+                      onClick={() => setViewMode('current')}
+                    >
+                      {t('infoPanel.currentImage')}
+                    </button>
+                    <button
+                      className={viewMode === 'all' ? 'active' : ''}
+                      onClick={() => setViewMode('all')}
+                    >
+                      {t('infoPanel.allImages')}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -318,7 +238,7 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
                   <h3>
                     {t('statistics.categoryBreakdown')}
                     {hasMultipleImages &&
-                      ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
+                      ` - ${viewMode === 'current' ? t('infoPanel.currentImage') : t('infoPanel.allImages')}`}
                   </h3>
                   <div className="category-distribution">
                     {viewStats.categoryDistribution.map((cat) => (
@@ -378,7 +298,7 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
                   <h3>
                     {t('statistics.annotationSizes')}
                     {hasMultipleImages &&
-                      ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
+                      ` - ${viewMode === 'current' ? t('infoPanel.currentImage') : t('infoPanel.allImages')}`}
                   </h3>
                   <div className="statistics-grid">
                     <div className="statistic-card">
@@ -400,85 +320,6 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Comparison Evaluation Metrics - Only show for current image view */}
-              {viewStats && viewMode === 'current' && (
-                <div className="statistics-section">
-                  <h3>{t('statistics.comparisonMetrics')}</h3>
-                  {isComparing && currentImageComparisonMetrics ? (
-                    <>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.tp}</div>
-                          <div className="statistic-label">{t('statistics.truePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.fp}</div>
-                          <div className="statistic-label">{t('statistics.falsePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.fn}</div>
-                          <div className="statistic-label">{t('statistics.falseNegatives')}</div>
-                        </div>
-                      </div>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.precision * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.precision')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.recall * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.recall')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.f1 * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.f1Score')}</div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.truePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.falsePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.falseNegatives')}</div>
-                        </div>
-                      </div>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.precision')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.recall')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.f1Score')}</div>
-                        </div>
-                      </div>
-                      <div className="comparison-mode-notice">
-                        {t('statistics.comparisonModeOnly')}
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
             </>
