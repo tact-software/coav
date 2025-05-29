@@ -37,6 +37,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [maxMatchesPerAnnotation, setMaxMatchesPerAnnotation] = useState(1);
   const [iouMethod, setIouMethod] = useState<'bbox' | 'polygon'>('bbox');
+  const [hasManualMapping, setHasManualMapping] = useState(false);
 
   // Category selection dialog state
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -84,23 +85,15 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         });
         setMaxMatchesPerAnnotation(1);
         setIouMethod('bbox');
+        setHasManualMapping(false);
       }
     }
   }, [isOpen, isComparing, currentComparisonData, currentComparisonSettings, currentImageId]);
 
   useEffect(() => {
     if (isOpen && cocoData && comparisonData) {
-      console.debug('ComparisonDialog useEffect - data available:', {
-        cocoCategories: cocoData.categories.length,
-        comparisonCategories: comparisonData.categories.length,
-        comparisonImages: comparisonData.images.length,
-        comparisonAnnotations: comparisonData.annotations.length,
-        hasExistingMapping: categoryMapping.size > 0,
-      });
-
-      // Only initialize category mapping if there's no existing mapping or we're not restoring from existing settings
-      if (categoryMapping.size === 0 && (!isComparing || !currentComparisonSettings)) {
-        console.debug('No existing mapping found, creating auto-mapping');
+      // Only initialize category mapping if we're not restoring from existing settings and no manual mapping exists
+      if ((!isComparing || !currentComparisonSettings) && !hasManualMapping) {
         const mapping = new Map<number, number[]>();
         cocoData.categories.forEach((cat) => {
           // Try to find matching category by name
@@ -114,19 +107,9 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         });
         setCategoryMapping(mapping);
       } else {
-        console.debug('Existing mapping found or restoring from settings, preserving it');
       }
     }
-  }, [isOpen, cocoData, comparisonData, categoryMapping, isComparing, currentComparisonSettings]);
-
-  // Debug: Monitor selectedImageId changes
-  useEffect(() => {
-    console.debug('selectedImageId changed:', {
-      selectedImageId,
-      type: typeof selectedImageId,
-      hasComparisonData: !!comparisonData,
-    });
-  }, [selectedImageId]);
+  }, [isOpen, cocoData, comparisonData, isComparing, currentComparisonSettings]);
 
   const handleFileSelect = async () => {
     try {
@@ -145,22 +128,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           filePath: selected,
         });
 
-        console.debug('Loaded comparison file data:', {
-          filePath: selected,
-          images: data.images?.length || 0,
-          annotations: data.annotations?.length || 0,
-          categories: data.categories?.length || 0,
-          firstImage: data.images?.[0],
-          sampleAnnotations: data.annotations?.slice(0, 3),
-        });
-
         setSelectedFile(selected);
         setComparisonData(data);
-
-        console.debug('State after setComparisonData:', {
-          dataSet: !!data,
-          imagesCount: data.images?.length || 0,
-        });
 
         // Auto-select first image or keep null for dropdown selection
         if (data.images && data.images.length === 1) {
@@ -182,21 +151,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
   };
 
   const handleCompare = async () => {
-    console.debug('handleCompare called with current state:', {
-      hasCocoData: !!cocoData,
-      hasComparisonData: !!comparisonData,
-      comparisonDataImages: comparisonData?.images?.length,
-      comparisonDataAnnotations: comparisonData?.annotations?.length,
-      selectedImageId,
-      selectedFile,
-    });
-
     if (!cocoData || !comparisonData || !selectedImageId) {
-      console.error('Missing required data for comparison:', {
-        hasCocoData: !!cocoData,
-        hasComparisonData: !!comparisonData,
-        selectedImageId,
-      });
       return;
     }
 
@@ -225,13 +180,31 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       ).length,
     });
 
+    // If comparing with different image IDs, we need to map the annotations
+    // to match the current image ID for proper comparison
+    const targetImageId = currentImageId || selectedImageId;
+
     const filteredComparisonData: COCOData = {
       ...comparisonData,
-      annotations: comparisonData.annotations.filter((ann) => ann.image_id === selectedImageId),
-      images: comparisonData.images.filter((img) => img.id === selectedImageId),
+      // Map annotations to use the target image ID for comparison
+      annotations: comparisonData.annotations
+        .filter((ann) => ann.image_id === selectedImageId)
+        .map((ann) => ({
+          ...ann,
+          image_id: targetImageId, // Use the current image ID for comparison
+        })),
+      images: comparisonData.images
+        .filter((img) => img.id === selectedImageId)
+        .map((img) => ({
+          ...img,
+          id: targetImageId, // Use the current image ID for comparison
+        })),
     };
 
-    console.debug('After filtering:', {
+    console.debug('After filtering and ID mapping:', {
+      originalImageId: selectedImageId,
+      targetImageId,
+      currentImageId,
       filteredAnnotations: filteredComparisonData.annotations.length,
       filteredImages: filteredComparisonData.images.length,
       firstFilteredAnnotation: filteredComparisonData.annotations[0],
@@ -275,13 +248,30 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
   };
 
   const updateCategoryMapping = (gtCatId: number, predCatId: number, isAdd: boolean = true) => {
+    console.debug('updateCategoryMapping called:', {
+      gtCatId,
+      predCatId,
+      isAdd,
+      currentMappingSize: categoryMapping.size,
+      currentMappings: Array.from(categoryMapping.entries()),
+    });
+
     const newMapping = new Map(categoryMapping);
     const currentMappings = newMapping.get(gtCatId) || [];
 
     if (isAdd) {
       // 追加：重複チェックして追加
       if (!currentMappings.includes(predCatId)) {
-        newMapping.set(gtCatId, [...currentMappings, predCatId]);
+        const newMappings = [...currentMappings, predCatId];
+        newMapping.set(gtCatId, newMappings);
+        console.debug('Added mapping successfully:', {
+          gtCatId,
+          predCatId,
+          oldMappings: currentMappings,
+          newMappings,
+        });
+      } else {
+        console.warn('Mapping already exists:', { gtCatId, predCatId, currentMappings });
       }
     } else {
       // 削除：指定されたマッピングを削除
@@ -291,18 +281,21 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       } else {
         newMapping.delete(gtCatId);
       }
+      console.debug('Removed mapping:', {
+        gtCatId,
+        predCatId,
+        oldMappings: currentMappings,
+        newMappings: filteredMappings,
+      });
     }
 
+    console.debug('Setting new category mapping:', {
+      oldSize: categoryMapping.size,
+      newSize: newMapping.size,
+      newMappings: Array.from(newMapping.entries()),
+    });
     setCategoryMapping(newMapping);
-  };
-
-  // 指定されたカテゴリIDが他のマッピングで使用されているかチェック
-  const isPredCategoryUsed = (predCatId: number, excludeGtCatId?: number): boolean => {
-    for (const [gtId, predIds] of categoryMapping) {
-      if (excludeGtCatId && gtId === excludeGtCatId) continue;
-      if (predIds.includes(predCatId)) return true;
-    }
-    return false;
+    setHasManualMapping(true); // Mark that manual mapping has been set
   };
 
   // カテゴリ選択ダイアログを開く
@@ -313,8 +306,24 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
   // カテゴリ選択ダイアログでカテゴリを選択
   const handleCategorySelect = (predCategoryId: number) => {
-    if (currentGtCategoryId !== null && !isPredCategoryUsed(predCategoryId)) {
+    console.debug('handleCategorySelect called:', {
+      currentGtCategoryId,
+      predCategoryId,
+      currentMappingState: Array.from(categoryMapping.entries()),
+    });
+
+    if (currentGtCategoryId !== null) {
+      console.debug('Calling updateCategoryMapping with:', {
+        gtCategoryId: currentGtCategoryId,
+        predCategoryId,
+        isAdd: true,
+      });
       updateCategoryMapping(currentGtCategoryId, predCategoryId, true);
+      console.debug('After updateCategoryMapping, new state:', {
+        newMappingState: Array.from(categoryMapping.entries()),
+      });
+    } else {
+      console.warn('currentGtCategoryId is null, cannot add mapping');
     }
     setShowCategoryDialog(false);
     setCurrentGtCategoryId(null);
@@ -328,10 +337,18 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     onClose();
   };
 
-  // 未割当のカテゴリを取得
-  const getAvailableCategories = () => {
+  // 表示用：使用済みでないカテゴリのみを取得
+  const getUnusedCategories = () => {
     if (!comparisonData) return [];
-    return comparisonData.categories.filter((cat) => !isPredCategoryUsed(cat.id));
+    const usedCategoryIds = new Set<number>();
+
+    // 現在のマッピングで使用されているカテゴリIDを収集
+    categoryMapping.forEach((predIds) => {
+      predIds.forEach((id) => usedCategoryIds.add(id));
+    });
+
+    // 使用されていないカテゴリのみを返す
+    return comparisonData.categories.filter((cat) => !usedCategoryIds.has(cat.id));
   };
 
   if (!isOpen) return null;
@@ -501,7 +518,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                         })}
 
                         {/* Addバッジ */}
-                        {getAvailableCategories().length > 0 && (
+                        {getUnusedCategories().length > 0 && (
                           <button
                             type="button"
                             className="category-badge add-badge"
@@ -530,7 +547,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                       </div>
                       <div className="category-badge-list">
                         {/* 追加ボタンのみ */}
-                        {getAvailableCategories().length > 0 && (
+                        {getUnusedCategories().length > 0 && (
                           <button
                             type="button"
                             className="category-badge add-badge"
@@ -545,14 +562,14 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                     </div>
                   ))}
 
-                {/* 比較ファイルの未割当カテゴリ */}
-                {getAvailableCategories().length > 0 && (
+                {/* 比較ファイルの未使用カテゴリ */}
+                {getUnusedCategories().length > 0 && (
                   <div className="mapping-row unassigned-comparison-row">
                     <div className="category-name unassigned-label">
-                      {t('comparison.unassignedComparison')}
+                      {t('comparison.availableCategories')}
                     </div>
                     <div className="category-badge-list">
-                      {getAvailableCategories().map((cat) => (
+                      {getUnusedCategories().map((cat) => (
                         <div key={cat.id} className="category-badge unassigned-comparison-category">
                           <span className="badge-icon">○</span>
                           <span className="badge-text">{cat.name}</span>
@@ -708,7 +725,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
             </div>
             <div className="category-dialog-content">
               <div className="available-categories">
-                {getAvailableCategories().map((cat) => (
+                {getUnusedCategories().map((cat) => (
                   <button
                     key={cat.id}
                     className="category-option"
@@ -721,7 +738,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                   </button>
                 ))}
               </div>
-              {getAvailableCategories().length === 0 && (
+              {getUnusedCategories().length === 0 && (
                 <div className="no-categories">{t('comparison.noAvailableCategories')}</div>
               )}
             </div>

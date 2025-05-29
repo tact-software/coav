@@ -33,6 +33,7 @@ pub struct SampleGeneratorParams {
     pub include_option: Option<bool>,
     pub include_multi_polygon: Option<bool>,
     pub include_pair_json: Option<bool>,
+    pub change_pair_category_names: Option<bool>, // Whether to change category names in pair file
     pub max_pair_matches: Option<u32>, // Maximum number of matching pairs per annotation (for pair generation)
     pub pair_perfect_match_ratio: Option<f32>, // Ratio of perfect matches (0.0-1.0)
     pub pair_partial_match_ratio: Option<f32>, // Ratio of partial matches (0.0-1.0)
@@ -381,8 +382,14 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
             params.pair_no_match_ratio.unwrap_or(0.20),
             params.pair_additional_ratio.unwrap_or(0.20),
         );
-        let pair_coco_data =
-            generate_pair_json(&coco_data, &mut rng, max_pair_matches, distribution);
+        let change_category_names = params.change_pair_category_names.unwrap_or(false);
+        let pair_coco_data = generate_pair_json(
+            &coco_data,
+            &mut rng,
+            max_pair_matches,
+            distribution,
+            change_category_names,
+        );
         let pair_json_filename = format!("{}-pair.json", base_filename);
         let pair_json_path = Path::new(&output_dir).join(&pair_json_filename);
         let pair_json_content = serde_json::to_string_pretty(&pair_coco_data)
@@ -404,6 +411,7 @@ fn generate_pair_json(
     rng: &mut rand::rngs::ThreadRng,
     max_pair_matches: u32,
     distribution: (f32, f32, f32, f32),
+    change_category_names: bool,
 ) -> COCOData {
     let mut pair_annotations = Vec::new();
     let mut annotation_id_counter = 1;
@@ -673,12 +681,28 @@ fn generate_pair_json(
         );
     }
 
+    // Create categories with modified names if requested
+    let categories = if change_category_names {
+        original_data
+            .categories
+            .iter()
+            .map(|cat| COCOCategory {
+                id: cat.id,
+                name: format!("{}2", cat.name),
+                supercategory: cat.supercategory.clone(),
+                extra: cat.extra.clone(),
+            })
+            .collect()
+    } else {
+        original_data.categories.clone()
+    };
+
     // Create a new COCO data structure with the modified annotations
     COCOData {
         info: original_data.info.clone(),
         images: original_data.images.clone(),
         annotations: pair_annotations,
-        categories: original_data.categories.clone(),
+        categories,
         licenses: original_data.licenses.clone(),
         extra: original_data.extra.clone(),
     }

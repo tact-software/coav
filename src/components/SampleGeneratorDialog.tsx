@@ -31,6 +31,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
   const [includeOption, setIncludeOption] = useState(false);
   const [includeMultiPolygon, setIncludeMultiPolygon] = useState(false);
   const [includePairJson, setIncludePairJson] = useState(false);
+  const [changePairCategoryNames, setChangePairCategoryNames] = useState(false);
   const [maxPairMatches, setMaxPairMatches] = useState(1);
   const [perfectMatchRatio, setPerfectMatchRatio] = useState(25);
   const [partialMatchRatio, setPartialMatchRatio] = useState(35);
@@ -144,6 +145,7 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
           include_option: includeOption,
           include_multi_polygon: includeMultiPolygon,
           include_pair_json: includePairJson,
+          change_pair_category_names: includePairJson ? changePairCategoryNames : undefined,
           max_pair_matches: includePairJson ? maxPairMatches : undefined,
           pair_perfect_match_ratio: includePairJson ? perfectMatchRatio / 100 : undefined,
           pair_partial_match_ratio: includePairJson ? partialMatchRatio / 100 : undefined,
@@ -359,6 +361,20 @@ const SampleGeneratorDialog: React.FC<SampleGeneratorDialogProps> = ({
                   />
                   <div className="setting-description">
                     {t('sampleGenerator.maxPairMatchesDescription')}
+                  </div>
+                </div>
+
+                <div className="form-group sub-option">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={changePairCategoryNames}
+                      onChange={(e) => setChangePairCategoryNames(e.target.checked)}
+                    />
+                    {t('sampleGenerator.changePairCategoryNames')}
+                  </label>
+                  <div className="setting-description">
+                    {t('sampleGenerator.changePairCategoryNamesDescription')}
                   </div>
                 </div>
 
