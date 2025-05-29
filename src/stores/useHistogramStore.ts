@@ -40,11 +40,11 @@ interface HistogramStore {
   // 設定
   settings: HistogramSettings;
   histogramType: HistogramType;
-  
+
   // 計算結果
   histogramData: HistogramData | null;
   highlightedAnnotations: Set<number>;
-  
+
   // アクション
   setHistogramType: (type: HistogramType) => void;
   setBinCount: (count: number) => void;

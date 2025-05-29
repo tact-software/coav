@@ -7,4 +7,10 @@ export { useLoadingStore } from './useLoadingStore';
 export { useHistogramStore } from './useHistogramStore';
 export type { RecentFile } from './useRecentFilesStore';
 export type { Language, Theme, TabType } from './useSettingsStore';
-export type { HistogramType, ScaleType, HistogramData, HistogramBin, HistogramStatistics } from './useHistogramStore';
+export type {
+  HistogramType,
+  ScaleType,
+  HistogramData,
+  HistogramBin,
+  HistogramStatistics,
+} from './useHistogramStore';

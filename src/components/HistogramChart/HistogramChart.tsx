@@ -33,7 +33,7 @@ interface ChartDataPoint {
 
 const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
   const { t } = useTranslation();
-  
+
   if (!active || !payload || !payload[0]) {
     return null;
   }
@@ -46,8 +46,12 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload
         <strong>{data.range}</strong>
       </div>
       <div className="tooltip-content">
-        <div>{t('histogram.count')}: {data.count}</div>
-        <div>{t('histogram.percentage')}: {data.percentage.toFixed(1)}%</div>
+        <div>
+          {t('histogram.count')}: {data.count}
+        </div>
+        <div>
+          {t('histogram.percentage')}: {data.percentage.toFixed(1)}%
+        </div>
       </div>
     </div>
   );
@@ -59,8 +63,6 @@ export const HistogramChart: React.FC<HistogramChartProps> = ({
   onBinHover,
   highlightedBinIndex,
 }) => {
-  const { t } = useTranslation();
-
   // チャートデータを準備
   const chartData = useMemo(() => {
     return data.bins.map((bin, index) => {
@@ -72,10 +74,12 @@ export const HistogramChart: React.FC<HistogramChartProps> = ({
         range: rangeStr,
         count: bin.count,
         percentage,
-        categoryBreakdown: Array.from(bin.categoryBreakdown.entries()).map(([categoryId, count]) => ({
-          categoryId,
-          count,
-        })),
+        categoryBreakdown: Array.from(bin.categoryBreakdown.entries()).map(
+          ([categoryId, count]) => ({
+            categoryId,
+            count,
+          })
+        ),
       };
     });
   }, [data]);
@@ -141,7 +145,6 @@ export const HistogramChart: React.FC<HistogramChartProps> = ({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-
     </div>
   );
 };
@@ -149,33 +152,14 @@ export const HistogramChart: React.FC<HistogramChartProps> = ({
 // 範囲のフォーマット
 function formatRange(range: [number, number], type: HistogramType): string {
   const [start, end] = range;
-  
+
   if (type === 'aspectRatio') {
     return `${start.toFixed(2)}-${end.toFixed(2)}`;
   }
-  
+
   if (end >= 1000) {
     return `${Math.round(start)}-${Math.round(end)}`;
   }
-  
-  return `${Math.round(start)}-${Math.round(end)}`;
-}
 
-// 値のフォーマット
-function formatValue(value: number, type: HistogramType): string {
-  switch (type) {
-    case 'aspectRatio':
-      return value.toFixed(2);
-    case 'area':
-    case 'polygonArea':
-      if (value >= 1000000) {
-        return `${(value / 1000000).toFixed(1)}M`;
-      }
-      if (value >= 1000) {
-        return `${(value / 1000).toFixed(1)}k`;
-      }
-      return Math.round(value).toString();
-    default:
-      return Math.round(value).toString();
-  }
+  return `${Math.round(start)}-${Math.round(end)}`;
 }

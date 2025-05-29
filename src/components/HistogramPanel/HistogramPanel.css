@@ -112,7 +112,7 @@
   cursor: pointer;
 }
 
-.radio-group input[type="radio"] {
+.radio-group input[type='radio'] {
   cursor: pointer;
 }
 
@@ -175,11 +175,11 @@
   .histogram-controls {
     grid-template-columns: 1fr;
   }
-  
+
   .category-chips {
     gap: var(--spacing-xs);
   }
-  
+
   .chip {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.75rem;
@@ -192,15 +192,15 @@
   .histogram-chart {
     background: var(--color-bg-tertiary);
   }
-  
+
   .select {
     background: var(--color-bg-tertiary);
   }
-  
+
   .range-input {
     background: var(--color-bg-secondary);
   }
-  
+
   .chip {
     background: var(--color-bg-tertiary);
   }

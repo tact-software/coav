@@ -1,5 +1,11 @@
 import { COCOAnnotation, COCOData } from '../types/coco';
-import { HistogramBin, HistogramData, HistogramStatistics, HistogramType, HistogramSettings } from '../stores/useHistogramStore';
+import {
+  HistogramBin,
+  HistogramData,
+  HistogramStatistics,
+  HistogramType,
+  HistogramSettings,
+} from '../stores/useHistogramStore';
 
 // ポリゴンの面積を計算（Shoelace formula）
 function calculatePolygonArea(segmentation: number[][]): number {
@@ -8,25 +14,25 @@ function calculatePolygonArea(segmentation: number[][]): number {
   }
 
   let totalArea = 0;
-  
+
   for (const polygon of segmentation) {
     if (polygon.length < 6) continue; // 最低3点（x1,y1,x2,y2,x3,y3）が必要
-    
+
     let area = 0;
     const pointCount = polygon.length / 2;
-    
+
     for (let i = 0; i < pointCount; i++) {
       const x1 = polygon[i * 2];
       const y1 = polygon[i * 2 + 1];
       const x2 = polygon[((i + 1) % pointCount) * 2];
       const y2 = polygon[((i + 1) % pointCount) * 2 + 1];
-      
-      area += (x1 * y2 - x2 * y1);
+
+      area += x1 * y2 - x2 * y1;
     }
-    
+
     totalArea += Math.abs(area) / 2;
   }
-  
+
   return totalArea;
 }
 
@@ -46,7 +52,11 @@ export function getAnnotationSize(annotation: COCOAnnotation, type: HistogramTyp
     case 'area':
       return width * height;
     case 'polygonArea':
-      if (annotation.segmentation && Array.isArray(annotation.segmentation) && annotation.segmentation.length > 0) {
+      if (
+        annotation.segmentation &&
+        Array.isArray(annotation.segmentation) &&
+        annotation.segmentation.length > 0
+      ) {
         return calculatePolygonArea(annotation.segmentation);
       }
       // ポリゴンデータがない場合はbbox面積を返す
@@ -80,9 +90,10 @@ export function calculateStatistics(values: number[]): HistogramStatistics {
   const mean = values.reduce((sum, val) => sum + val, 0) / total;
 
   // 中央値
-  const median = total % 2 === 0
-    ? (sorted[Math.floor(total / 2) - 1] + sorted[Math.floor(total / 2)]) / 2
-    : sorted[Math.floor(total / 2)];
+  const median =
+    total % 2 === 0
+      ? (sorted[Math.floor(total / 2) - 1] + sorted[Math.floor(total / 2)]) / 2
+      : sorted[Math.floor(total / 2)];
 
   // 標準偏差
   const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / total;
@@ -152,16 +163,16 @@ export function calculateHistogram(
 
   // フィルタリング
   let annotations = cocoData.annotations;
-  
+
   // ビューモードフィルタ
   if (settings.viewMode === 'current' && currentImageId) {
-    annotations = annotations.filter(ann => ann.image_id === currentImageId);
+    annotations = annotations.filter((ann) => ann.image_id === currentImageId);
   }
-  
+
   // カテゴリフィルタ
   if (settings.selectedCategories.size > 0) {
-    annotations = annotations.filter(ann => 
-      ann.category_id && settings.selectedCategories.has(ann.category_id)
+    annotations = annotations.filter(
+      (ann) => ann.category_id && settings.selectedCategories.has(ann.category_id)
     );
   }
 
@@ -170,10 +181,12 @@ export function calculateHistogram(
   }
 
   // サイズ値を取得
-  const annotationSizes = annotations.map(ann => ({
-    annotation: ann,
-    size: getAnnotationSize(ann, type),
-  })).filter(item => item.size > 0);
+  const annotationSizes = annotations
+    .map((ann) => ({
+      annotation: ann,
+      size: getAnnotationSize(ann, type),
+    }))
+    .filter((item) => item.size > 0);
 
   if (annotationSizes.length === 0) {
     return null;
@@ -182,10 +195,10 @@ export function calculateHistogram(
   // サイズ範囲フィルタ
   if (settings.sizeRange) {
     const [minRange, maxRange] = settings.sizeRange;
-    annotationSizes.filter(item => item.size >= minRange && item.size <= maxRange);
+    annotationSizes.filter((item) => item.size >= minRange && item.size <= maxRange);
   }
 
-  const sizes = annotationSizes.map(item => item.size);
+  const sizes = annotationSizes.map((item) => item.size);
   const statistics = calculateStatistics(sizes);
 
   // ビンの範囲を計算
@@ -197,7 +210,7 @@ export function calculateHistogram(
   );
 
   // ビンを作成
-  const bins: HistogramBin[] = binRanges.map(range => ({
+  const bins: HistogramBin[] = binRanges.map((range) => ({
     range,
     count: 0,
     categoryBreakdown: new Map(),
@@ -232,18 +245,18 @@ export function calculateHistogram(
 // データをCSV形式でエクスポート
 export function exportHistogramAsCSV(data: HistogramData, categories: Map<number, string>): string {
   const headers = ['Bin Range', 'Count', 'Percentage'];
-  
+
   // カテゴリ別ヘッダーを追加
   const categoryIds = Array.from(
-    new Set(data.bins.flatMap(bin => Array.from(bin.categoryBreakdown.keys())))
+    new Set(data.bins.flatMap((bin) => Array.from(bin.categoryBreakdown.keys())))
   ).sort((a, b) => a - b);
-  
-  categoryIds.forEach(id => {
+
+  categoryIds.forEach((id) => {
     const categoryName = categories.get(id) || `Category ${id}`;
     headers.push(categoryName);
   });
 
-  const rows = data.bins.map(bin => {
+  const rows = data.bins.map((bin) => {
     const percentage = ((bin.count / data.statistics.total) * 100).toFixed(2);
     const row = [
       `${bin.range[0].toFixed(2)}-${bin.range[1].toFixed(2)}`,
@@ -252,7 +265,7 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
     ];
 
     // カテゴリ別カウントを追加
-    categoryIds.forEach(id => {
+    categoryIds.forEach((id) => {
       const count = bin.categoryBreakdown.get(id) || 0;
       row.push(count.toString());
     });
@@ -273,9 +286,7 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
   rows.push(['Total', data.statistics.total.toString()]);
 
   // CSVフォーマット
-  const csv = [headers, ...rows]
-    .map(row => row.map(cell => `"${cell}"`).join(','))
-    .join('\n');
+  const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
 
   return csv;
 }
