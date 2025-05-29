@@ -14,12 +14,14 @@ import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import {
   useAnnotationStore,
   useImageStore,
   useToastStore,
   useRecentFilesStore,
   useSettingsStore,
+  useLoadingStore,
   toast,
 } from './stores';
 import type { RecentFile, TabType } from './stores';
@@ -31,7 +33,8 @@ import { useTranslation } from 'react-i18next';
 
 function App() {
   const { t } = useTranslation();
-  const { cocoData, setCocoData, clearCocoData, setCurrentImageId } = useAnnotationStore();
+  const { cocoData, setCocoData, clearCocoData, setCurrentImageId, isComparing, clearComparison } =
+    useAnnotationStore();
   const {
     setImagePath,
     setImageData,
@@ -47,6 +50,7 @@ function App() {
   const { addRecentFile } = useRecentFilesStore();
   const { isSettingsModalOpen, openSettingsModal, closeSettingsModal, panelLayout } =
     useSettingsStore();
+  const { isLoading, message, subMessage, progress } = useLoadingStore();
   const [activeLeftTab, setActiveLeftTab] = useState<string>(panelLayout.defaultLeftTab);
   const [activeRightTab, setActiveRightTab] = useState<string>(panelLayout.defaultRightTab);
   const prevPanelLayoutRef = useRef(panelLayout);
@@ -445,6 +449,11 @@ function App() {
           setImagePath(imagePath);
           setImageData(dataUrl, { width: img.width, height: img.height });
           clearCocoData();
+
+          // Exit comparison mode if active
+          if (isComparing) {
+            clearComparison();
+          }
           // Add to recent files
           addRecentFile({
             path: imagePath,
@@ -468,7 +477,16 @@ function App() {
         toast.error(t('errors.loadImageFailed'), errorMessage);
       }
     },
-    [setImagePath, setImageData, setLoading, setError, clearCocoData, addRecentFile]
+    [
+      setImagePath,
+      setImageData,
+      setLoading,
+      setError,
+      clearCocoData,
+      addRecentFile,
+      isComparing,
+      clearComparison,
+    ]
   );
 
   // Common function to load annotations from path
@@ -485,6 +503,11 @@ function App() {
         const annotationDir =
           jsonPath.substring(0, jsonPath.lastIndexOf('/')) ||
           jsonPath.substring(0, jsonPath.lastIndexOf('\\'));
+
+        // Exit comparison mode if active
+        if (isComparing) {
+          clearComparison();
+        }
 
         // Check if there are multiple images
         if (data.images && data.images.length > 1) {
@@ -522,7 +545,15 @@ function App() {
         toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
       }
     },
-    [setCocoData, setError, addRecentFile, loadImageFromPath]
+    [
+      setCocoData,
+      setError,
+      addRecentFile,
+      loadImageFromPath,
+      isComparing,
+      clearComparison,
+      setCurrentImageId,
+    ]
   );
 
   // Handle recent file selection
@@ -555,7 +586,7 @@ function App() {
 
   // Auto-show right panel when annotation is selected
   const { selectedAnnotationIds } = useAnnotationStore();
-  const prevSelectedAnnotationIdsRef = useRef<number[]>([]);
+  const prevSelectedAnnotationIdsRef = useRef<(number | string)[]>([]);
 
   useEffect(() => {
     const prevLength = prevSelectedAnnotationIdsRef.current.length;
@@ -855,6 +886,12 @@ function App() {
       />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <LoadingOverlay
+        isLoading={isLoading}
+        message={message}
+        subMessage={subMessage}
+        progress={progress}
+      />
     </div>
   );
 }

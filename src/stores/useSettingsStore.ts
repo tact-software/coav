@@ -33,6 +33,17 @@ interface ColorSettings {
   selectedFillOpacity: number;
   hoverFillOpacity: number;
   strokeOpacity: number;
+  // Comparison colors
+  comparison: {
+    gtColors: {
+      tp: string; // True Positive (Ground Truth)
+      fn: string; // False Negative
+    };
+    predColors: {
+      tp: string; // True Positive (Prediction)
+      fp: string; // False Positive
+    };
+  };
 }
 
 interface SettingsState {
@@ -113,6 +124,16 @@ const defaultSettings: Omit<
     selectedFillOpacity: 0.5,
     hoverFillOpacity: 0.4,
     strokeOpacity: 1.0,
+    comparison: {
+      gtColors: {
+        tp: '#4caf50', // Green
+        fn: '#ff9800', // Orange
+      },
+      predColors: {
+        tp: '#66bb6a', // Light Green
+        fp: '#f44336', // Red
+      },
+    },
   },
   isSettingsModalOpen: false,
 };
@@ -224,6 +245,29 @@ export const useSettingsStore = create<SettingsState>()(
         panelLayout: state.panelLayout,
         colors: state.colors,
       }),
+      migrate: (persistedState: unknown) => {
+        // Migrate from older versions that don't have comparison colors
+        if (
+          persistedState &&
+          typeof persistedState === 'object' &&
+          'colors' in persistedState &&
+          persistedState.colors &&
+          typeof persistedState.colors === 'object' &&
+          !('comparison' in persistedState.colors)
+        ) {
+          (persistedState.colors as Partial<ColorSettings>).comparison = {
+            gtColors: {
+              tp: '#4caf50', // Green
+              fn: '#ff9800', // Orange
+            },
+            predColors: {
+              tp: '#66bb6a', // Light Green
+              fp: '#f44336', // Red
+            },
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
