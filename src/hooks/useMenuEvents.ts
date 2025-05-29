@@ -8,7 +8,8 @@ export const useMenuEvents = (
   onGenerateSample: () => void,
   onExportAnnotations: () => void,
   onShowStatistics: () => void,
-  onShowSettings: () => void
+  onShowSettings: () => void,
+  onShowComparison?: () => void
 ) => {
   const { zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
   const { showAllCategories, hideAllCategories, clearCocoData } = useAnnotationStore();
@@ -40,6 +41,11 @@ export const useMenuEvents = (
         await listen('menu-hide_all_categories', hideAllCategories),
         await listen('menu-clear_data', clearCocoData)
       );
+
+      // Add comparison dialog listener if handler provided
+      if (onShowComparison) {
+        unsubscribers.push(await listen('menu-compare', onShowComparison));
+      }
     };
 
     setupListeners();

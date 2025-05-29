@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAnnotationStore } from '../../stores';
 import { calculateAnnotationStatistics } from '../../utils/statistics';
+import { CommonModal } from '../CommonModal';
 import './StatisticsDialog.css';
 
 interface StatisticsDialogProps {
@@ -248,248 +249,15 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
     return text;
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="statistics-dialog-overlay" onClick={onClose}>
-      <div className="statistics-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="statistics-dialog-header">
-          <h2>{t('statistics.title')}</h2>
-          <button className="statistics-dialog-close" onClick={onClose}>
-            ✕
-          </button>
-        </div>
-
-        <div className="statistics-dialog-content">
-          {datasetStats ? (
-            <>
-              {/* Dataset Overview Section - Always at top */}
-              <div className="statistics-section">
-                <h3>{t('statistics.dataset')}</h3>
-                <div className="statistics-grid">
-                  <div className="statistic-card">
-                    <div className="statistic-value">{datasetStats.totalImages}</div>
-                    <div className="statistic-label">{t('statistics.images')}</div>
-                  </div>
-                  <div className="statistic-card">
-                    <div className="statistic-value">{datasetStats.totalAnnotations}</div>
-                    <div className="statistic-label">{t('statistics.annotations')}</div>
-                  </div>
-                  <div className="statistic-card">
-                    <div className="statistic-value">{datasetStats.totalCategories}</div>
-                    <div className="statistic-label">{t('statistics.categories')}</div>
-                  </div>
-                  <div className="statistic-card">
-                    <div className="statistic-value">
-                      {datasetStats.avgAnnotationsPerImage.toFixed(2)}
-                    </div>
-                    <div className="statistic-label">{t('statistics.avgPerImage')}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* View Mode Toggle for Annotation Statistics */}
-              {hasMultipleImages && statistics && (
-                <div className="view-mode-section">
-                  <h3>{t('statistics.annotationStatistics')}</h3>
-                  {/* Only show view mode toggle for datasets with multiple images */}
-                  {hasMultipleImages && (
-                    <div className="view-mode-toggle">
-                      <button
-                        className={viewMode === 'current' ? 'active' : ''}
-                        onClick={() => setViewMode('current')}
-                      >
-                        {t('statistics.currentImage')}
-                      </button>
-                      <button
-                        className={viewMode === 'all' ? 'active' : ''}
-                        onClick={() => setViewMode('all')}
-                      >
-                        {t('statistics.allImages')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Category Distribution */}
-              {viewStats && viewStats.categoryDistribution.length > 0 && (
-                <div className="statistics-section">
-                  <h3>
-                    {t('statistics.categoryBreakdown')}
-                    {hasMultipleImages &&
-                      ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
-                  </h3>
-                  <div className="category-distribution">
-                    {viewStats.categoryDistribution.map((cat) => (
-                      <div key={cat.name} className="category-stat">
-                        <div className="category-info">
-                          <span className="category-name">{cat.name}</span>
-                          <span className="category-count">{cat.count}</span>
-                        </div>
-                        <div className="category-bar-container">
-                          <div className="category-bar" style={{ width: `${cat.percentage}%` }} />
-                          <span className="category-percentage">{cat.percentage.toFixed(1)}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Annotation Statistics based on view mode */}
-              {statistics && (
-                <div className="statistics-section">
-                  <h3>
-                    {t('statistics.annotationStatistics')}
-                    {hasMultipleImages &&
-                      ` - ${viewMode === 'current' ? t('infoPanel.currentImage') : t('infoPanel.allImages')}`}
-                  </h3>
-                  <div className="statistics-grid">
-                    <div className="statistic-card">
-                      <div className="statistic-value">{statistics.totalAnnotations}</div>
-                      <div className="statistic-label">{t('statistics.annotations')}</div>
-                    </div>
-                    <div className="statistic-card">
-                      <div className="statistic-value">{statistics.visibleAnnotations}</div>
-                      <div className="statistic-label">
-                        {t('info.visible')} {t('controls.annotations')}
-                      </div>
-                    </div>
-                    <div className="statistic-card">
-                      <div className="statistic-value">{statistics.selectedAnnotations}</div>
-                      <div className="statistic-label">
-                        {t('info.selected')} {t('controls.annotations')}
-                      </div>
-                    </div>
-                    <div className="statistic-card">
-                      <div className="statistic-value">
-                        {statistics.coveragePercentage.toFixed(1)}%
-                      </div>
-                      <div className="statistic-label">{t('info.coverage')}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Size Statistics */}
-              {viewStats && (
-                <div className="statistics-section">
-                  <h3>
-                    {t('statistics.annotationSizes')}
-                    {hasMultipleImages &&
-                      ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
-                  </h3>
-                  <div className="statistics-grid">
-                    <div className="statistic-card">
-                      <div className="statistic-value">{viewStats.avgArea.toFixed(0)}</div>
-                      <div className="statistic-label">
-                        {t('statistics.average')} {t('detail.area')}
-                      </div>
-                    </div>
-                    <div className="statistic-card">
-                      <div className="statistic-value">{viewStats.avgWidth.toFixed(0)}</div>
-                      <div className="statistic-label">
-                        {t('statistics.average')} {t('detail.width')}
-                      </div>
-                    </div>
-                    <div className="statistic-card">
-                      <div className="statistic-value">{viewStats.avgHeight.toFixed(0)}</div>
-                      <div className="statistic-label">
-                        {t('statistics.average')} {t('detail.height')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Comparison Evaluation Metrics - Only show for current image view */}
-              {viewStats && viewMode === 'current' && (
-                <div className="statistics-section">
-                  <h3>{t('statistics.comparisonMetrics')}</h3>
-                  {isComparing && currentImageComparisonMetrics ? (
-                    <>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.tp}</div>
-                          <div className="statistic-label">{t('statistics.truePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.fp}</div>
-                          <div className="statistic-label">{t('statistics.falsePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">{currentImageComparisonMetrics.fn}</div>
-                          <div className="statistic-label">{t('statistics.falseNegatives')}</div>
-                        </div>
-                      </div>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.precision * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.precision')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.recall * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.recall')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">
-                            {(currentImageComparisonMetrics.f1 * 100).toFixed(1)}%
-                          </div>
-                          <div className="statistic-label">{t('statistics.f1Score')}</div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.truePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.falsePositives')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.falseNegatives')}</div>
-                        </div>
-                      </div>
-                      <div className="statistics-grid">
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.precision')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.recall')}</div>
-                        </div>
-                        <div className="statistic-card">
-                          <div className="statistic-value">-</div>
-                          <div className="statistic-label">{t('statistics.f1Score')}</div>
-                        </div>
-                      </div>
-                      <div className="comparison-mode-notice">
-                        {t('statistics.comparisonModeOnly')}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="statistics-empty">
-              <p>{t('info.noImageLoaded')}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="statistics-dialog-footer">
+    <CommonModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('statistics.title')}
+      size="xl"
+      hasBlur={true}
+      footer={
+        <>
           <button
             className="btn btn-secondary"
             onClick={() => copyToClipboard(formatStatisticsText())}
@@ -500,9 +268,232 @@ const StatisticsDialog: React.FC<StatisticsDialogProps> = ({ isOpen, onClose }) 
           <button className="btn btn-primary" onClick={onClose}>
             {t('common.close')}
           </button>
+        </>
+      }
+    >
+      {datasetStats ? (
+        <>
+          {/* Dataset Overview Section - Always at top */}
+          <div className="statistics-section">
+            <h3>{t('statistics.dataset')}</h3>
+            <div className="statistics-grid">
+              <div className="statistic-card">
+                <div className="statistic-value">{datasetStats.totalImages}</div>
+                <div className="statistic-label">{t('statistics.images')}</div>
+              </div>
+              <div className="statistic-card">
+                <div className="statistic-value">{datasetStats.totalAnnotations}</div>
+                <div className="statistic-label">{t('statistics.annotations')}</div>
+              </div>
+              <div className="statistic-card">
+                <div className="statistic-value">{datasetStats.totalCategories}</div>
+                <div className="statistic-label">{t('statistics.categories')}</div>
+              </div>
+              <div className="statistic-card">
+                <div className="statistic-value">
+                  {datasetStats.avgAnnotationsPerImage.toFixed(2)}
+                </div>
+                <div className="statistic-label">{t('statistics.avgPerImage')}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* View Mode Toggle for Annotation Statistics */}
+          {hasMultipleImages && statistics && (
+            <div className="view-mode-section">
+              <h3>{t('statistics.annotationStatistics')}</h3>
+              {/* Only show view mode toggle for datasets with multiple images */}
+              {hasMultipleImages && (
+                <div className="view-mode-toggle">
+                  <button
+                    className={viewMode === 'current' ? 'active' : ''}
+                    onClick={() => setViewMode('current')}
+                  >
+                    {t('statistics.currentImage')}
+                  </button>
+                  <button
+                    className={viewMode === 'all' ? 'active' : ''}
+                    onClick={() => setViewMode('all')}
+                  >
+                    {t('statistics.allImages')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Category Distribution */}
+          {viewStats && viewStats.categoryDistribution.length > 0 && (
+            <div className="statistics-section">
+              <h3>
+                {t('statistics.categoryBreakdown')}
+                {hasMultipleImages &&
+                  ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
+              </h3>
+              <div className="category-distribution">
+                {viewStats.categoryDistribution.map((cat) => (
+                  <div key={cat.name} className="category-stat">
+                    <div className="category-info">
+                      <span className="category-name">{cat.name}</span>
+                      <span className="category-count">{cat.count}</span>
+                    </div>
+                    <div className="category-bar-container">
+                      <div className="category-bar" style={{ width: `${cat.percentage}%` }} />
+                      <span className="category-percentage">{cat.percentage.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Annotation Statistics based on view mode */}
+          {statistics && (
+            <div className="statistics-section">
+              <h3>
+                {t('statistics.annotationStatistics')}
+                {hasMultipleImages &&
+                  ` - ${viewMode === 'current' ? t('infoPanel.currentImage') : t('infoPanel.allImages')}`}
+              </h3>
+              <div className="statistics-grid">
+                <div className="statistic-card">
+                  <div className="statistic-value">{statistics.totalAnnotations}</div>
+                  <div className="statistic-label">{t('statistics.annotations')}</div>
+                </div>
+                <div className="statistic-card">
+                  <div className="statistic-value">{statistics.visibleAnnotations}</div>
+                  <div className="statistic-label">
+                    {t('info.visible')} {t('controls.annotations')}
+                  </div>
+                </div>
+                <div className="statistic-card">
+                  <div className="statistic-value">{statistics.selectedAnnotations}</div>
+                  <div className="statistic-label">
+                    {t('info.selected')} {t('controls.annotations')}
+                  </div>
+                </div>
+                <div className="statistic-card">
+                  <div className="statistic-value">{statistics.coveragePercentage.toFixed(1)}%</div>
+                  <div className="statistic-label">{t('info.coverage')}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Size Statistics */}
+          {viewStats && (
+            <div className="statistics-section">
+              <h3>
+                {t('statistics.annotationSizes')}
+                {hasMultipleImages &&
+                  ` - ${viewMode === 'current' ? t('statistics.currentImage') : t('statistics.allImages')}`}
+              </h3>
+              <div className="statistics-grid">
+                <div className="statistic-card">
+                  <div className="statistic-value">{viewStats.avgArea.toFixed(0)}</div>
+                  <div className="statistic-label">
+                    {t('statistics.average')} {t('detail.area')}
+                  </div>
+                </div>
+                <div className="statistic-card">
+                  <div className="statistic-value">{viewStats.avgWidth.toFixed(0)}</div>
+                  <div className="statistic-label">
+                    {t('statistics.average')} {t('detail.width')}
+                  </div>
+                </div>
+                <div className="statistic-card">
+                  <div className="statistic-value">{viewStats.avgHeight.toFixed(0)}</div>
+                  <div className="statistic-label">
+                    {t('statistics.average')} {t('detail.height')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Comparison Evaluation Metrics - Only show for current image view */}
+          {viewStats && viewMode === 'current' && (
+            <div className="statistics-section">
+              <h3>{t('statistics.comparisonMetrics')}</h3>
+              {isComparing && currentImageComparisonMetrics ? (
+                <>
+                  <div className="statistics-grid">
+                    <div className="statistic-card">
+                      <div className="statistic-value">{currentImageComparisonMetrics.tp}</div>
+                      <div className="statistic-label">{t('statistics.truePositives')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">{currentImageComparisonMetrics.fp}</div>
+                      <div className="statistic-label">{t('statistics.falsePositives')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">{currentImageComparisonMetrics.fn}</div>
+                      <div className="statistic-label">{t('statistics.falseNegatives')}</div>
+                    </div>
+                  </div>
+                  <div className="statistics-grid">
+                    <div className="statistic-card">
+                      <div className="statistic-value">
+                        {(currentImageComparisonMetrics.precision * 100).toFixed(1)}%
+                      </div>
+                      <div className="statistic-label">{t('statistics.precision')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">
+                        {(currentImageComparisonMetrics.recall * 100).toFixed(1)}%
+                      </div>
+                      <div className="statistic-label">{t('statistics.recall')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">
+                        {(currentImageComparisonMetrics.f1 * 100).toFixed(1)}%
+                      </div>
+                      <div className="statistic-label">{t('statistics.f1Score')}</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="statistics-grid">
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.truePositives')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.falsePositives')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.falseNegatives')}</div>
+                    </div>
+                  </div>
+                  <div className="statistics-grid">
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.precision')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.recall')}</div>
+                    </div>
+                    <div className="statistic-card">
+                      <div className="statistic-value">-</div>
+                      <div className="statistic-label">{t('statistics.f1Score')}</div>
+                    </div>
+                  </div>
+                  <div className="comparison-mode-notice">{t('statistics.comparisonModeOnly')}</div>
+                </>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="statistics-empty">
+          <p>{t('info.noImageLoaded')}</p>
         </div>
-      </div>
-    </div>
+      )}
+    </CommonModal>
   );
 };
 

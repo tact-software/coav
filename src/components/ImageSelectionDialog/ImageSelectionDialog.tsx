@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { COCOImage } from '../../types/coco';
+import { CommonModal } from '../CommonModal';
 import './ImageSelectionDialog.css';
 
 interface ImageSelectionDialogProps {
@@ -45,72 +46,55 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog-content image-selection-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-header">
-          <h2>{t('imageSelection.title')}</h2>
-          <button className="dialog-close" onClick={onClose}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="dialog-body">
-          <p className="dialog-description">{t('imageSelection.description')}</p>
-
-          {images.length > 0 ? (
-            <div className="image-list">
-              {images.map((image) => (
-                <div
-                  key={image.id}
-                  className={`image-item ${selectedImageId === image.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedImageId(image.id)}
-                >
-                  <div className="image-radio">
-                    <input
-                      type="radio"
-                      id={`image-${image.id}`}
-                      name="image-selection"
-                      checked={selectedImageId === image.id}
-                      onChange={() => setSelectedImageId(image.id)}
-                    />
-                  </div>
-                  <label htmlFor={`image-${image.id}`} className="image-info">
-                    <div className="image-name">{image.file_name}</div>
-                    <div className="image-details">
-                      ID: {image.id} • {image.width}×{image.height}
-                    </div>
-                  </label>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="no-images-message">{t('imageSelection.noImages')}</div>
-          )}
-        </div>
-
-        <div className="dialog-footer">
+    <CommonModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('imageSelection.title')}
+      size="md"
+      footer={
+        <>
           <button className="btn btn-secondary" onClick={onClose}>
             {t('imageSelection.cancel')}
           </button>
           <button className="btn btn-primary" onClick={handleSelect} disabled={!selectedImageId}>
             {t('imageSelection.select')}
           </button>
+        </>
+      }
+    >
+      <p className="dialog-description">{t('imageSelection.description')}</p>
+
+      {images.length > 0 ? (
+        <div className="image-list">
+          {images.map((image) => (
+            <div
+              key={image.id}
+              className={`image-item ${selectedImageId === image.id ? 'selected' : ''}`}
+              onClick={() => setSelectedImageId(image.id)}
+            >
+              <div className="image-radio">
+                <input
+                  type="radio"
+                  id={`image-${image.id}`}
+                  name="image-selection"
+                  checked={selectedImageId === image.id}
+                  onChange={() => setSelectedImageId(image.id)}
+                />
+              </div>
+              <label htmlFor={`image-${image.id}`} className="image-info">
+                <div className="image-name">{image.file_name}</div>
+                <div className="image-details">
+                  ID: {image.id} • {image.width}×{image.height}
+                </div>
+              </label>
+            </div>
+          ))}
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="no-images-message">{t('imageSelection.noImages')}</div>
+      )}
+    </CommonModal>
   );
 };
 

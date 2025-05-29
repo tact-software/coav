@@ -7,11 +7,12 @@ import './styles/themes.css';
 import ImageViewer from './components/ImageViewer';
 import ControlPanel from './components/ControlPanel';
 import InfoPanel from './components/InfoPanel';
+import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SampleGeneratorDialog from './components/SampleGeneratorDialog';
 import StatisticsDialog from './components/StatisticsDialog';
-import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
+import { ComparisonDialog } from './components/ComparisonDialog';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -59,6 +60,7 @@ function App() {
   const [showSampleGenerator, setShowSampleGenerator] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showImageSelection, setShowImageSelection] = useState(false);
+  const [showComparisonDialog, setShowComparisonDialog] = useState(false);
   const [tempCocoData, setTempCocoData] = useState<{
     data: COCOData;
     annotationDir: string;
@@ -68,7 +70,7 @@ function App() {
   const renderTabContent = (tab: string) => {
     switch (tab) {
       case 'control':
-        return <ControlPanel />;
+        return <ControlPanel onOpenComparisonDialog={() => setShowComparisonDialog(true)} />;
       case 'info':
         return <InfoPanel />;
       case 'detail':
@@ -575,7 +577,8 @@ function App() {
     handleGenerateSample,
     handleExportAnnotations,
     handleShowStatistics,
-    openSettingsModal
+    openSettingsModal,
+    () => setShowComparisonDialog(true)
   );
 
   // Handle drag and drop
@@ -654,6 +657,10 @@ function App() {
           case 'i':
             e.preventDefault();
             if (cocoData) handleShowStatistics();
+            break;
+          case 'k':
+            e.preventDefault();
+            if (cocoData) setShowComparisonDialog(true);
             break;
         }
       } else if (e.key === 'Escape') {
@@ -883,6 +890,11 @@ function App() {
             toast.info(t('info.imageIdSelected'), t('info.pleaseOpenImage'));
           }
         }}
+      />
+
+      <ComparisonDialog
+        isOpen={showComparisonDialog}
+        onClose={() => setShowComparisonDialog(false)}
       />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />

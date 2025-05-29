@@ -6,6 +6,7 @@ import { useAnnotationStore } from '../../stores/useAnnotationStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { toast } from '../../stores/useToastStore';
 import { useLoadingStore } from '../../stores/useLoadingStore';
+import { CommonModal } from '../CommonModal';
 import type { COCOData } from '../../types/coco';
 import type { ComparisonSettings, DiffDisplaySettings } from '../../types/diff';
 import './ComparisonDialog.css';
@@ -351,400 +352,380 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     return comparisonData.categories.filter((cat) => !usedCategoryIds.has(cat.id));
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="comparison-dialog-overlay" onClick={handleClose}>
-      <div className="comparison-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="comparison-dialog-header">
-          <h2>{t('comparison.title')}</h2>
-          <button className="close-button" onClick={handleClose}>
-            ×
-          </button>
-        </div>
-
-        <div className="comparison-dialog-content">
-          {/* Current File Info */}
-          <div className="comparison-section">
-            <h3>{t('comparison.currentFileInfo')}</h3>
-            <div className="file-info">
-              {cocoData && (
-                <>
-                  <div>
-                    {t('comparison.fileInfo', {
-                      images: cocoData.images.length,
-                      annotations: cocoData.annotations.length,
-                    })}
-                  </div>
-                  {currentImageId && (
-                    <div className="selected-image-info">
-                      {t('comparison.currentImage')}:{' '}
-                      {cocoData.images.find((img) => img.id === currentImageId)?.file_name ||
-                        'Unknown'}{' '}
-                      (ID: {currentImageId})
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* File Selection */}
-          <div className="comparison-section">
-            <h3>{t('comparison.fileSelection')}</h3>
-            <div className="file-selection">
-              <button
-                className="file-select-button"
-                onClick={handleFileSelect}
-                disabled={isLoading || isComparing}
-              >
-                {isComparing
-                  ? t('comparison.usingCurrentFile')
-                  : selectedFile
-                    ? selectedFile.split('/').pop()
-                    : t('comparison.selectFile')}
-              </button>
-              {comparisonData && (
-                <div className="file-info">
+    <>
+      <CommonModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={t('comparison.title')}
+        size="xl"
+        hasBlur={true}
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={handleClose}>
+              {t('common.cancel')}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleCompare}
+              disabled={!comparisonData || !selectedImageId || isLoading}
+              title={
+                !comparisonData
+                  ? 'No comparison file loaded'
+                  : !selectedImageId
+                    ? 'No image selected'
+                    : ''
+              }
+            >
+              {t('comparison.startComparison')}
+            </button>
+          </>
+        }
+      >
+        {/* Current File Info */}
+        <div className="comparison-section">
+          <h3>{t('comparison.currentFileInfo')}</h3>
+          <div className="file-info">
+            {cocoData && (
+              <>
+                <div>
                   {t('comparison.fileInfo', {
-                    images: comparisonData.images.length,
-                    annotations: comparisonData.annotations.length,
+                    images: cocoData.images.length,
+                    annotations: cocoData.annotations.length,
                   })}
                 </div>
+                {currentImageId && (
+                  <div className="selected-image-info">
+                    {t('comparison.currentImage')}:{' '}
+                    {cocoData.images.find((img) => img.id === currentImageId)?.file_name ||
+                      'Unknown'}{' '}
+                    (ID: {currentImageId})
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* File Selection */}
+        <div className="comparison-section">
+          <h3>{t('comparison.fileSelection')}</h3>
+          <div className="file-selection">
+            <button
+              className="file-select-button"
+              onClick={handleFileSelect}
+              disabled={isLoading || isComparing}
+            >
+              {isComparing
+                ? t('comparison.usingCurrentFile')
+                : selectedFile
+                  ? selectedFile.split('/').pop()
+                  : t('comparison.selectFile')}
+            </button>
+            {comparisonData && (
+              <div className="file-info">
+                {t('comparison.fileInfo', {
+                  images: comparisonData.images.length,
+                  annotations: comparisonData.annotations.length,
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Image Selection (for multiple images) */}
+        {comparisonData && comparisonData.images.length > 1 && (
+          <div className="comparison-section">
+            <h3>{t('comparison.imageSelection')}</h3>
+            <div className="image-selection">
+              <select
+                value={selectedImageId || ''}
+                onChange={(e) =>
+                  setSelectedImageId(e.target.value ? parseInt(e.target.value) : null)
+                }
+                className="image-select-dropdown"
+              >
+                <option value="">{t('comparison.selectImage')}</option>
+                {comparisonData.images.map((img) => (
+                  <option key={img.id} value={img.id}>
+                    {img.file_name} (ID: {img.id})
+                  </option>
+                ))}
+              </select>
+              {selectedImageId && (
+                <div className="selected-image-info">
+                  {t('comparison.selectedImageAnnotations')}:{' '}
+                  {
+                    comparisonData.annotations.filter((ann) => ann.image_id === selectedImageId)
+                      .length
+                  }
+                </div>
               )}
             </div>
           </div>
+        )}
 
-          {/* Image Selection (for multiple images) */}
-          {comparisonData && comparisonData.images.length > 1 && (
-            <div className="comparison-section">
-              <h3>{t('comparison.imageSelection')}</h3>
-              <div className="image-selection">
-                <select
-                  value={selectedImageId || ''}
-                  onChange={(e) =>
-                    setSelectedImageId(e.target.value ? parseInt(e.target.value) : null)
-                  }
-                  className="image-select-dropdown"
-                >
-                  <option value="">{t('comparison.selectImage')}</option>
-                  {comparisonData.images.map((img) => (
-                    <option key={img.id} value={img.id}>
-                      {img.file_name} (ID: {img.id})
-                    </option>
-                  ))}
-                </select>
-                {selectedImageId && (
-                  <div className="selected-image-info">
-                    {t('comparison.selectedImageAnnotations')}:{' '}
-                    {
-                      comparisonData.annotations.filter((ann) => ann.image_id === selectedImageId)
-                        .length
-                    }
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Role Selection */}
-          <div className="comparison-section">
-            <h3>{t('comparison.roleSelection')}</h3>
-            <div className="role-selection">
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="current_gt"
-                  checked={roleSelection === 'current_gt'}
-                  onChange={() => setRoleSelection('current_gt')}
-                />
-                {t('comparison.currentAsGT')}
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="current_pred"
-                  checked={roleSelection === 'current_pred'}
-                  onChange={() => setRoleSelection('current_pred')}
-                />
-                {t('comparison.currentAsPred')}
-              </label>
-            </div>
+        {/* Role Selection */}
+        <div className="comparison-section">
+          <h3>{t('comparison.roleSelection')}</h3>
+          <div className="role-selection">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="current_gt"
+                checked={roleSelection === 'current_gt'}
+                onChange={() => setRoleSelection('current_gt')}
+              />
+              {t('comparison.currentAsGT')}
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="current_pred"
+                checked={roleSelection === 'current_pred'}
+                onChange={() => setRoleSelection('current_pred')}
+              />
+              {t('comparison.currentAsPred')}
+            </label>
           </div>
+        </div>
 
-          {/* Category Mapping */}
-          {cocoData && comparisonData && (
-            <div className="comparison-section">
-              <h3>{t('comparison.categoryMapping')}</h3>
-              <div className="category-mapping-description">
-                {t('comparison.categoryMappingDescription')}
+        {/* Category Mapping */}
+        {cocoData && comparisonData && (
+          <div className="comparison-section">
+            <h3>{t('comparison.categoryMapping')}</h3>
+            <div className="category-mapping-description">
+              {t('comparison.categoryMappingDescription')}
+            </div>
+            <div className="category-mapping">
+              <div className="mapping-header">
+                <div>{t('comparison.currentFile')}</div>
+                <div>{t('comparison.comparisonFile')}</div>
               </div>
-              <div className="category-mapping">
-                <div className="mapping-header">
-                  <div>{t('comparison.currentFile')}</div>
-                  <div>{t('comparison.comparisonFile')}</div>
-                </div>
 
-                {/* 割り当て済みカテゴリ */}
-                {cocoData.categories.map((cat) => {
-                  const mappedCategories = categoryMapping.get(cat.id) || [];
-                  if (mappedCategories.length === 0) return null;
+              {/* 割り当て済みカテゴリ */}
+              {cocoData.categories.map((cat) => {
+                const mappedCategories = categoryMapping.get(cat.id) || [];
+                if (mappedCategories.length === 0) return null;
 
-                  return (
-                    <div key={cat.id} className="mapping-row">
-                      <div className="category-name">
-                        {cat.name} ({cat.id})
-                      </div>
-                      <div className="category-badge-list">
-                        {/* マッピングされたカテゴリのバッジ */}
-                        {mappedCategories.map((predCatId) => {
-                          const predCat = comparisonData.categories.find((c) => c.id === predCatId);
-                          return (
-                            <div key={predCatId} className="category-badge pred-category">
-                              <span className="badge-icon">●</span>
-                              <span className="badge-text">{predCat?.name}</span>
-                              <button
-                                type="button"
-                                className="badge-remove"
-                                onClick={() => updateCategoryMapping(cat.id, predCatId, false)}
-                                title={t('comparison.removeMapping')}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          );
-                        })}
-
-                        {/* Addバッジ */}
-                        {getUnusedCategories().length > 0 && (
-                          <button
-                            type="button"
-                            className="category-badge add-badge"
-                            onClick={() => openCategoryDialog(cat.id)}
-                            title={t('comparison.addMapping')}
-                          >
-                            <span className="badge-icon">+</span>
-                            <span className="badge-text">{t('comparison.add')}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* 未割当カテゴリの行追加 */}
-                {cocoData.categories
-                  .filter(
-                    (cat) =>
-                      !categoryMapping.has(cat.id) || categoryMapping.get(cat.id)?.length === 0
-                  )
-                  .map((cat) => (
-                    <div key={cat.id} className="mapping-row">
-                      <div className="category-name">
-                        {cat.name} ({cat.id})
-                      </div>
-                      <div className="category-badge-list">
-                        {/* 追加ボタンのみ */}
-                        {getUnusedCategories().length > 0 && (
-                          <button
-                            type="button"
-                            className="category-badge add-badge"
-                            onClick={() => openCategoryDialog(cat.id)}
-                            title={t('comparison.addMapping')}
-                          >
-                            <span className="badge-icon">+</span>
-                            <span className="badge-text">{t('comparison.add')}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                {/* 比較ファイルの未使用カテゴリ */}
-                {getUnusedCategories().length > 0 && (
-                  <div className="mapping-row unassigned-comparison-row">
-                    <div className="category-name unassigned-label">
-                      {t('comparison.availableCategories')}
+                return (
+                  <div key={cat.id} className="mapping-row">
+                    <div className="category-name">
+                      {cat.name} ({cat.id})
                     </div>
                     <div className="category-badge-list">
-                      {getUnusedCategories().map((cat) => (
-                        <div key={cat.id} className="category-badge unassigned-comparison-category">
-                          <span className="badge-icon">○</span>
-                          <span className="badge-text">{cat.name}</span>
-                        </div>
-                      ))}
+                      {/* マッピングされたカテゴリのバッジ */}
+                      {mappedCategories.map((predCatId) => {
+                        const predCat = comparisonData.categories.find((c) => c.id === predCatId);
+                        return (
+                          <div key={predCatId} className="category-badge pred-category">
+                            <span className="badge-icon">●</span>
+                            <span className="badge-text">{predCat?.name}</span>
+                            <button
+                              type="button"
+                              className="badge-remove"
+                              onClick={() => updateCategoryMapping(cat.id, predCatId, false)}
+                              title={t('comparison.removeMapping')}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Addバッジ */}
+                      {getUnusedCategories().length > 0 && (
+                        <button
+                          type="button"
+                          className="category-badge add-badge"
+                          onClick={() => openCategoryDialog(cat.id)}
+                          title={t('comparison.addMapping')}
+                        >
+                          <span className="badge-icon">+</span>
+                          <span className="badge-text">{t('comparison.add')}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                );
+              })}
 
-          {/* IoU Threshold */}
-          <div className="comparison-section">
-            <h3>{t('comparison.matchingSettings')}</h3>
-            <div className="iou-threshold">
-              <label>
-                {t('comparison.iouThreshold')}: {iouThreshold.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0.05"
-                max="0.95"
-                step="0.05"
-                value={iouThreshold}
-                onChange={(e) => setIouThreshold(parseFloat(e.target.value))}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="maxMatches">{t('comparison.maxMatchesPerAnnotation')}</label>
-              <input
-                id="maxMatches"
-                type="number"
-                className="input"
-                min="1"
-                value={maxMatchesPerAnnotation}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value) && value >= 1) {
-                    setMaxMatchesPerAnnotation(value);
-                  }
-                }}
-              />
-            </div>
-            <div className="iou-method">
-              <label>{t('comparison.iouMethod')}</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    value="bbox"
-                    checked={iouMethod === 'bbox'}
-                    onChange={(e) => setIouMethod(e.target.value as 'bbox' | 'polygon')}
-                  />
-                  {t('comparison.bboxIoU')}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="polygon"
-                    checked={iouMethod === 'polygon'}
-                    onChange={(e) => setIouMethod(e.target.value as 'bbox' | 'polygon')}
-                  />
-                  {t('comparison.polygonIoU')}
-                </label>
-              </div>
-              <div className="setting-description">{t('comparison.iouMethodDescription')}</div>
-              {iouMethod === 'polygon' && (
-                <div className="polygon-iou-warning">
-                  <i className="warning-icon">⚠️</i>
-                  {t('comparison.polygonIoUWarning')}
+              {/* 未割当カテゴリの行追加 */}
+              {cocoData.categories
+                .filter(
+                  (cat) => !categoryMapping.has(cat.id) || categoryMapping.get(cat.id)?.length === 0
+                )
+                .map((cat) => (
+                  <div key={cat.id} className="mapping-row">
+                    <div className="category-name">
+                      {cat.name} ({cat.id})
+                    </div>
+                    <div className="category-badge-list">
+                      {/* 追加ボタンのみ */}
+                      {getUnusedCategories().length > 0 && (
+                        <button
+                          type="button"
+                          className="category-badge add-badge"
+                          onClick={() => openCategoryDialog(cat.id)}
+                          title={t('comparison.addMapping')}
+                        >
+                          <span className="badge-icon">+</span>
+                          <span className="badge-text">{t('comparison.add')}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+              {/* 比較ファイルの未使用カテゴリ */}
+              {getUnusedCategories().length > 0 && (
+                <div className="mapping-row unassigned-comparison-row">
+                  <div className="category-name unassigned-label">
+                    {t('comparison.availableCategories')}
+                  </div>
+                  <div className="category-badge-list">
+                    {getUnusedCategories().map((cat) => (
+                      <div key={cat.id} className="category-badge unassigned-comparison-category">
+                        <span className="badge-icon">○</span>
+                        <span className="badge-text">{cat.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </div>
+        )}
 
-          {/* Display Settings */}
-          <div className="comparison-section">
-            <h3>{t('comparison.displaySettings')}</h3>
-            <div className="display-settings">
-              <label className="checkbox-label">
+        {/* IoU Threshold */}
+        <div className="comparison-section">
+          <h3>{t('comparison.matchingSettings')}</h3>
+          <div className="iou-threshold">
+            <label>
+              {t('comparison.iouThreshold')}: {iouThreshold.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min="0.05"
+              max="0.95"
+              step="0.05"
+              value={iouThreshold}
+              onChange={(e) => setIouThreshold(parseFloat(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="maxMatches">{t('comparison.maxMatchesPerAnnotation')}</label>
+            <input
+              id="maxMatches"
+              type="number"
+              className="input"
+              min="1"
+              value={maxMatchesPerAnnotation}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value >= 1) {
+                  setMaxMatchesPerAnnotation(value);
+                }
+              }}
+            />
+          </div>
+          <div className="iou-method">
+            <label>{t('comparison.iouMethod')}</label>
+            <div className="radio-group">
+              <label>
                 <input
-                  type="checkbox"
-                  checked={displaySettings.showBoundingBoxes}
-                  onChange={(e) =>
-                    setDisplaySettings({
-                      ...displaySettings,
-                      showBoundingBoxes: e.target.checked,
-                    })
-                  }
+                  type="radio"
+                  value="bbox"
+                  checked={iouMethod === 'bbox'}
+                  onChange={(e) => setIouMethod(e.target.value as 'bbox' | 'polygon')}
                 />
-                {t('comparison.showBoundingBoxes')}
+                {t('comparison.bboxIoU')}
               </label>
-              <label className="checkbox-label">
+              <label>
                 <input
-                  type="checkbox"
-                  checked={displaySettings.showLabels}
-                  onChange={(e) =>
-                    setDisplaySettings({
-                      ...displaySettings,
-                      showLabels: e.target.checked,
-                    })
-                  }
+                  type="radio"
+                  value="polygon"
+                  checked={iouMethod === 'polygon'}
+                  onChange={(e) => setIouMethod(e.target.value as 'bbox' | 'polygon')}
                 />
-                {t('comparison.showLabels')}
+                {t('comparison.polygonIoU')}
               </label>
             </div>
+            <div className="setting-description">{t('comparison.iouMethodDescription')}</div>
+            {iouMethod === 'polygon' && (
+              <div className="polygon-iou-warning">
+                <i className="warning-icon">⚠️</i>
+                {t('comparison.polygonIoUWarning')}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="comparison-dialog-footer">
-          <button className="cancel-button" onClick={handleClose}>
-            {t('common.cancel')}
-          </button>
-          <button
-            className="compare-button"
-            onClick={handleCompare}
-            disabled={!comparisonData || !selectedImageId || isLoading}
-            title={
-              !comparisonData
-                ? 'No comparison file loaded'
-                : !selectedImageId
-                  ? 'No image selected'
-                  : ''
-            }
-          >
-            {t('comparison.startComparison')}
-          </button>
+        {/* Display Settings */}
+        <div className="comparison-section">
+          <h3>{t('comparison.displaySettings')}</h3>
+          <div className="display-settings">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={displaySettings.showBoundingBoxes}
+                onChange={(e) =>
+                  setDisplaySettings({
+                    ...displaySettings,
+                    showBoundingBoxes: e.target.checked,
+                  })
+                }
+              />
+              {t('comparison.showBoundingBoxes')}
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={displaySettings.showLabels}
+                onChange={(e) =>
+                  setDisplaySettings({
+                    ...displaySettings,
+                    showLabels: e.target.checked,
+                  })
+                }
+              />
+              {t('comparison.showLabels')}
+            </label>
+          </div>
         </div>
-      </div>
+      </CommonModal>
 
       {/* カテゴリ選択ダイアログ */}
-      {showCategoryDialog && (
-        <div
-          className="category-dialog-overlay"
-          onClick={() => {
-            setShowCategoryDialog(false);
-            setCurrentGtCategoryId(null);
-          }}
-        >
-          <div className="category-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="category-dialog-header">
-              <h3>{t('comparison.selectCategory')}</h3>
-              <button
-                className="close-button"
-                onClick={() => {
-                  setShowCategoryDialog(false);
-                  setCurrentGtCategoryId(null);
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div className="category-dialog-content">
-              <div className="available-categories">
-                {getUnusedCategories().map((cat) => (
-                  <button
-                    key={cat.id}
-                    className="category-option"
-                    onClick={() => handleCategorySelect(cat.id)}
-                  >
-                    <span className="category-option-icon">○</span>
-                    <span className="category-option-text">
-                      {cat.name} ({cat.id})
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {getUnusedCategories().length === 0 && (
-                <div className="no-categories">{t('comparison.noAvailableCategories')}</div>
-              )}
-            </div>
-          </div>
+      <CommonModal
+        isOpen={showCategoryDialog}
+        onClose={() => {
+          setShowCategoryDialog(false);
+          setCurrentGtCategoryId(null);
+        }}
+        title={t('comparison.selectCategory')}
+        size="md"
+        hasBlur={true}
+      >
+        <div className="available-categories">
+          {getUnusedCategories().map((cat) => (
+            <button
+              key={cat.id}
+              className="category-option"
+              onClick={() => handleCategorySelect(cat.id)}
+            >
+              <span className="category-option-icon">○</span>
+              <span className="category-option-text">
+                {cat.name} ({cat.id})
+              </span>
+            </button>
+          ))}
         </div>
-      )}
-    </div>
+        {getUnusedCategories().length === 0 && (
+          <div className="no-categories">{t('comparison.noAvailableCategories')}</div>
+        )}
+      </CommonModal>
+    </>
   );
 };
