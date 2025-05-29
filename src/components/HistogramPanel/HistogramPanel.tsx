@@ -27,7 +27,7 @@ function formatValue(value: number, type: HistogramType): string {
 
 export const HistogramPanel: React.FC = () => {
   const { t } = useTranslation();
-  const { cocoData } = useAnnotationStore();
+  const { cocoData, currentImageId } = useAnnotationStore();
   const {
     settings,
     histogramType,
@@ -40,6 +40,7 @@ export const HistogramPanel: React.FC = () => {
     highlightBin,
     clearHighlight,
     setHistogramData,
+    setViewMode,
   } = useHistogramStore();
 
   // カテゴリマップを作成
@@ -60,9 +61,9 @@ export const HistogramPanel: React.FC = () => {
       return;
     }
 
-    const data = calculateHistogram(cocoData, histogramType, settings);
+    const data = calculateHistogram(cocoData, histogramType, settings, currentImageId);
     setHistogramData(data);
-  }, [cocoData, histogramType, settings, setHistogramData]);
+  }, [cocoData, histogramType, settings, currentImageId, setHistogramData]);
 
   // ハイライトされたアノテーションを選択状態に反映
   useEffect(() => {
@@ -101,6 +102,9 @@ export const HistogramPanel: React.FC = () => {
     }
   };
 
+  // 複数画像があるかチェック
+  const hasMultipleImages = cocoData && cocoData.images && cocoData.images.length > 1;
+
   if (!cocoData || !cocoData.annotations || cocoData.annotations.length === 0) {
     return (
       <div className="histogram-empty">
@@ -111,6 +115,27 @@ export const HistogramPanel: React.FC = () => {
 
   return (
     <>
+      {/* ビューモード選択セクション */}
+      {hasMultipleImages && (
+        <div className="statistics-section">
+          <h3>{t('histogram.viewMode')}</h3>
+          <div className="view-mode-toggle">
+            <button
+              className={settings.viewMode === 'current' ? 'active' : ''}
+              onClick={() => setViewMode('current')}
+            >
+              {t('histogram.currentImage')}
+            </button>
+            <button
+              className={settings.viewMode === 'all' ? 'active' : ''}
+              onClick={() => setViewMode('all')}
+            >
+              {t('histogram.allImages')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* コントロール設定セクション */}
       <div className="statistics-section">
         <h3>{t('histogram.settings')}</h3>

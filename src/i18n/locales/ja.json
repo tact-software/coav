@@ -343,7 +343,7 @@
     "processingSubMessage": "アノテーションを分析してマッチングを計算しています"
   },
   "histogram": {
-    "title": "アノテーションサイズ分布",
+    "title": "分布ヒストグラム",
     "noData": "アノテーションデータがありません",
     "export": "CSV出力",
     "settings": "設定",
@@ -367,6 +367,9 @@
     "std": "標準偏差",
     "min": "最小",
     "max": "最大",
-    "total": "合計"
+    "total": "合計",
+    "viewMode": "表示対象",
+    "currentImage": "現在の画像",
+    "allImages": "全画像"
   }
 }

@@ -109,7 +109,7 @@ pub fn create_menu(app: &tauri::AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn s
                 .item(&MenuItem::with_id(
                     app,
                     "histogram",
-                    "Size Distribution...",
+                    "Distribution Histogram...",
                     true,
                     Some("CmdOrCtrl+Shift+H"),
                 )?)

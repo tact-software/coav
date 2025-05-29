@@ -344,7 +344,7 @@
     "processingSubMessage": "Analyzing annotations and calculating matches"
   },
   "histogram": {
-    "title": "Annotation Size Distribution",
+    "title": "Distribution Histogram",
     "noData": "No annotation data available",
     "export": "Export CSV",
     "settings": "Settings",
@@ -368,6 +368,9 @@
     "std": "Std Dev",
     "min": "Min",
     "max": "Max",
-    "total": "Total"
+    "total": "Total",
+    "viewMode": "View Mode",
+    "currentImage": "Current Image",
+    "allImages": "All Images"
   }
 }

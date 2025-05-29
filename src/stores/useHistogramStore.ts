@@ -33,6 +33,7 @@ export interface HistogramSettings {
   scale: ScaleType;
   selectedCategories: Set<number>;
   sizeRange: [number, number] | null;
+  viewMode: 'current' | 'all';
 }
 
 interface HistogramStore {
@@ -53,6 +54,7 @@ interface HistogramStore {
   highlightBin: (binIndex: number) => void;
   clearHighlight: () => void;
   setHistogramData: (data: HistogramData | null) => void;
+  setViewMode: (mode: 'current' | 'all') => void;
   resetSettings: () => void;
 }
 
@@ -61,6 +63,7 @@ const defaultSettings: HistogramSettings = {
   scale: 'linear',
   selectedCategories: new Set(),
   sizeRange: null,
+  viewMode: 'all',
 };
 
 export const useHistogramStore = create<HistogramStore>()(
@@ -144,6 +147,16 @@ export const useHistogramStore = create<HistogramStore>()(
     setHistogramData: (data) =>
       set(() => ({
         histogramData: data,
+      })),
+
+    setViewMode: (mode) =>
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          viewMode: mode,
+        },
+        // ビューモード変更時はデータをクリア（再計算が必要）
+        histogramData: null,
       })),
 
     resetSettings: () =>

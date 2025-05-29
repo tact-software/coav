@@ -143,7 +143,8 @@ export function calculateBinRanges(
 export function calculateHistogram(
   cocoData: COCOData,
   type: HistogramType,
-  settings: HistogramSettings
+  settings: HistogramSettings,
+  currentImageId?: number | null
 ): HistogramData | null {
   if (!cocoData.annotations || cocoData.annotations.length === 0) {
     return null;
@@ -151,6 +152,11 @@ export function calculateHistogram(
 
   // フィルタリング
   let annotations = cocoData.annotations;
+  
+  // ビューモードフィルタ
+  if (settings.viewMode === 'current' && currentImageId) {
+    annotations = annotations.filter(ann => ann.image_id === currentImageId);
+  }
   
   // カテゴリフィルタ
   if (settings.selectedCategories.size > 0) {
