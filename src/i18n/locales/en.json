@@ -342,5 +342,32 @@
     "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance.",
     "processing": "Processing comparison...",
     "processingSubMessage": "Analyzing annotations and calculating matches"
+  },
+  "histogram": {
+    "title": "Annotation Size Distribution",
+    "noData": "No annotation data available",
+    "export": "Export CSV",
+    "settings": "Settings",
+    "distributionType": "Distribution Type",
+    "width": "Width",
+    "height": "Height",
+    "area": "Area (BBox)",
+    "polygonArea": "Area (Polygon)",
+    "aspectRatio": "Aspect Ratio",
+    "binCount": "Number of Bins",
+    "scale": "Scale",
+    "linear": "Linear",
+    "log": "Logarithmic",
+    "categoryFilter": "Category Filter",
+    "allCategories": "All Categories",
+    "count": "Count",
+    "percentage": "Percentage",
+    "statistics": "Statistics",
+    "mean": "Mean",
+    "median": "Median",
+    "std": "Std Dev",
+    "min": "Min",
+    "max": "Max",
+    "total": "Total"
   }
 }

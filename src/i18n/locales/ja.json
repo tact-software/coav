@@ -341,5 +341,32 @@
     "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。",
     "processing": "比較処理中...",
     "processingSubMessage": "アノテーションを分析してマッチングを計算しています"
+  },
+  "histogram": {
+    "title": "アノテーションサイズ分布",
+    "noData": "アノテーションデータがありません",
+    "export": "CSV出力",
+    "settings": "設定",
+    "distributionType": "分布タイプ",
+    "width": "幅",
+    "height": "高さ",
+    "area": "面積（bbox）",
+    "polygonArea": "面積（ポリゴン）",
+    "aspectRatio": "アスペクト比",
+    "binCount": "ビン数",
+    "scale": "スケール",
+    "linear": "線形",
+    "log": "対数",
+    "categoryFilter": "カテゴリフィルタ",
+    "allCategories": "全カテゴリ",
+    "count": "数",
+    "percentage": "割合",
+    "statistics": "統計情報",
+    "mean": "平均",
+    "median": "中央値",
+    "std": "標準偏差",
+    "min": "最小",
+    "max": "最大",
+    "total": "合計"
   }
 }

@@ -108,6 +108,13 @@ pub fn create_menu(app: &tauri::AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn s
                 )?)
                 .item(&MenuItem::with_id(
                     app,
+                    "histogram",
+                    "Size Distribution...",
+                    true,
+                    Some("CmdOrCtrl+Shift+H"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
                     "settings",
                     "Settings...",
                     true,

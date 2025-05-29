@@ -1,0 +1,1 @@
+export { HistogramChart } from './HistogramChart';

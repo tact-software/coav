@@ -9,7 +9,8 @@ export const useMenuEvents = (
   onExportAnnotations: () => void,
   onShowStatistics: () => void,
   onShowSettings: () => void,
-  onShowComparison?: () => void
+  onShowComparison?: () => void,
+  onShowHistogram?: () => void
 ) => {
   const { zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
   const { showAllCategories, hideAllCategories, clearCocoData } = useAnnotationStore();
@@ -46,6 +47,11 @@ export const useMenuEvents = (
       if (onShowComparison) {
         unsubscribers.push(await listen('menu-compare', onShowComparison));
       }
+
+      // Add histogram dialog listener if handler provided
+      if (onShowHistogram) {
+        unsubscribers.push(await listen('menu-histogram', onShowHistogram));
+      }
     };
 
     setupListeners();
@@ -61,6 +67,8 @@ export const useMenuEvents = (
     onExportAnnotations,
     onShowStatistics,
     onShowSettings,
+    onShowComparison,
+    onShowHistogram,
     zoomIn,
     zoomOut,
     resetView,

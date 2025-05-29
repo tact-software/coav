@@ -13,6 +13,8 @@ import StatisticsDialog from './components/StatisticsDialog';
 import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
 import { ComparisonDialog } from './components/ComparisonDialog';
+import { CommonModal } from './components/CommonModal';
+import { HistogramPanel } from './components/HistogramPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -61,6 +63,7 @@ function App() {
   const [showStatistics, setShowStatistics] = useState(false);
   const [showImageSelection, setShowImageSelection] = useState(false);
   const [showComparisonDialog, setShowComparisonDialog] = useState(false);
+  const [showHistogramDialog, setShowHistogramDialog] = useState(false);
   const [tempCocoData, setTempCocoData] = useState<{
     data: COCOData;
     annotationDir: string;
@@ -578,7 +581,8 @@ function App() {
     handleExportAnnotations,
     handleShowStatistics,
     openSettingsModal,
-    () => setShowComparisonDialog(true)
+    () => setShowComparisonDialog(true),
+    () => setShowHistogramDialog(true)
   );
 
   // Handle drag and drop
@@ -896,6 +900,16 @@ function App() {
         isOpen={showComparisonDialog}
         onClose={() => setShowComparisonDialog(false)}
       />
+
+      <CommonModal
+        isOpen={showHistogramDialog}
+        onClose={() => setShowHistogramDialog(false)}
+        title={t('histogram.title')}
+        size="xl"
+        hasBlur={true}
+      >
+        <HistogramPanel />
+      </CommonModal>
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <LoadingOverlay
