@@ -7,11 +7,15 @@ import './styles/themes.css';
 import ImageViewer from './components/ImageViewer';
 import ControlPanel from './components/ControlPanel';
 import InfoPanel from './components/InfoPanel';
+import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SampleGeneratorDialog from './components/SampleGeneratorDialog';
 import StatisticsDialog from './components/StatisticsDialog';
-import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
+import { ComparisonDialog } from './components/ComparisonDialog';
+import { CommonModal } from './components/CommonModal';
+import { HistogramPanel } from './components/HistogramPanel';
+import { HeatmapDialog } from './components/HeatmapDialog';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -22,6 +26,7 @@ import {
   useRecentFilesStore,
   useSettingsStore,
   useLoadingStore,
+  useHeatmapStore,
   toast,
 } from './stores';
 import type { RecentFile, TabType } from './stores';
@@ -59,6 +64,9 @@ function App() {
   const [showSampleGenerator, setShowSampleGenerator] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showImageSelection, setShowImageSelection] = useState(false);
+  const [showComparisonDialog, setShowComparisonDialog] = useState(false);
+  const [showHistogramDialog, setShowHistogramDialog] = useState(false);
+  const { openModal: openHeatmapModal } = useHeatmapStore();
   const [tempCocoData, setTempCocoData] = useState<{
     data: COCOData;
     annotationDir: string;
@@ -68,7 +76,7 @@ function App() {
   const renderTabContent = (tab: string) => {
     switch (tab) {
       case 'control':
-        return <ControlPanel />;
+        return <ControlPanel onOpenComparisonDialog={() => setShowComparisonDialog(true)} />;
       case 'info':
         return <InfoPanel />;
       case 'detail':
@@ -575,7 +583,10 @@ function App() {
     handleGenerateSample,
     handleExportAnnotations,
     handleShowStatistics,
-    openSettingsModal
+    openSettingsModal,
+    () => setShowComparisonDialog(true),
+    () => setShowHistogramDialog(true),
+    openHeatmapModal
   );
 
   // Handle drag and drop
@@ -654,6 +665,10 @@ function App() {
           case 'i':
             e.preventDefault();
             if (cocoData) handleShowStatistics();
+            break;
+          case 'k':
+            e.preventDefault();
+            if (cocoData) setShowComparisonDialog(true);
             break;
         }
       } else if (e.key === 'Escape') {
@@ -884,6 +899,23 @@ function App() {
           }
         }}
       />
+
+      <ComparisonDialog
+        isOpen={showComparisonDialog}
+        onClose={() => setShowComparisonDialog(false)}
+      />
+
+      <CommonModal
+        isOpen={showHistogramDialog}
+        onClose={() => setShowHistogramDialog(false)}
+        title={t('histogram.title')}
+        size="xl"
+        hasBlur={true}
+      >
+        <HistogramPanel />
+      </CommonModal>
+
+      <HeatmapDialog />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <LoadingOverlay

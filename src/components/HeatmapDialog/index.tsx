@@ -1,0 +1,1 @@
+export { HeatmapDialog } from './HeatmapDialog';

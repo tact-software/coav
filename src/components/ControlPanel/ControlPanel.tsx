@@ -8,10 +8,13 @@ import {
 } from '../../stores';
 import { extractFieldsFromAnnotation, groupFieldsByCategory } from '../../utils';
 import SearchBox, { SearchBoxRef } from '../SearchBox/SearchBox';
-import { ComparisonDialog } from '../ComparisonDialog';
 import './ControlPanel.css';
 
-const ControlPanel: React.FC = () => {
+interface ControlPanelProps {
+  onOpenComparisonDialog?: () => void;
+}
+
+const ControlPanel: React.FC<ControlPanelProps> = ({ onOpenComparisonDialog }) => {
   const { t } = useTranslation();
   const searchBoxRef = useRef<SearchBoxRef>(null);
 
@@ -34,7 +37,6 @@ const ControlPanel: React.FC = () => {
   const { detail, updateDetailSettings, colors } = useSettingsStore();
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['option']));
-  const [isComparisonDialogOpen, setIsComparisonDialogOpen] = useState(false);
 
   // Handle Ctrl+F keyboard shortcut
   useEffect(() => {
@@ -190,7 +192,7 @@ const ControlPanel: React.FC = () => {
             {!isComparing ? (
               <button
                 className="btn btn-secondary comparison-button"
-                onClick={() => setIsComparisonDialogOpen(true)}
+                onClick={onOpenComparisonDialog}
               >
                 <span className="icon">📊</span>
                 {t('controls.openComparisonFile')}
@@ -273,7 +275,7 @@ const ControlPanel: React.FC = () => {
                   </label>
                 </div>
 
-                <button className="btn btn-primary" onClick={() => setIsComparisonDialogOpen(true)}>
+                <button className="btn btn-primary" onClick={onOpenComparisonDialog}>
                   {t('controls.changeComparisonSettings')}
                 </button>
 
@@ -490,12 +492,6 @@ const ControlPanel: React.FC = () => {
           <p>{t('info.noImageLoaded')}</p>
         </div>
       )}
-
-      {/* Comparison Dialog */}
-      <ComparisonDialog
-        isOpen={isComparisonDialogOpen}
-        onClose={() => setIsComparisonDialogOpen(false)}
-      />
     </div>
   );
 };
