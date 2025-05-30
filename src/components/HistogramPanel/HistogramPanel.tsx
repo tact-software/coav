@@ -32,13 +32,10 @@ export const HistogramPanel: React.FC = () => {
     settings,
     histogramType,
     histogramData,
-    highlightedAnnotations,
     setHistogramType,
     setBinCount,
     setScale,
     toggleCategory,
-    highlightBin,
-    clearHighlight,
     setHistogramData,
     setViewMode,
   } = useHistogramStore();
@@ -65,44 +62,122 @@ export const HistogramPanel: React.FC = () => {
     setHistogramData(data);
   }, [cocoData, histogramType, settings, currentImageId, setHistogramData]);
 
-  // ハイライトされたアノテーションを選択状態に反映
-  useEffect(() => {
-    if (highlightedAnnotations.size > 0) {
-      const { clearSelection, selectAnnotation } = useAnnotationStore.getState();
-      clearSelection();
-      highlightedAnnotations.forEach((id) => selectAnnotation(id, true));
+  // ハイライト機能は無効化（メインビューアーとの連携不要）
+  // useEffect(() => {
+  //   if (highlightedAnnotations.size > 0) {
+  //     const { clearSelection, selectAnnotation } = useAnnotationStore.getState();
+  //     clearSelection();
+  //     highlightedAnnotations.forEach((id) => selectAnnotation(id, true));
+  //   }
+  // }, [highlightedAnnotations]);
+
+  const handleCopyToClipboard = async () => {
+    if (!histogramData) {
+      console.error('No histogram data available for copy');
+      return;
     }
-  }, [highlightedAnnotations]);
 
-  const handleExportCSV = () => {
-    if (!histogramData) return;
-
-    const csv = exportHistogramAsCSV(histogramData, categoryMap);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `histogram_${histogramType}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const csv = exportHistogramAsCSV(histogramData, categoryMap);
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(csv);
+        
+        // 成功メッセージを表示
+        const toast = document.createElement('div');
+        toast.textContent = 'ヒストグラムデータをクリップボードにコピーしました';
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #28a745;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 4px;
+          z-index: 10000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          font-size: 14px;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 3000);
+        
+      } else {
+        throw new Error('Clipboard API not available');
+      }
+    } catch (error) {
+      // フォールバック: テキストエリアで選択可能にする
+      const csv = exportHistogramAsCSV(histogramData, categoryMap);
+      
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 10000;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        max-width: 80%;
+        max-height: 80%;
+      `;
+      
+      const message = document.createElement('p');
+      message.textContent = 'クリップボードへのコピーが失敗しました。下のテキストを手動でコピーしてください:';
+      message.style.cssText = 'margin: 0 0 15px 0; color: #333; line-height: 1.4;';
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = csv;
+      textarea.style.cssText = `
+        width: 100%;
+        height: 200px;
+        font-family: monospace;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        margin-bottom: 10px;
+      `;
+      textarea.readOnly = true;
+      
+      const closeButton = document.createElement('button');
+      closeButton.textContent = '閉じる';
+      closeButton.style.cssText = `
+        padding: 8px 16px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      `;
+      closeButton.onclick = () => document.body.removeChild(container);
+      
+      container.appendChild(message);
+      container.appendChild(textarea);
+      container.appendChild(closeButton);
+      document.body.appendChild(container);
+      
+      // テキストエリアを選択状態にする
+      textarea.focus();
+      textarea.select();
+    }
   };
 
-  const handleBinClick = (binIndex: number) => {
-    highlightBin(binIndex);
+  // ハイライト機能を無効化
+  const handleBinClick = () => {
+    // クリック時の動作を無効化
   };
 
-  const handleBinHover = (binIndex: number | null) => {
-    if (binIndex === null) {
-      clearHighlight();
-    } else {
-      highlightBin(binIndex);
-    }
+  const handleBinHover = () => {
+    // ホバー時の動作を無効化
   };
 
   // 複数画像があるかチェック
@@ -201,15 +276,15 @@ export const HistogramPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* エクスポートボタン */}
+          {/* クリップボードコピーボタン */}
           <div className="control-group">
-            <label>{t('histogram.export')}</label>
+            <label>{t('histogram.copy')}</label>
             <button
               className="btn btn-secondary"
-              onClick={handleExportCSV}
+              onClick={handleCopyToClipboard}
               disabled={!histogramData}
             >
-              {t('histogram.export')}
+              {t('histogram.copy')}
             </button>
           </div>
         </div>
@@ -297,6 +372,45 @@ export const HistogramPanel: React.FC = () => {
                 {histogramData.statistics.total.toLocaleString()}
               </div>
               <div className="statistic-label">{t('histogram.total')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {formatValue(histogramData.statistics.q1, histogramData.type)}
+              </div>
+              <div className="statistic-label">{t('histogram.q1')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {formatValue(histogramData.statistics.q3, histogramData.type)}
+              </div>
+              <div className="statistic-label">{t('histogram.q3')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {formatValue(histogramData.statistics.q3 - histogramData.statistics.q1, histogramData.type)}
+              </div>
+              <div className="statistic-label">{t('histogram.iqr')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {histogramData.statistics.mean > 0 ? 
+                  (histogramData.statistics.std / histogramData.statistics.mean * 100).toFixed(1) + '%' : 
+                  'N/A'
+                }
+              </div>
+              <div className="statistic-label">{t('histogram.cv')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {histogramData.statistics.skewness.toFixed(3)}
+              </div>
+              <div className="statistic-label">{t('histogram.skewness')}</div>
+            </div>
+            <div className="statistic-card">
+              <div className="statistic-value">
+                {histogramData.statistics.kurtosis.toFixed(3)}
+              </div>
+              <div className="statistic-label">{t('histogram.kurtosis')}</div>
             </div>
           </div>
         </div>

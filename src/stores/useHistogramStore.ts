@@ -26,6 +26,8 @@ export interface HistogramStatistics {
   q1: number;
   q3: number;
   total: number;
+  skewness: number;
+  kurtosis: number;
 }
 
 export interface HistogramSettings {

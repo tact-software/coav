@@ -346,6 +346,7 @@
     "title": "分布ヒストグラム",
     "noData": "アノテーションデータがありません",
     "export": "CSV出力",
+    "copy": "クリップボードにコピー",
     "settings": "設定",
     "distributionType": "分布タイプ",
     "width": "幅",
@@ -370,6 +371,12 @@
     "total": "合計",
     "viewMode": "表示対象",
     "currentImage": "現在の画像",
-    "allImages": "全画像"
+    "allImages": "全画像",
+    "q1": "第1四分位数",
+    "q3": "第3四分位数",
+    "iqr": "四分位範囲",
+    "cv": "変動係数",
+    "skewness": "歪度",
+    "kurtosis": "尖度"
   }
 }

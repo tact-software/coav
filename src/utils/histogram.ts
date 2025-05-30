@@ -80,6 +80,8 @@ export function calculateStatistics(values: number[]): HistogramStatistics {
       q1: 0,
       q3: 0,
       total: 0,
+      skewness: 0,
+      kurtosis: 0,
     };
   }
 
@@ -109,7 +111,17 @@ export function calculateStatistics(values: number[]): HistogramStatistics {
   const q1 = sorted[q1Index];
   const q3 = sorted[q3Index];
 
-  return { mean, median, std, min, max, q1, q3, total };
+  // 歪度 (Skewness) - 3次モーメント
+  const skewness = std > 0 ? 
+    values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 3), 0) / total :
+    0;
+
+  // 尖度 (Kurtosis) - 4次モーメント - 3 (excess kurtosis)
+  const kurtosis = std > 0 ?
+    values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 4), 0) / total - 3 :
+    0;
+
+  return { mean, median, std, min, max, q1, q3, total, skewness, kurtosis };
 }
 
 // ビンの範囲を計算
@@ -244,49 +256,72 @@ export function calculateHistogram(
 
 // データをCSV形式でエクスポート
 export function exportHistogramAsCSV(data: HistogramData, categories: Map<number, string>): string {
-  const headers = ['Bin Range', 'Count', 'Percentage'];
+  try {
+    const headers = ['Bin Range', 'Count', 'Percentage'];
 
-  // カテゴリ別ヘッダーを追加
-  const categoryIds = Array.from(
-    new Set(data.bins.flatMap((bin) => Array.from(bin.categoryBreakdown.keys())))
-  ).sort((a, b) => a - b);
+    // カテゴリ別ヘッダーを追加
+    const categoryIds = Array.from(
+      new Set(data.bins.flatMap((bin) => Array.from(bin.categoryBreakdown.keys())))
+    ).sort((a, b) => a - b);
 
-  categoryIds.forEach((id) => {
-    const categoryName = categories.get(id) || `Category ${id}`;
-    headers.push(categoryName);
-  });
-
-  const rows = data.bins.map((bin) => {
-    const percentage = ((bin.count / data.statistics.total) * 100).toFixed(2);
-    const row = [
-      `${bin.range[0].toFixed(2)}-${bin.range[1].toFixed(2)}`,
-      bin.count.toString(),
-      `${percentage}%`,
-    ];
-
-    // カテゴリ別カウントを追加
     categoryIds.forEach((id) => {
-      const count = bin.categoryBreakdown.get(id) || 0;
-      row.push(count.toString());
+      const categoryName = categories.get(id) || `Category ${id}`;
+      headers.push(categoryName);
     });
 
-    return row;
-  });
+    const rows = data.bins.map((bin) => {
+      const percentage = data.statistics.total > 0 ? 
+        ((bin.count / data.statistics.total) * 100).toFixed(2) : '0.00';
+      const row = [
+        `${bin.range[0].toFixed(2)}-${bin.range[1].toFixed(2)}`,
+        bin.count.toString(),
+        `${percentage}%`,
+      ];
 
-  // 統計情報を追加
-  rows.push([]);
-  rows.push(['Statistics']);
-  rows.push(['Mean', data.statistics.mean.toFixed(2)]);
-  rows.push(['Median', data.statistics.median.toFixed(2)]);
-  rows.push(['Std Dev', data.statistics.std.toFixed(2)]);
-  rows.push(['Min', data.statistics.min.toFixed(2)]);
-  rows.push(['Max', data.statistics.max.toFixed(2)]);
-  rows.push(['Q1', data.statistics.q1.toFixed(2)]);
-  rows.push(['Q3', data.statistics.q3.toFixed(2)]);
-  rows.push(['Total', data.statistics.total.toString()]);
+      // カテゴリ別カウントを追加
+      categoryIds.forEach((id) => {
+        const count = bin.categoryBreakdown.get(id) || 0;
+        row.push(count.toString());
+      });
 
-  // CSVフォーマット
-  const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+      return row;
+    });
 
-  return csv;
+    // 統計情報を追加
+    rows.push([]);
+    rows.push(['Statistics']);
+    
+    // 安全な数値フォーマッティング
+    const safeFixed = (value: number, digits: number): string => {
+      return isNaN(value) || !isFinite(value) ? 'N/A' : value.toFixed(digits);
+    };
+
+    rows.push(['Mean', safeFixed(data.statistics.mean, 2)]);
+    rows.push(['Median', safeFixed(data.statistics.median, 2)]);
+    rows.push(['Std Dev', safeFixed(data.statistics.std, 2)]);
+    rows.push(['Min', safeFixed(data.statistics.min, 2)]);
+    rows.push(['Max', safeFixed(data.statistics.max, 2)]);
+    rows.push(['Q1', safeFixed(data.statistics.q1, 2)]);
+    rows.push(['Q3', safeFixed(data.statistics.q3, 2)]);
+    rows.push(['IQR', safeFixed(data.statistics.q3 - data.statistics.q1, 2)]);
+    
+    const cvValue = data.statistics.mean > 0 ? 
+      ((data.statistics.std / data.statistics.mean) * 100) : NaN;
+    rows.push(['CV (%)', safeFixed(cvValue, 2)]);
+    
+    rows.push(['Skewness', safeFixed(data.statistics.skewness, 3)]);
+    rows.push(['Kurtosis', safeFixed(data.statistics.kurtosis, 3)]);
+    rows.push(['Total', data.statistics.total.toString()]);
+
+    // CSVフォーマット
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n');
+
+    return csv;
+  } catch (error) {
+    console.error('Error in exportHistogramAsCSV:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`CSV export failed: ${errorMessage}`);
+  }
 }
