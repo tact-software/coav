@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Annotation Statistical Analysis**
+  - **Histogram Analysis**: 5 distribution types (width, height, area, polygon area, aspect ratio)
+  - **Heatmap Analysis**: 4 2D distributions (width×height, center coordinates, area×aspect ratio, etc.)
+  - **Detailed Statistics**: Display of mean, median, standard deviation, skewness, kurtosis, quartiles, etc.
+  - **Polygon Area Calculation**: Accurate segmentation area calculation using Shoelace formula
+  - **Data Export**: Clipboard copy functionality for statistical data
+  - **Menu Integration**: Shortcuts for Histogram (Ctrl/Cmd+Shift+H) and Heatmap (Ctrl/Cmd+Shift+M)
+- **Common Modal Component**
+  - Unified modal design with blur background effects
+  - Responsive size support (sm, md, lg, xl)
+  - Accessibility support (ESC key, overlay click)
 - **Comparison Mode**
   - Visual comparison between two COCO datasets (ground truth vs predictions)
   - Color-coded display of TP (True Positive), FP (False Positive), and FN (False Negative)
@@ -27,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detailed matching distribution settings
 - **Loading Overlay**
   - Full-screen loading display for long-running operations
+- **Disclaimer Addition**
+  - Added disclaimer in README stating statistical information is for reference purposes with developer liability limitations
 
 ### Changed
 
