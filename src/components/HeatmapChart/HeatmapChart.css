@@ -1,0 +1,73 @@
+.heatmap-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.heatmap-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.heatmap-title {
+  text-align: center;
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nivo-heatmap-container {
+  flex: 1;
+  min-height: 500px;
+  width: 100%;
+}
+
+.heatmap-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.heatmap-stats span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.heatmap-stats span:not(:last-child)::after {
+  content: '•';
+  margin-left: 25px;
+  color: var(--border-color);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .heatmap-container {
+    padding: 10px;
+  }
+
+  .nivo-heatmap-container {
+    min-height: 400px;
+  }
+
+  .heatmap-stats {
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .heatmap-stats span:not(:last-child)::after {
+    display: none;
+  }
+}

@@ -1,0 +1,1 @@
+export { HeatmapPanel } from './HeatmapPanel';

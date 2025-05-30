@@ -79,10 +79,10 @@ export const HistogramPanel: React.FC = () => {
 
     try {
       const csv = exportHistogramAsCSV(histogramData, categoryMap);
-      
+
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(csv);
-        
+
         // 成功メッセージを表示
         const toast = document.createElement('div');
         toast.textContent = 'ヒストグラムデータをクリップボードにコピーしました';
@@ -98,22 +98,21 @@ export const HistogramPanel: React.FC = () => {
           box-shadow: 0 2px 10px rgba(0,0,0,0.2);
           font-size: 14px;
         `;
-        
+
         document.body.appendChild(toast);
-        
+
         setTimeout(() => {
           if (document.body.contains(toast)) {
             document.body.removeChild(toast);
           }
         }, 3000);
-        
       } else {
         throw new Error('Clipboard API not available');
       }
-    } catch (error) {
+    } catch {
       // フォールバック: テキストエリアで選択可能にする
       const csv = exportHistogramAsCSV(histogramData, categoryMap);
-      
+
       const container = document.createElement('div');
       container.style.cssText = `
         position: fixed;
@@ -129,11 +128,12 @@ export const HistogramPanel: React.FC = () => {
         max-width: 80%;
         max-height: 80%;
       `;
-      
+
       const message = document.createElement('p');
-      message.textContent = 'クリップボードへのコピーが失敗しました。下のテキストを手動でコピーしてください:';
+      message.textContent =
+        'クリップボードへのコピーが失敗しました。下のテキストを手動でコピーしてください:';
       message.style.cssText = 'margin: 0 0 15px 0; color: #333; line-height: 1.4;';
-      
+
       const textarea = document.createElement('textarea');
       textarea.value = csv;
       textarea.style.cssText = `
@@ -147,7 +147,7 @@ export const HistogramPanel: React.FC = () => {
         margin-bottom: 10px;
       `;
       textarea.readOnly = true;
-      
+
       const closeButton = document.createElement('button');
       closeButton.textContent = '閉じる';
       closeButton.style.cssText = `
@@ -159,12 +159,12 @@ export const HistogramPanel: React.FC = () => {
         cursor: pointer;
       `;
       closeButton.onclick = () => document.body.removeChild(container);
-      
+
       container.appendChild(message);
       container.appendChild(textarea);
       container.appendChild(closeButton);
       document.body.appendChild(container);
-      
+
       // テキストエリアを選択状態にする
       textarea.focus();
       textarea.select();
@@ -387,29 +387,29 @@ export const HistogramPanel: React.FC = () => {
             </div>
             <div className="statistic-card">
               <div className="statistic-value">
-                {formatValue(histogramData.statistics.q3 - histogramData.statistics.q1, histogramData.type)}
+                {formatValue(
+                  histogramData.statistics.q3 - histogramData.statistics.q1,
+                  histogramData.type
+                )}
               </div>
               <div className="statistic-label">{t('histogram.iqr')}</div>
             </div>
             <div className="statistic-card">
               <div className="statistic-value">
-                {histogramData.statistics.mean > 0 ? 
-                  (histogramData.statistics.std / histogramData.statistics.mean * 100).toFixed(1) + '%' : 
-                  'N/A'
-                }
+                {histogramData.statistics.mean > 0
+                  ? ((histogramData.statistics.std / histogramData.statistics.mean) * 100).toFixed(
+                      1
+                    ) + '%'
+                  : 'N/A'}
               </div>
               <div className="statistic-label">{t('histogram.cv')}</div>
             </div>
             <div className="statistic-card">
-              <div className="statistic-value">
-                {histogramData.statistics.skewness.toFixed(3)}
-              </div>
+              <div className="statistic-value">{histogramData.statistics.skewness.toFixed(3)}</div>
               <div className="statistic-label">{t('histogram.skewness')}</div>
             </div>
             <div className="statistic-card">
-              <div className="statistic-value">
-                {histogramData.statistics.kurtosis.toFixed(3)}
-              </div>
+              <div className="statistic-value">{histogramData.statistics.kurtosis.toFixed(3)}</div>
               <div className="statistic-label">{t('histogram.kurtosis')}</div>
             </div>
           </div>

@@ -112,14 +112,12 @@ export function calculateStatistics(values: number[]): HistogramStatistics {
   const q3 = sorted[q3Index];
 
   // 歪度 (Skewness) - 3次モーメント
-  const skewness = std > 0 ? 
-    values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 3), 0) / total :
-    0;
+  const skewness =
+    std > 0 ? values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 3), 0) / total : 0;
 
   // 尖度 (Kurtosis) - 4次モーメント - 3 (excess kurtosis)
-  const kurtosis = std > 0 ?
-    values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 4), 0) / total - 3 :
-    0;
+  const kurtosis =
+    std > 0 ? values.reduce((sum, val) => sum + Math.pow((val - mean) / std, 4), 0) / total - 3 : 0;
 
   return { mean, median, std, min, max, q1, q3, total, skewness, kurtosis };
 }
@@ -270,8 +268,8 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
     });
 
     const rows = data.bins.map((bin) => {
-      const percentage = data.statistics.total > 0 ? 
-        ((bin.count / data.statistics.total) * 100).toFixed(2) : '0.00';
+      const percentage =
+        data.statistics.total > 0 ? ((bin.count / data.statistics.total) * 100).toFixed(2) : '0.00';
       const row = [
         `${bin.range[0].toFixed(2)}-${bin.range[1].toFixed(2)}`,
         bin.count.toString(),
@@ -290,7 +288,7 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
     // 統計情報を追加
     rows.push([]);
     rows.push(['Statistics']);
-    
+
     // 安全な数値フォーマッティング
     const safeFixed = (value: number, digits: number): string => {
       return isNaN(value) || !isFinite(value) ? 'N/A' : value.toFixed(digits);
@@ -304,11 +302,11 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
     rows.push(['Q1', safeFixed(data.statistics.q1, 2)]);
     rows.push(['Q3', safeFixed(data.statistics.q3, 2)]);
     rows.push(['IQR', safeFixed(data.statistics.q3 - data.statistics.q1, 2)]);
-    
-    const cvValue = data.statistics.mean > 0 ? 
-      ((data.statistics.std / data.statistics.mean) * 100) : NaN;
+
+    const cvValue =
+      data.statistics.mean > 0 ? (data.statistics.std / data.statistics.mean) * 100 : NaN;
     rows.push(['CV (%)', safeFixed(cvValue, 2)]);
-    
+
     rows.push(['Skewness', safeFixed(data.statistics.skewness, 3)]);
     rows.push(['Kurtosis', safeFixed(data.statistics.kurtosis, 3)]);
     rows.push(['Total', data.statistics.total.toString()]);

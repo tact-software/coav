@@ -10,7 +10,8 @@ export const useMenuEvents = (
   onShowStatistics: () => void,
   onShowSettings: () => void,
   onShowComparison?: () => void,
-  onShowHistogram?: () => void
+  onShowHistogram?: () => void,
+  onShowHeatmap?: () => void
 ) => {
   const { zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
   const { showAllCategories, hideAllCategories, clearCocoData } = useAnnotationStore();
@@ -52,6 +53,11 @@ export const useMenuEvents = (
       if (onShowHistogram) {
         unsubscribers.push(await listen('menu-histogram', onShowHistogram));
       }
+
+      // Add heatmap dialog listener if handler provided
+      if (onShowHeatmap) {
+        unsubscribers.push(await listen('menu-heatmap', onShowHeatmap));
+      }
     };
 
     setupListeners();
@@ -69,6 +75,7 @@ export const useMenuEvents = (
     onShowSettings,
     onShowComparison,
     onShowHistogram,
+    onShowHeatmap,
     zoomIn,
     zoomOut,
     resetView,

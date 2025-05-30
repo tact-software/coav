@@ -15,6 +15,7 @@ import ImageSelectionDialog from './components/ImageSelectionDialog';
 import { ComparisonDialog } from './components/ComparisonDialog';
 import { CommonModal } from './components/CommonModal';
 import { HistogramPanel } from './components/HistogramPanel';
+import { HeatmapDialog } from './components/HeatmapDialog';
 import { FilesPanel } from './components/FilesPanel';
 import { ToastContainer } from './components/Toast';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -25,6 +26,7 @@ import {
   useRecentFilesStore,
   useSettingsStore,
   useLoadingStore,
+  useHeatmapStore,
   toast,
 } from './stores';
 import type { RecentFile, TabType } from './stores';
@@ -64,6 +66,7 @@ function App() {
   const [showImageSelection, setShowImageSelection] = useState(false);
   const [showComparisonDialog, setShowComparisonDialog] = useState(false);
   const [showHistogramDialog, setShowHistogramDialog] = useState(false);
+  const { openModal: openHeatmapModal } = useHeatmapStore();
   const [tempCocoData, setTempCocoData] = useState<{
     data: COCOData;
     annotationDir: string;
@@ -582,7 +585,8 @@ function App() {
     handleShowStatistics,
     openSettingsModal,
     () => setShowComparisonDialog(true),
-    () => setShowHistogramDialog(true)
+    () => setShowHistogramDialog(true),
+    openHeatmapModal
   );
 
   // Handle drag and drop
@@ -910,6 +914,8 @@ function App() {
       >
         <HistogramPanel />
       </CommonModal>
+
+      <HeatmapDialog />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <LoadingOverlay

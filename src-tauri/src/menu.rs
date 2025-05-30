@@ -115,6 +115,13 @@ pub fn create_menu(app: &tauri::AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn s
                 )?)
                 .item(&MenuItem::with_id(
                     app,
+                    "heatmap",
+                    "2D Heatmap...",
+                    true,
+                    Some("CmdOrCtrl+Shift+M"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
                     "settings",
                     "Settings...",
                     true,

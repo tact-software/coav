@@ -378,5 +378,27 @@
     "cv": "変動係数",
     "skewness": "歪度",
     "kurtosis": "尖度"
+  },
+  "heatmap": {
+    "title": "2Dヒートマップ",
+    "noData": "アノテーションデータがありません",
+    "copy": "クリップボードにコピー",
+    "settings": "設定",
+    "heatmapType": "ヒートマップタイプ",
+    "widthHeight": "幅 × 高さ",
+    "centerXY": "中心X × Y",
+    "areaAspectRatio": "面積 (bbox) × アスペクト比",
+    "polygonAreaAspectRatio": "面積 (ポリゴン) × アスペクト比",
+    "xBins": "X方向ビン数",
+    "yBins": "Y方向ビン数",
+    "colorScale": "カラースケール",
+    "categoryFilter": "カテゴリフィルタ",
+    "allCategories": "全カテゴリ",
+    "statistics": "統計情報",
+    "totalAnnotations": "総アノテーション数",
+    "range": "範囲",
+    "viewMode": "表示モード",
+    "currentImage": "現在の画像",
+    "allImages": "全画像"
   }
 }

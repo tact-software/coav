@@ -379,5 +379,27 @@
     "cv": "CV (Coefficient of Variation)",
     "skewness": "Skewness",
     "kurtosis": "Kurtosis"
+  },
+  "heatmap": {
+    "title": "2D Heatmap",
+    "noData": "No annotation data available",
+    "copy": "Copy to Clipboard",
+    "settings": "Settings",
+    "heatmapType": "Heatmap Type",
+    "widthHeight": "Width × Height",
+    "centerXY": "Center X × Y",
+    "areaAspectRatio": "Area (bbox) × Aspect Ratio",
+    "polygonAreaAspectRatio": "Area (polygon) × Aspect Ratio",
+    "xBins": "X Bins",
+    "yBins": "Y Bins",
+    "colorScale": "Color Scale",
+    "categoryFilter": "Category Filter",
+    "allCategories": "All Categories",
+    "statistics": "Statistics",
+    "totalAnnotations": "Total Annotations",
+    "range": "Range",
+    "viewMode": "View Mode",
+    "currentImage": "Current Image",
+    "allImages": "All Images"
   }
 }
