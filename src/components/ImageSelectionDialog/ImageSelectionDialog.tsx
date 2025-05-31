@@ -51,7 +51,7 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={t('imageSelection.title')}
-      size="md"
+      size="lg"
       hasBlur={true}
       footer={
         <>

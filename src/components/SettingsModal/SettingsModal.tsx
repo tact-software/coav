@@ -25,6 +25,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         return t('detail.title');
       case 'files':
         return t('files.recentFiles');
+      case 'navigation':
+        return t('navigation.title');
       default:
         return tab;
     }

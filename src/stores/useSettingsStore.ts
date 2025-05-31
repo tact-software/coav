@@ -15,7 +15,7 @@ interface DetailSettings {
   promotedFields: string[]; // Promoted field paths like "option.detection.confidence"
 }
 
-export type TabType = 'control' | 'info' | 'detail' | 'files';
+export type TabType = 'control' | 'info' | 'detail' | 'files' | 'navigation';
 export type PanelSide = 'left' | 'right';
 
 interface PanelLayoutSettings {
@@ -113,7 +113,7 @@ const defaultSettings: Omit<
     promotedFields: [],
   },
   panelLayout: {
-    leftPanelTabs: ['control', 'files'],
+    leftPanelTabs: ['control', 'files', 'navigation'],
     rightPanelTabs: ['info', 'detail'],
     defaultLeftTab: 'control',
     defaultRightTab: 'info',

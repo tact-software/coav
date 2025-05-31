@@ -2,7 +2,7 @@ mod commands;
 mod menu;
 mod models;
 
-use commands::{load_annotations, load_image, sample_generator::generate_sample_data};
+use commands::{load_annotations, load_image, sample_generator::generate_sample_data, scan_folder};
 use menu::create_menu;
 use tauri::{Emitter, Manager};
 
@@ -15,6 +15,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_annotations,
             load_image,
+            scan_folder,
             generate_sample_data
         ])
         .setup(|app| {
