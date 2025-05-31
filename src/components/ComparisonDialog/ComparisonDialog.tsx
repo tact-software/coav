@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { useAnnotationStore } from '../../stores/useAnnotationStore';
+import { useNavigationStore } from '../../stores/useNavigationStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { toast } from '../../stores/useToastStore';
 import { useLoadingStore } from '../../stores/useLoadingStore';
@@ -24,8 +25,10 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     currentImageId,
     isComparing,
     comparisonData: currentComparisonData,
+    originalComparisonData,
     comparisonSettings: currentComparisonSettings,
   } = useAnnotationStore();
+  const { navigationMode } = useNavigationStore();
   const { colors: colorSettings } = useSettingsStore();
   const { setLoading } = useLoadingStore();
 
@@ -61,7 +64,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
             currentComparisonSettings.gtFileId === 'primary' ? 'current_gt' : 'current_pred',
         });
 
-        setComparisonData(currentComparisonData);
+        // Use original comparison data if available, otherwise use current (for backward compatibility)
+        setComparisonData(originalComparisonData || currentComparisonData);
         setSelectedImageId(currentImageId);
         setRoleSelection(
           currentComparisonSettings.gtFileId === 'primary' ? 'current_gt' : 'current_pred'
@@ -132,12 +136,25 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
         setSelectedFile(selected);
         setComparisonData(data);
 
-        // Auto-select first image or keep null for dropdown selection
+        // Handle image selection based on navigation mode
         if (data.images && data.images.length === 1) {
           // Only one image, auto-select it
           setSelectedImageId(data.images[0].id);
+        } else if (navigationMode === 'folder' && currentImageId) {
+          // Folder mode: automatically find corresponding image ID
+          const correspondingImage = data.images.find((img) => img.id === currentImageId);
+          if (correspondingImage) {
+            setSelectedImageId(correspondingImage.id);
+          } else {
+            // No corresponding image found, show error
+            toast.error(
+              t('comparison.imageNotFound'),
+              t('comparison.noCorrespondingImage', { imageId: currentImageId })
+            );
+            setSelectedImageId(null);
+          }
         } else {
-          // Multiple images, user will select from dropdown
+          // Single image mode with multiple images: user will select from dropdown
           setSelectedImageId(null);
         }
 
@@ -160,47 +177,51 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
     console.debug('Starting comparison:', {
       selectedImageId,
+      currentImageId,
+      isComparing,
       comparisonImages: comparisonData.images.length,
       comparisonAnnotations: comparisonData.annotations.length,
     });
 
-    // Filter comparison data to only include annotations for the selected image
-    console.debug('Before filtering:', {
-      selectedImageId,
-      selectedImageIdType: typeof selectedImageId,
-      allAnnotations: comparisonData.annotations.length,
-      annotationImageIds: [...new Set(comparisonData.annotations.map((a) => a.image_id))],
-      annotationImageIdTypes: [
-        ...new Set(comparisonData.annotations.map((a) => typeof a.image_id)),
-      ],
-      matchingAnnotationsStrict: comparisonData.annotations.filter(
-        (ann) => ann.image_id === selectedImageId
-      ).length,
-      matchingAnnotationsLoose: comparisonData.annotations.filter(
-        (ann) => ann.image_id == selectedImageId
-      ).length,
-    });
+    // When changing settings in comparison mode, we should use the full comparison data
+    // Only filter for initial comparison setup
+    const shouldFilterData = !isComparing;
 
-    // If comparing with different image IDs, we need to map the annotations
-    // to match the current image ID for proper comparison
     const targetImageId = currentImageId || selectedImageId;
 
-    const filteredComparisonData: COCOData = {
-      ...comparisonData,
-      // Map annotations to use the target image ID for comparison
-      annotations: comparisonData.annotations
-        .filter((ann) => ann.image_id === selectedImageId)
-        .map((ann) => ({
-          ...ann,
-          image_id: targetImageId, // Use the current image ID for comparison
-        })),
-      images: comparisonData.images
-        .filter((img) => img.id === selectedImageId)
-        .map((img) => ({
-          ...img,
-          id: targetImageId, // Use the current image ID for comparison
-        })),
-    };
+    const filteredComparisonData: COCOData = shouldFilterData
+      ? {
+          ...comparisonData,
+          // Map annotations to use the target image ID for comparison
+          annotations: comparisonData.annotations
+            .filter((ann) => ann.image_id === selectedImageId)
+            .map((ann) => ({
+              ...ann,
+              image_id: targetImageId, // Use the current image ID for comparison
+            })),
+          images: comparisonData.images
+            .filter((img) => img.id === selectedImageId)
+            .map((img) => ({
+              ...img,
+              id: targetImageId, // Use the current image ID for comparison
+            })),
+        }
+      : {
+          // In comparison mode, just update the current image's annotations
+          ...comparisonData,
+          annotations: comparisonData.annotations
+            .filter((ann) => ann.image_id === currentImageId!)
+            .map((ann) => ({
+              ...ann,
+              image_id: currentImageId!,
+            })),
+          images: comparisonData.images
+            .filter((img) => img.id === currentImageId!)
+            .map((img) => ({
+              ...img,
+              id: currentImageId!,
+            })),
+        };
 
     console.debug('After filtering and ID mapping:', {
       originalImageId: selectedImageId,
@@ -231,7 +252,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
     // Use setTimeout to ensure the loading overlay appears before heavy computation
     setTimeout(() => {
-      setStoreComparisonData(filteredComparisonData, settings);
+      setStoreComparisonData(comparisonData, filteredComparisonData, settings);
       setLoading(false);
       onClose();
     }, 100);
@@ -433,8 +454,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           </div>
         </div>
 
-        {/* Image Selection (for multiple images) */}
-        {comparisonData && comparisonData.images.length > 1 && (
+        {/* Image Selection (for multiple images in single mode only) */}
+        {comparisonData && comparisonData.images.length > 1 && navigationMode === 'single' && (
           <div className="comparison-section">
             <h3>{t('comparison.imageSelection')}</h3>
             <div className="image-selection">
@@ -461,6 +482,20 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
                   }
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Show selected image info for folder mode */}
+        {comparisonData && navigationMode === 'folder' && selectedImageId && (
+          <div className="comparison-section">
+            <h3>{t('comparison.selectedImage')}</h3>
+            <div className="selected-image-info">
+              {comparisonData.images.find((img) => img.id === selectedImageId)?.file_name} (ID:{' '}
+              {selectedImageId})
+              <br />
+              {t('comparison.selectedImageAnnotations')}:{' '}
+              {comparisonData.annotations.filter((ann) => ann.image_id === selectedImageId).length}
             </div>
           </div>
         )}

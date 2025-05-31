@@ -20,6 +20,7 @@
     "help": "ヘルプ",
     "openImage": "画像を開く",
     "openAnnotations": "アノテーションを開く",
+    "openFolder": "フォルダを開く",
     "exportAnnotations": "アノテーションをエクスポート",
     "generateSample": "サンプルデータを生成",
     "settings": "設定",
@@ -146,6 +147,8 @@
   "errors": {
     "loadImageFailed": "画像の読み込みに失敗しました",
     "loadAnnotationsFailed": "アノテーションの読み込みに失敗しました",
+    "loadAnnotationFailed": "アノテーションの読み込みに失敗しました",
+    "imageRequiredFirst": "アノテーションを読み込む前に、画像またはフォルダを選択してください",
     "invalidImageFormat": "有効な画像形式であることを確認してください",
     "invalidJsonFormat": "有効なJSON形式であることを確認してください",
     "exportFailed": "エクスポートに失敗しました",
@@ -340,7 +343,9 @@
     "iouMethodDescription": "アノテーション間のIoU計算方法を選択",
     "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。",
     "processing": "比較処理中...",
-    "processingSubMessage": "アノテーションを分析してマッチングを計算しています"
+    "processingSubMessage": "アノテーションを分析してマッチングを計算しています",
+    "imageNotFound": "画像が見つかりません",
+    "noCorrespondingImage": "比較ファイルに対応する画像ID {{imageId}} が見つかりません"
   },
   "histogram": {
     "title": "分布ヒストグラム",
@@ -400,5 +405,33 @@
     "viewMode": "表示モード",
     "currentImage": "現在の画像",
     "allImages": "全画像"
+  },
+  "navigation": {
+    "title": "ナビゲーション",
+    "selectFolder": "フォルダを選択",
+    "needFolder": "ファイルタブでフォルダを選択してください",
+    "needAnnotation": "ファイルタブでアノテーションを読み込んでください",
+    "needFolderForNavigation": "ナビゲーション機能を使用するには、ファイルタブでフォルダを選択してください",
+    "noAnnotation": "先にアノテーションファイルを読み込んでください",
+    "noImages": "画像が見つかりません。フォルダを選択して画像を閲覧してください。",
+    "noImagesInFolder": "選択したフォルダ内にアノテーションに対応する画像が見つかりません",
+    "scanning": "フォルダをスキャン中...",
+    "previous": "前へ",
+    "next": "次へ",
+    "first": "最初へ",
+    "last": "最後へ",
+    "play": "再生",
+    "pause": "一時停止",
+    "speed": "速度",
+    "closeFolder": "フォルダを閉じる",
+    "noFolderSelected": "フォルダが選択されていません",
+    "singleMode": "単一画像モード",
+    "folderMode": "フォルダモード",
+    "loadingImage": "画像を読み込み中",
+    "loading": "読み込み中",
+    "jumpToId": "IDジャンプ",
+    "invalidIdFormat": "半角数字のみ入力してください",
+    "idNotFound": "指定されたIDが見つかりません",
+    "imageNotExists": "画像ファイルが存在しません"
   }
 }

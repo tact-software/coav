@@ -20,6 +20,7 @@
     "help": "Help",
     "openImage": "Open Image",
     "openAnnotations": "Open Annotations",
+    "openFolder": "Open Folder",
     "exportAnnotations": "Export Annotations",
     "generateSample": "Generate Sample Data",
     "settings": "Settings",
@@ -146,6 +147,8 @@
   "errors": {
     "loadImageFailed": "Failed to load image",
     "loadAnnotationsFailed": "Failed to load annotations",
+    "loadAnnotationFailed": "Failed to load annotation",
+    "imageRequiredFirst": "Please load an image or select a folder before loading annotations",
     "invalidImageFormat": "Please check if the file is a valid image format",
     "invalidJsonFormat": "Please check if the file is a valid JSON format",
     "exportFailed": "Failed to export",
@@ -341,7 +344,9 @@
     "iouMethodDescription": "Select how to calculate IoU between annotations",
     "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance.",
     "processing": "Processing comparison...",
-    "processingSubMessage": "Analyzing annotations and calculating matches"
+    "processingSubMessage": "Analyzing annotations and calculating matches",
+    "imageNotFound": "Image not found",
+    "noCorrespondingImage": "No corresponding image ID {{imageId}} found in comparison file"
   },
   "histogram": {
     "title": "Distribution Histogram",
@@ -401,5 +406,33 @@
     "viewMode": "View Mode",
     "currentImage": "Current Image",
     "allImages": "All Images"
+  },
+  "navigation": {
+    "title": "Navigation",
+    "selectFolder": "Select Folder",
+    "needFolder": "Please select a folder in the Files tab",
+    "needAnnotation": "Please load annotations in the Files tab",
+    "needFolderForNavigation": "To use navigation features, please select a folder in the Files tab",
+    "noAnnotation": "Please load an annotation file first",
+    "noImages": "No images found. Select a folder to browse images.",
+    "noImagesInFolder": "No images matching the annotations found in the selected folder",
+    "scanning": "Scanning folder...",
+    "previous": "Previous",
+    "next": "Next",
+    "first": "First",
+    "last": "Last",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Speed",
+    "closeFolder": "Close folder",
+    "noFolderSelected": "No folder selected",
+    "singleMode": "Single Image Mode",
+    "folderMode": "Folder Mode",
+    "loadingImage": "Loading Image",
+    "loading": "Loading",
+    "jumpToId": "Jump to ID",
+    "invalidIdFormat": "Please enter half-width digits only",
+    "idNotFound": "The specified ID was not found",
+    "imageNotExists": "Image file does not exist"
   }
 }

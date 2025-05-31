@@ -6,6 +6,7 @@ export { useSettingsStore, generateCategoryColor } from './useSettingsStore';
 export { useLoadingStore } from './useLoadingStore';
 export { useHistogramStore } from './useHistogramStore';
 export { useHeatmapStore } from './useHeatmapStore';
+export { useNavigationStore } from './useNavigationStore';
 export type { RecentFile } from './useRecentFilesStore';
 export type { Language, Theme, TabType } from './useSettingsStore';
 export type {

@@ -21,6 +21,7 @@ interface AnnotationState {
 
   // Comparison state
   comparisonData: COCOData | null;
+  originalComparisonData: COCOData | null; // Store original unfiltered data
   isComparing: boolean;
   comparisonSettings: ComparisonSettings | null;
   diffResults: Map<number, DiffResult>;
@@ -59,12 +60,17 @@ interface AnnotationState {
   getAnnotationsForCurrentImage: () => COCOAnnotation[];
 
   // Comparison actions
-  setComparisonData: (data: COCOData, settings: ComparisonSettings) => void;
+  setComparisonData: (
+    originalData: COCOData,
+    filteredData: COCOData,
+    settings: ComparisonSettings
+  ) => void;
   clearComparison: () => void;
   calculateDiff: () => void;
   toggleDiffFilter: (filter: DiffFilter) => void;
   setDiffFilters: (filters: Set<DiffFilter>) => void;
   updateComparisonSettings: (settings: ComparisonSettings) => void;
+  updateComparisonForCurrentImage: () => void;
 }
 
 export const useAnnotationStore = create<AnnotationState>((set, get) => ({
@@ -80,6 +86,7 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
   currentSearchIndex: -1,
   shouldCenterOnSelection: false,
   comparisonData: null,
+  originalComparisonData: null,
   isComparing: false,
   comparisonSettings: null,
   diffResults: new Map(),
@@ -276,6 +283,8 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
 
   setCurrentImageId: (id) => {
     set({ currentImageId: id });
+    // If in comparison mode, update comparison annotations for the new image
+    get().updateComparisonForCurrentImage();
   },
 
   getAnnotationsForCurrentImage: () => {
@@ -286,9 +295,10 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
   },
 
   // Comparison actions
-  setComparisonData: (data, settings) => {
+  setComparisonData: (originalData, filteredData, settings) => {
     set({
-      comparisonData: data,
+      originalComparisonData: originalData,
+      comparisonData: filteredData,
       comparisonSettings: settings,
       isComparing: true,
       diffFilters: new Set(['tp-gt', 'tp-pred', 'fp', 'fn']), // Show all result types by default
@@ -314,6 +324,7 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
 
     set({
       comparisonData: null,
+      originalComparisonData: null,
       comparisonSettings: null,
       isComparing: false,
       diffResults: new Map(),
@@ -384,4 +395,109 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
     set({ comparisonSettings: settings });
     get().calculateDiff();
   },
+
+  updateComparisonForCurrentImage: (() => {
+    let lastToastImageId: number | null = null;
+    let toastTimeout: NodeJS.Timeout | null = null;
+
+    return () => {
+      const state = get();
+      if (
+        !state.isComparing ||
+        !state.originalComparisonData ||
+        !state.comparisonSettings ||
+        !state.currentImageId
+      ) {
+        return;
+      }
+
+      // Check if there are annotations for the current image ID in ORIGINAL comparison data
+      const correspondingAnnotations = state.originalComparisonData.annotations.filter(
+        (ann) => ann.image_id === state.currentImageId
+      );
+
+      console.debug('updateComparisonForCurrentImage:', {
+        currentImageId: state.currentImageId,
+        originalComparisonDataHasImages: state.originalComparisonData.images.length,
+        originalComparisonDataHasAnnotations: state.originalComparisonData.annotations.length,
+        availableImageIds: [
+          ...new Set(state.originalComparisonData.annotations.map((ann) => ann.image_id)),
+        ],
+        correspondingAnnotationsCount: correspondingAnnotations.length,
+      });
+
+      if (correspondingAnnotations.length === 0) {
+        // No corresponding annotations found, show empty comparison data
+        console.warn(
+          'No corresponding annotations found in comparison data for image ID:',
+          state.currentImageId
+        );
+
+        // Prevent duplicate toasts for the same image ID
+        if (lastToastImageId !== state.currentImageId) {
+          lastToastImageId = state.currentImageId;
+
+          // Clear any pending toast
+          if (toastTimeout) {
+            clearTimeout(toastTimeout);
+          }
+
+          // Import toast to show info
+          import('../stores/useToastStore').then(({ toast }) => {
+            toast.info(
+              '比較情報',
+              `画像ID ${state.currentImageId} にはペアアノテーションがありません`
+            );
+          });
+
+          // Reset toast ID after a delay
+          toastTimeout = setTimeout(() => {
+            lastToastImageId = null;
+          }, 1000);
+        }
+
+        // Set empty comparison data but keep comparison mode active
+        const emptyComparisonData: COCOData = {
+          ...state.originalComparisonData,
+          annotations: [],
+          images: state.originalComparisonData.images.filter(
+            (img) => img.id === state.currentImageId
+          ),
+        };
+
+        set({ comparisonData: emptyComparisonData });
+        get().calculateDiff();
+        return;
+      } else {
+        // Reset last toast ID when annotations are found
+        lastToastImageId = null;
+      }
+
+      // Find corresponding image metadata (optional - may not exist in images array)
+      const correspondingImage = state.originalComparisonData.images.find(
+        (img) => img.id === state.currentImageId
+      );
+
+      // Filter comparison data to only include annotations for the current image
+      const filteredComparisonData: COCOData = {
+        ...state.originalComparisonData,
+        annotations: correspondingAnnotations.map((ann) => ({
+          ...ann,
+          image_id: state.currentImageId!, // Use the current image ID for comparison
+        })),
+        images: correspondingImage
+          ? [
+              {
+                ...correspondingImage,
+                id: state.currentImageId!, // Use the current image ID for comparison
+              },
+            ]
+          : state.originalComparisonData.images.filter((img) => img.id === state.currentImageId),
+      };
+
+      // Update comparison data and recalculate diff
+      set({ comparisonData: filteredComparisonData });
+      get().calculateDiff();
+    };
+  })(),
 }));

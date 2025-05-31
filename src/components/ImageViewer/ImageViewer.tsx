@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { useTranslation } from 'react-i18next';
-import { useImageStore, useAnnotationStore } from '../../stores';
+import { useImageStore, useAnnotationStore, useNavigationStore } from '../../stores';
 import AnnotationLayer from '../AnnotationLayer';
 import './ImageViewer.css';
 
@@ -12,6 +12,7 @@ const ImageViewer: React.FC = () => {
   const stageRef = useRef<Konva.Stage>(null);
   const [containerSize, setLocalContainerSize] = useState({ width: 0, height: 0 });
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [hasAutoFitted, setHasAutoFitted] = useState(false);
 
   const {
     imageData,
@@ -24,10 +25,13 @@ const ImageViewer: React.FC = () => {
     setContainerSize,
     isLoading,
     error,
+    preserveViewState,
   } = useImageStore();
 
   const { cocoData, selectedAnnotationIds, shouldCenterOnSelection, currentImageId, isComparing } =
     useAnnotationStore();
+
+  const { navigationMode } = useNavigationStore();
 
   // Calculate viewport for culling
   const getViewport = useCallback(() => {
@@ -83,20 +87,43 @@ const ImageViewer: React.FC = () => {
         setImage(img);
       };
       img.src = imageData;
+      // Only reset auto-fit flag in single mode (not in folder navigation mode)
+      if (navigationMode === 'single') {
+        setHasAutoFitted(false);
+      }
     } else {
       setImage(null);
+      setHasAutoFitted(false); // Reset auto-fit flag when image is cleared
     }
-  }, [imageData]);
+  }, [imageData, navigationMode]);
 
-  // Auto-fit image when both image and container size are available
+  // Auto-fit image when both image and container size are available (first time only or in single mode)
   useEffect(() => {
     if (image && containerSize.width > 0 && containerSize.height > 0) {
-      // Small delay to ensure container size is properly set in store
-      setTimeout(() => {
-        fitToWindow();
-      }, 0);
+      // Don't auto-fit if preserveViewState is true
+      if (preserveViewState) {
+        return;
+      }
+
+      // In folder mode, only auto-fit if it's the first time for this session
+      // In single mode, always auto-fit new images
+      if (navigationMode === 'single' || !hasAutoFitted) {
+        // Small delay to ensure container size is properly set in store
+        setTimeout(() => {
+          fitToWindow();
+          setHasAutoFitted(true);
+        }, 0);
+      }
     }
-  }, [image, containerSize.width, containerSize.height, fitToWindow]);
+  }, [
+    image,
+    containerSize.width,
+    containerSize.height,
+    fitToWindow,
+    hasAutoFitted,
+    navigationMode,
+    preserveViewState,
+  ]);
 
   // Auto-scroll to selected annotation only when flagged (e.g., from search)
   useEffect(() => {
