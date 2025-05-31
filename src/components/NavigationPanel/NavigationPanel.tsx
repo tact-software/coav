@@ -101,9 +101,12 @@ export const NavigationPanel: React.FC = () => {
 
               // Update current image ID in annotation store for folder mode
               if (currentAnnotation && navigationMode === 'folder') {
-                setCurrentImageId(image.id);
-                // Clear selected annotations when switching images
-                clearSelection();
+                // Only update if ID actually changed
+                if (currentAnnotation.currentImageId !== image.id) {
+                  setCurrentImageId(image.id);
+                  // Clear selected annotations when switching images
+                  clearSelection();
+                }
               }
 
               // End loading after image is fully loaded and displayed
