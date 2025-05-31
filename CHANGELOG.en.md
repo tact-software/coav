@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Multi-Image Navigation**
+  - **Navigation Panel**: New panel for easy navigation between images in a folder
+  - **Image List Display**: Image list and status indicators
+  - **ID Jump Feature**: Direct navigation to specific image by entering image ID
+  - **Smart Navigation**: Automatically skip non-existent images
+  - **View State Preservation**: Maintain zoom and pan state when switching images
+  - **Comparison Mode Support**: Navigate between images while comparing, with dynamic pair annotation updates
+  - **Keyboard Shortcuts**: Arrow keys for previous/next image navigation
 - **Annotation Statistical Analysis**
   - **Histogram Analysis**: 5 distribution types (width, height, area, polygon area, aspect ratio)
   - **Heatmap Analysis**: 4 2D distributions (width×height, center coordinates, area×aspect ratio, etc.)
@@ -45,12 +53,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved zoom buttons to zoom relative to viewport center
 - Auto-adjust view mode for single image datasets in statistics dialog
+- Enhanced comparison mode data management with original data preservation
+- Updated panel settings UI to place NavigationPanel as an independent tab
 
 ### Fixed
 
 - Fixed infinite loop issue after category mapping
 - Fixed comparison results not showing for single image datasets
 - Enabled comparison between datasets with different image IDs
+- Fixed ReferenceError during NavigationPanel initialization
+- Fixed zoom/pan state reset when switching images
+- Fixed annotation data loss when changing comparison settings
+- Prevented unnecessary image ID reset when switching tabs
 
 ### Removed
 
