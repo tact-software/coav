@@ -344,7 +344,9 @@
     "iouMethodDescription": "Select how to calculate IoU between annotations",
     "polygonIoUWarning": "Polygon IoU uses a grid-based approximation algorithm, not exact area calculation. The values are approximations balanced for accuracy and performance.",
     "processing": "Processing comparison...",
-    "processingSubMessage": "Analyzing annotations and calculating matches"
+    "processingSubMessage": "Analyzing annotations and calculating matches",
+    "imageNotFound": "Image not found",
+    "noCorrespondingImage": "No corresponding image ID {{imageId}} found in comparison file"
   },
   "histogram": {
     "title": "Distribution Histogram",

@@ -343,7 +343,9 @@
     "iouMethodDescription": "アノテーション間のIoU計算方法を選択",
     "polygonIoUWarning": "ポリゴンIoUはグリッドベースの近似アルゴリズムを使用するため、正確な面積計算ではありません。精度と性能のバランスを考慮した近似値となります。",
     "processing": "比較処理中...",
-    "processingSubMessage": "アノテーションを分析してマッチングを計算しています"
+    "processingSubMessage": "アノテーションを分析してマッチングを計算しています",
+    "imageNotFound": "画像が見つかりません",
+    "noCorrespondingImage": "比較ファイルに対応する画像ID {{imageId}} が見つかりません"
   },
   "histogram": {
     "title": "分布ヒストグラム",
