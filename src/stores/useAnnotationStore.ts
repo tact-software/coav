@@ -60,7 +60,11 @@ interface AnnotationState {
   getAnnotationsForCurrentImage: () => COCOAnnotation[];
 
   // Comparison actions
-  setComparisonData: (originalData: COCOData, filteredData: COCOData, settings: ComparisonSettings) => void;
+  setComparisonData: (
+    originalData: COCOData,
+    filteredData: COCOData,
+    settings: ComparisonSettings
+  ) => void;
   clearComparison: () => void;
   calculateDiff: () => void;
   toggleDiffFilter: (filter: DiffFilter) => void;
@@ -398,34 +402,46 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
 
     return () => {
       const state = get();
-      if (!state.isComparing || !state.originalComparisonData || !state.comparisonSettings || !state.currentImageId) {
+      if (
+        !state.isComparing ||
+        !state.originalComparisonData ||
+        !state.comparisonSettings ||
+        !state.currentImageId
+      ) {
         return;
       }
 
       // Check if there are annotations for the current image ID in ORIGINAL comparison data
-      const correspondingAnnotations = state.originalComparisonData.annotations.filter(ann => ann.image_id === state.currentImageId);
-      
+      const correspondingAnnotations = state.originalComparisonData.annotations.filter(
+        (ann) => ann.image_id === state.currentImageId
+      );
+
       console.debug('updateComparisonForCurrentImage:', {
         currentImageId: state.currentImageId,
         originalComparisonDataHasImages: state.originalComparisonData.images.length,
         originalComparisonDataHasAnnotations: state.originalComparisonData.annotations.length,
-        availableImageIds: [...new Set(state.originalComparisonData.annotations.map(ann => ann.image_id))],
-        correspondingAnnotationsCount: correspondingAnnotations.length
+        availableImageIds: [
+          ...new Set(state.originalComparisonData.annotations.map((ann) => ann.image_id)),
+        ],
+        correspondingAnnotationsCount: correspondingAnnotations.length,
       });
-      
+
       if (correspondingAnnotations.length === 0) {
         // No corresponding annotations found, show empty comparison data
-        console.warn('No corresponding annotations found in comparison data for image ID:', state.currentImageId);
-        
+        console.warn(
+          'No corresponding annotations found in comparison data for image ID:',
+          state.currentImageId
+        );
+
         // Prevent duplicate toasts for the same image ID
         if (lastToastImageId !== state.currentImageId) {
           lastToastImageId = state.currentImageId;
-          
+
           // Clear any pending toast
           if (toastTimeout) {
             clearTimeout(toastTimeout);
           }
-          
+
           // Import toast to show info
           import('../stores/useToastStore').then(({ toast }) => {
             toast.info(
@@ -433,20 +449,22 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
               `画像ID ${state.currentImageId} にはペアアノテーションがありません`
             );
           });
-          
+
           // Reset toast ID after a delay
           toastTimeout = setTimeout(() => {
             lastToastImageId = null;
           }, 1000);
         }
-        
+
         // Set empty comparison data but keep comparison mode active
         const emptyComparisonData: COCOData = {
           ...state.originalComparisonData,
           annotations: [],
-          images: state.originalComparisonData.images.filter((img) => img.id === state.currentImageId),
+          images: state.originalComparisonData.images.filter(
+            (img) => img.id === state.currentImageId
+          ),
         };
-        
+
         set({ comparisonData: emptyComparisonData });
         get().calculateDiff();
         return;
@@ -456,7 +474,9 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
       }
 
       // Find corresponding image metadata (optional - may not exist in images array)
-      const correspondingImage = state.originalComparisonData.images.find(img => img.id === state.currentImageId);
+      const correspondingImage = state.originalComparisonData.images.find(
+        (img) => img.id === state.currentImageId
+      );
 
       // Filter comparison data to only include annotations for the current image
       const filteredComparisonData: COCOData = {
@@ -465,10 +485,14 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
           ...ann,
           image_id: state.currentImageId!, // Use the current image ID for comparison
         })),
-        images: correspondingImage ? [{
-          ...correspondingImage,
-          id: state.currentImageId!, // Use the current image ID for comparison
-        }] : state.originalComparisonData.images.filter((img) => img.id === state.currentImageId),
+        images: correspondingImage
+          ? [
+              {
+                ...correspondingImage,
+                id: state.currentImageId!, // Use the current image ID for comparison
+              },
+            ]
+          : state.originalComparisonData.images.filter((img) => img.id === state.currentImageId),
       };
 
       // Update comparison data and recalculate diff

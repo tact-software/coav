@@ -142,7 +142,7 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           setSelectedImageId(data.images[0].id);
         } else if (navigationMode === 'folder' && currentImageId) {
           // Folder mode: automatically find corresponding image ID
-          const correspondingImage = data.images.find(img => img.id === currentImageId);
+          const correspondingImage = data.images.find((img) => img.id === currentImageId);
           if (correspondingImage) {
             setSelectedImageId(correspondingImage.id);
           } else {
@@ -186,40 +186,42 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     // When changing settings in comparison mode, we should use the full comparison data
     // Only filter for initial comparison setup
     const shouldFilterData = !isComparing;
-    
+
     const targetImageId = currentImageId || selectedImageId;
 
-    const filteredComparisonData: COCOData = shouldFilterData ? {
-      ...comparisonData,
-      // Map annotations to use the target image ID for comparison
-      annotations: comparisonData.annotations
-        .filter((ann) => ann.image_id === selectedImageId)
-        .map((ann) => ({
-          ...ann,
-          image_id: targetImageId, // Use the current image ID for comparison
-        })),
-      images: comparisonData.images
-        .filter((img) => img.id === selectedImageId)
-        .map((img) => ({
-          ...img,
-          id: targetImageId, // Use the current image ID for comparison
-        })),
-    } : {
-      // In comparison mode, just update the current image's annotations
-      ...comparisonData,
-      annotations: comparisonData.annotations
-        .filter((ann) => ann.image_id === currentImageId!)
-        .map((ann) => ({
-          ...ann,
-          image_id: currentImageId!,
-        })),
-      images: comparisonData.images
-        .filter((img) => img.id === currentImageId!)
-        .map((img) => ({
-          ...img,
-          id: currentImageId!,
-        })),
-    };
+    const filteredComparisonData: COCOData = shouldFilterData
+      ? {
+          ...comparisonData,
+          // Map annotations to use the target image ID for comparison
+          annotations: comparisonData.annotations
+            .filter((ann) => ann.image_id === selectedImageId)
+            .map((ann) => ({
+              ...ann,
+              image_id: targetImageId, // Use the current image ID for comparison
+            })),
+          images: comparisonData.images
+            .filter((img) => img.id === selectedImageId)
+            .map((img) => ({
+              ...img,
+              id: targetImageId, // Use the current image ID for comparison
+            })),
+        }
+      : {
+          // In comparison mode, just update the current image's annotations
+          ...comparisonData,
+          annotations: comparisonData.annotations
+            .filter((ann) => ann.image_id === currentImageId!)
+            .map((ann) => ({
+              ...ann,
+              image_id: currentImageId!,
+            })),
+          images: comparisonData.images
+            .filter((img) => img.id === currentImageId!)
+            .map((img) => ({
+              ...img,
+              id: currentImageId!,
+            })),
+        };
 
     console.debug('After filtering and ID mapping:', {
       originalImageId: selectedImageId,
@@ -489,7 +491,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
           <div className="comparison-section">
             <h3>{t('comparison.selectedImage')}</h3>
             <div className="selected-image-info">
-              {comparisonData.images.find(img => img.id === selectedImageId)?.file_name} (ID: {selectedImageId})
+              {comparisonData.images.find((img) => img.id === selectedImageId)?.file_name} (ID:{' '}
+              {selectedImageId})
               <br />
               {t('comparison.selectedImageAnnotations')}:{' '}
               {comparisonData.annotations.filter((ann) => ann.image_id === selectedImageId).length}
