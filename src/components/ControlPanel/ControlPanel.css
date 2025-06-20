@@ -305,3 +305,49 @@
   text-transform: uppercase;
   font-weight: 500;
 }
+
+/* Comparison section */
+.comparison-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.comparison-button .icon {
+  font-size: 1.2rem;
+}
+
+.comparison-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.comparison-status {
+  padding: 8px 12px;
+  background: var(--color-info-bg, #e3f2fd);
+  color: var(--color-info-text, #1565c0);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.comparison-info {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-info-bg, #e3f2fd);
+  color: var(--color-info-text, #1565c0);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.comparison-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}

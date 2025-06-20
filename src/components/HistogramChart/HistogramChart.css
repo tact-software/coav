@@ -1,0 +1,100 @@
+.histogram-chart {
+  width: 100%;
+  padding: var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-primary);
+}
+
+.histogram-tooltip {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.tooltip-header {
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-primary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.tooltip-content {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* Statistics Section */
+.statistics-section {
+  margin-top: var(--spacing-2xl);
+}
+
+.statistics-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Statistics Grid */
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Statistic Card */
+.statistic-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.statistic-card:hover {
+  border-color: var(--color-brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.statistic-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.statistic-label {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .statistics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .statistic-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .histogram-chart {
+    background: var(--color-bg-tertiary);
+  }
+
+  .statistic-card {
+    background: var(--color-bg-tertiary);
+  }
+
+  .histogram-tooltip {
+    background: var(--color-bg-tertiary);
+  }
+}

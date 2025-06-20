@@ -7,19 +7,28 @@ import './styles/themes.css';
 import ImageViewer from './components/ImageViewer';
 import ControlPanel from './components/ControlPanel';
 import InfoPanel from './components/InfoPanel';
+import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SampleGeneratorDialog from './components/SampleGeneratorDialog';
 import StatisticsDialog from './components/StatisticsDialog';
-import AnnotationDetailPanel from './components/AnnotationDetailPanel';
 import SettingsModal from './components/SettingsModal';
 import ImageSelectionDialog from './components/ImageSelectionDialog';
+import { ComparisonDialog } from './components/ComparisonDialog';
+import { CommonModal } from './components/CommonModal';
+import { HistogramPanel } from './components/HistogramPanel';
+import { HeatmapDialog } from './components/HeatmapDialog';
 import { FilesPanel } from './components/FilesPanel';
+import { NavigationPanel } from './components/NavigationPanel';
 import { ToastContainer } from './components/Toast';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import {
   useAnnotationStore,
   useImageStore,
   useToastStore,
   useRecentFilesStore,
   useSettingsStore,
+  useLoadingStore,
+  useHeatmapStore,
+  useNavigationStore,
   toast,
 } from './stores';
 import type { RecentFile, TabType } from './stores';
@@ -31,7 +40,8 @@ import { useTranslation } from 'react-i18next';
 
 function App() {
   const { t } = useTranslation();
-  const { cocoData, setCocoData, clearCocoData, setCurrentImageId } = useAnnotationStore();
+  const { cocoData, setCocoData, clearCocoData, setCurrentImageId, isComparing, clearComparison } =
+    useAnnotationStore();
   const {
     setImagePath,
     setImageData,
@@ -47,14 +57,37 @@ function App() {
   const { addRecentFile } = useRecentFilesStore();
   const { isSettingsModalOpen, openSettingsModal, closeSettingsModal, panelLayout } =
     useSettingsStore();
-  const [activeLeftTab, setActiveLeftTab] = useState<string>(panelLayout.defaultLeftTab);
-  const [activeRightTab, setActiveRightTab] = useState<string>(panelLayout.defaultRightTab);
+  const { selectedFolderPath, navigationMode } = useNavigationStore();
+  const { isLoading, message, subMessage, progress } = useLoadingStore();
+  const { imageData } = useImageStore();
+
+  // Check if images are available (either single image or folder)
+  const hasImagesAvailable =
+    imageData || (navigationMode === 'folder' && selectedFolderPath !== null);
+
+  const [activeLeftTab, setActiveLeftTab] = useState<string>(() => {
+    // デフォルトタブが実際に左パネルに存在するかチェック
+    const defaultTab = panelLayout.defaultLeftTab;
+    return panelLayout.leftPanelTabs.includes(defaultTab as TabType)
+      ? defaultTab
+      : panelLayout.leftPanelTabs[0] || 'control';
+  });
+  const [activeRightTab, setActiveRightTab] = useState<string>(() => {
+    // デフォルトタブが実際に右パネルに存在するかチェック
+    const defaultTab = panelLayout.defaultRightTab;
+    return panelLayout.rightPanelTabs.includes(defaultTab as TabType)
+      ? defaultTab
+      : panelLayout.rightPanelTabs[0] || 'info';
+  });
   const prevPanelLayoutRef = useRef(panelLayout);
   const [unifiedPanelVisible, setUnifiedPanelVisible] = useState(false);
   const [activeUnifiedTab, setActiveUnifiedTab] = useState<string>('control');
   const [showSampleGenerator, setShowSampleGenerator] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showImageSelection, setShowImageSelection] = useState(false);
+  const [showComparisonDialog, setShowComparisonDialog] = useState(false);
+  const [showHistogramDialog, setShowHistogramDialog] = useState(false);
+  const { openModal: openHeatmapModal } = useHeatmapStore();
   const [tempCocoData, setTempCocoData] = useState<{
     data: COCOData;
     annotationDir: string;
@@ -64,7 +97,7 @@ function App() {
   const renderTabContent = (tab: string) => {
     switch (tab) {
       case 'control':
-        return <ControlPanel />;
+        return <ControlPanel onOpenComparisonDialog={() => setShowComparisonDialog(true)} />;
       case 'info':
         return <InfoPanel />;
       case 'detail':
@@ -74,9 +107,12 @@ function App() {
           <FilesPanel
             onOpenImage={handleOpenImage}
             onOpenAnnotations={handleOpenAnnotations}
+            onOpenFolder={handleOpenFolder}
             onFileSelect={handleRecentFileSelect}
           />
         );
+      case 'navigation':
+        return <NavigationPanel />;
       default:
         return null;
     }
@@ -146,6 +182,21 @@ function App() {
             <polyline points="10 9 9 9 8 9" />
           </svg>
         );
+      case 'navigation':
+        return (
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M3 3v18h18" />
+            <polyline points="9 9 12 6 15 9" />
+            <path d="M12 6v13" />
+          </svg>
+        );
       default:
         return null;
     }
@@ -162,6 +213,8 @@ function App() {
         return t('detail.title');
       case 'files':
         return t('files.recentFiles');
+      case 'navigation':
+        return t('navigation.title');
       default:
         return '';
     }
@@ -268,6 +321,15 @@ function App() {
 
       const imagePath = selected as string;
 
+      // Reset to single mode when opening a single image
+      const { resetToSingleMode } = useNavigationStore.getState();
+
+      // Use setTimeout to avoid hook execution order issues
+      setTimeout(() => {
+        clearCocoData();
+        resetToSingleMode();
+      }, 0);
+
       const imageBytes = await invoke<number[]>('load_image', { filePath: imagePath });
       const uint8Array = new Uint8Array(imageBytes);
       const blob = new Blob([uint8Array]);
@@ -277,8 +339,6 @@ function App() {
       img.onload = () => {
         setImagePath(imagePath);
         setImageData(dataUrl, { width: img.width, height: img.height });
-        // Clear annotations when loading a new image
-        clearCocoData();
         // Add to recent files
         addRecentFile({
           path: imagePath,
@@ -304,6 +364,12 @@ function App() {
   }, [setImagePath, setImageData, setLoading, setError, clearCocoData, addRecentFile]);
 
   const handleOpenAnnotations = useCallback(async () => {
+    // Check if images are available
+    if (!hasImagesAvailable) {
+      toast.error(t('errors.loadAnnotationFailed'), t('errors.imageRequiredFirst'));
+      return;
+    }
+
     try {
       const selected = await open({
         multiple: false,
@@ -332,15 +398,23 @@ function App() {
 
       // Check if there are multiple images
       if (data.images && data.images.length > 1) {
-        // Store data temporarily but don't set it in the store yet
-        setTempCocoData({ data, annotationDir });
-        // Dialog will be shown by useEffect when tempCocoData is set
+        // フォルダモード（ナビゲーション有効）の場合は直接セット
+        if (navigationMode === 'folder') {
+          // フォルダ + 複数画像アノテーション → そのまま開く（ナビゲーションモード）
+          setCocoData(data);
+          // 最初の画像IDをセット
+          setCurrentImageId(data.images[0].id);
+        } else {
+          // 画像モード（単一画像）の場合は画像選択ダイアログ
+          // 画像 + 複数画像アノテーション → 画像ID選択ダイアログ
+          setTempCocoData({ data, annotationDir });
+        }
       } else if (data.images && data.images.length === 1) {
-        // Single image, set it immediately
+        // 単一画像、そのまま開く
         setCocoData(data);
         setCurrentImageId(data.images[0].id);
       } else {
-        // No images, just set the data
+        // 画像なし、データのみセット
         setCocoData(data);
       }
 
@@ -365,11 +439,66 @@ function App() {
       setError(errorMessage);
       toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
     }
-  }, [setCocoData, setCurrentImageId, setError, addRecentFile, t]);
+  }, [hasImagesAvailable, setCocoData, setCurrentImageId, setError, addRecentFile, t]);
 
   const handleGenerateSample = useCallback(() => {
     setShowSampleGenerator(true);
   }, []);
+
+  const handleOpenFolder = useCallback(async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: t('navigation.selectFolder'),
+      });
+
+      // ユーザーがキャンセルした場合
+      if (!selected) {
+        return; // エラーではないので、何もしない
+      }
+
+      if (selected) {
+        try {
+          // Clear annotations immediately when changing folder
+          clearCocoData();
+
+          // Store folder path in navigation store first
+          const { setSelectedFolderPath, clearImageList } = useNavigationStore.getState();
+
+          // Clear other state after a microtask to avoid hook issues
+          setTimeout(() => {
+            // Clear images and image list
+            const { clearImage } = useImageStore.getState();
+            clearImage();
+            clearImageList();
+
+            // Set the new folder path after clearing
+            setSelectedFolderPath(selected as string);
+          }, 0);
+
+          toast.success(
+            'フォルダを選択しました',
+            'アノテーションを読み込むとナビゲーション機能が利用可能になります'
+          );
+        } catch (stateError) {
+          console.error('Error updating state after folder selection:', stateError);
+          toast.error(
+            'フォルダの設定中にエラーが発生しました',
+            stateError instanceof Error ? stateError.message : 'Unknown error'
+          );
+        }
+      }
+      // キャンセルした場合は何もしない（エラーではない）
+    } catch (error) {
+      // ダイアログ表示時のエラーのみキャッチ
+      console.error('Failed to open folder dialog:', error);
+      toast.error(
+        'フォルダ選択ダイアログの表示に失敗しました',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }, [t, clearCocoData]);
 
   const handleExportAnnotations = useCallback(() => {
     const { cocoData } = useAnnotationStore.getState();
@@ -435,6 +564,16 @@ function App() {
         // Reset dialog state when loading new image
         setShowImageSelection(false);
         setTempCocoData(null);
+
+        // Reset to single mode when loading a single image
+        const { resetToSingleMode } = useNavigationStore.getState();
+
+        // Use setTimeout to avoid hook execution order issues
+        setTimeout(() => {
+          clearCocoData();
+          resetToSingleMode();
+        }, 0);
+
         const imageBytes = await invoke<number[]>('load_image', { filePath: imagePath });
         const uint8Array = new Uint8Array(imageBytes);
         const blob = new Blob([uint8Array]);
@@ -445,6 +584,11 @@ function App() {
           setImagePath(imagePath);
           setImageData(dataUrl, { width: img.width, height: img.height });
           clearCocoData();
+
+          // Exit comparison mode if active
+          if (isComparing) {
+            clearComparison();
+          }
           // Add to recent files
           addRecentFile({
             path: imagePath,
@@ -468,12 +612,27 @@ function App() {
         toast.error(t('errors.loadImageFailed'), errorMessage);
       }
     },
-    [setImagePath, setImageData, setLoading, setError, clearCocoData, addRecentFile]
+    [
+      setImagePath,
+      setImageData,
+      setLoading,
+      setError,
+      clearCocoData,
+      addRecentFile,
+      isComparing,
+      clearComparison,
+    ]
   );
 
   // Common function to load annotations from path
   const loadAnnotationsFromPath = useCallback(
     async (jsonPath: string) => {
+      // Check if images are available
+      if (!hasImagesAvailable) {
+        toast.error(t('errors.loadAnnotationFailed'), t('errors.imageRequiredFirst'));
+        return;
+      }
+
       try {
         // Reset previous state
         setShowImageSelection(false);
@@ -486,17 +645,30 @@ function App() {
           jsonPath.substring(0, jsonPath.lastIndexOf('/')) ||
           jsonPath.substring(0, jsonPath.lastIndexOf('\\'));
 
+        // Exit comparison mode if active
+        if (isComparing) {
+          clearComparison();
+        }
+
         // Check if there are multiple images
         if (data.images && data.images.length > 1) {
-          // Store data temporarily but don't set it in the store yet
-          setTempCocoData({ data, annotationDir });
-          // Dialog will be shown by useEffect when tempCocoData is set
+          // フォルダモード（ナビゲーション有効）の場合は直接セット
+          if (navigationMode === 'folder') {
+            // フォルダ + 複数画像アノテーション → そのまま開く（ナビゲーションモード）
+            setCocoData(data);
+            // 最初の画像IDをセット
+            setCurrentImageId(data.images[0].id);
+          } else {
+            // 画像モード（単一画像）の場合は画像選択ダイアログ
+            // 画像 + 複数画像アノテーション → 画像ID選択ダイアログ
+            setTempCocoData({ data, annotationDir });
+          }
         } else if (data.images && data.images.length === 1) {
-          // Single image, set it immediately
+          // 単一画像、そのまま開く
           setCocoData(data);
           setCurrentImageId(data.images[0].id);
         } else {
-          // No images, just set the data
+          // 画像なし、データのみセット
           setCocoData(data);
         }
 
@@ -522,7 +694,17 @@ function App() {
         toast.error(t('errors.loadAnnotationsFailed'), errorMessage);
       }
     },
-    [setCocoData, setError, addRecentFile, loadImageFromPath]
+    [
+      hasImagesAvailable,
+      setCocoData,
+      setError,
+      addRecentFile,
+      loadImageFromPath,
+      isComparing,
+      clearComparison,
+      setCurrentImageId,
+      t,
+    ]
   );
 
   // Handle recent file selection
@@ -544,7 +726,10 @@ function App() {
     handleGenerateSample,
     handleExportAnnotations,
     handleShowStatistics,
-    openSettingsModal
+    openSettingsModal,
+    () => setShowComparisonDialog(true),
+    () => setShowHistogramDialog(true),
+    openHeatmapModal
   );
 
   // Handle drag and drop
@@ -555,7 +740,7 @@ function App() {
 
   // Auto-show right panel when annotation is selected
   const { selectedAnnotationIds } = useAnnotationStore();
-  const prevSelectedAnnotationIdsRef = useRef<number[]>([]);
+  const prevSelectedAnnotationIdsRef = useRef<(number | string)[]>([]);
 
   useEffect(() => {
     const prevLength = prevSelectedAnnotationIdsRef.current.length;
@@ -624,6 +809,10 @@ function App() {
             e.preventDefault();
             if (cocoData) handleShowStatistics();
             break;
+          case 'k':
+            e.preventDefault();
+            if (cocoData) setShowComparisonDialog(true);
+            break;
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -667,7 +856,7 @@ function App() {
                 <div className="unified-panel-container">
                   <div className="unified-panel-header">
                     <div className="unified-panel-tabs">
-                      {['control', 'info', 'detail', 'files'].map((tab) => (
+                      {[...panelLayout.leftPanelTabs, ...panelLayout.rightPanelTabs].map((tab) => (
                         <button
                           key={tab}
                           className={`tab ${activeUnifiedTab === tab ? 'active' : ''}`}
@@ -854,7 +1043,30 @@ function App() {
         }}
       />
 
+      <ComparisonDialog
+        isOpen={showComparisonDialog}
+        onClose={() => setShowComparisonDialog(false)}
+      />
+
+      <CommonModal
+        isOpen={showHistogramDialog}
+        onClose={() => setShowHistogramDialog(false)}
+        title={t('histogram.title')}
+        size="xl"
+        hasBlur={true}
+      >
+        <HistogramPanel />
+      </CommonModal>
+
+      <HeatmapDialog />
+
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <LoadingOverlay
+        isLoading={isLoading}
+        message={message}
+        subMessage={subMessage}
+        progress={progress}
+      />
     </div>
   );
 }

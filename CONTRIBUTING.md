@@ -111,11 +111,21 @@ git checkout -b feature/your-feature-name
 ブランチ名の規則：
 
 - `feature/` - 新機能
+  - 例: `feature/auto-update`, `feature/123-screenshot-tool`
 - `fix/` - バグ修正
+  - 例: `fix/memory-leak`, `fix/456-panel-crash`
 - `docs/` - ドキュメント
+  - 例: `docs/api-guide`, `docs/readme-update`
 - `refactor/` - リファクタリング
+  - 例: `refactor/component-structure`
 - `test/` - テスト追加
+  - 例: `test/unit-tests`, `test/e2e-setup`
 - `chore/` - その他の変更
+  - 例: `chore/dependencies-update`
+- `hotfix/` - 緊急修正（mainブランチから）
+  - 例: `hotfix/1.0.1-critical-bug`
+- `release/` - リリース準備
+  - 例: `release/v1.1.0`
 
 ### 2. 開発
 

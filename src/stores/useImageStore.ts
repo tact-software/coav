@@ -9,6 +9,7 @@ interface ImageState {
   pan: { x: number; y: number };
   isLoading: boolean;
   error: string | null;
+  preserveViewState: boolean; // Flag to prevent auto-fit when changing images
 
   // Actions
   setImagePath: (path: string) => void;
@@ -20,6 +21,7 @@ interface ImageState {
   resetView: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setPreserveViewState: (preserve: boolean) => void;
 
   // Zoom helpers
   zoomIn: () => void;
@@ -36,6 +38,7 @@ export const useImageStore = create<ImageState>((set, get) => ({
   pan: { x: 0, y: 0 },
   isLoading: false,
   error: null,
+  preserveViewState: false,
 
   setImagePath: (path) => {
     set({ imagePath: path, error: null });
@@ -63,6 +66,7 @@ export const useImageStore = create<ImageState>((set, get) => ({
       pan: { x: 0, y: 0 },
       isLoading: false,
       error: null,
+      preserveViewState: false,
     });
   },
 
@@ -88,14 +92,64 @@ export const useImageStore = create<ImageState>((set, get) => ({
     set({ error, isLoading: false });
   },
 
+  setPreserveViewState: (preserve) => {
+    set({ preserveViewState: preserve });
+  },
+
   zoomIn: () => {
-    const currentZoom = get().zoom;
-    set({ zoom: Math.min(10, currentZoom * 1.2) });
+    const state = get();
+    const currentZoom = state.zoom;
+    const newZoom = Math.min(10, currentZoom * 1.2);
+
+    // Calculate zoom around viewport center
+    if (state.containerSize) {
+      const viewportCenter = {
+        x: state.containerSize.width / 2,
+        y: state.containerSize.height / 2,
+      };
+
+      const pointBeforeZoom = {
+        x: (viewportCenter.x - state.pan.x) / currentZoom,
+        y: (viewportCenter.y - state.pan.y) / currentZoom,
+      };
+
+      const newPan = {
+        x: viewportCenter.x - pointBeforeZoom.x * newZoom,
+        y: viewportCenter.y - pointBeforeZoom.y * newZoom,
+      };
+
+      set({ zoom: newZoom, pan: newPan });
+    } else {
+      set({ zoom: newZoom });
+    }
   },
 
   zoomOut: () => {
-    const currentZoom = get().zoom;
-    set({ zoom: Math.max(0.1, currentZoom / 1.2) });
+    const state = get();
+    const currentZoom = state.zoom;
+    const newZoom = Math.max(0.1, currentZoom / 1.2);
+
+    // Calculate zoom around viewport center
+    if (state.containerSize) {
+      const viewportCenter = {
+        x: state.containerSize.width / 2,
+        y: state.containerSize.height / 2,
+      };
+
+      const pointBeforeZoom = {
+        x: (viewportCenter.x - state.pan.x) / currentZoom,
+        y: (viewportCenter.y - state.pan.y) / currentZoom,
+      };
+
+      const newPan = {
+        x: viewportCenter.x - pointBeforeZoom.x * newZoom,
+        y: viewportCenter.y - pointBeforeZoom.y * newZoom,
+      };
+
+      set({ zoom: newZoom, pan: newPan });
+    } else {
+      set({ zoom: newZoom });
+    }
   },
 
   fitToWindow: () => {
