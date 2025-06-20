@@ -9,6 +9,8 @@
 
 ## [未リリース]
 
+## [1.1.0] - 2025-06-20
+
 ### 追加
 
 - **マルチ画像ナビゲーション機能**
@@ -107,5 +109,6 @@
 - Zustandによる状態管理
 - クロスプラットフォーム対応（Windows、macOS、Linux）
 
-[未リリース]: https://github.com/tact-software/coav/compare/v1.0.0...HEAD
+[未リリース]: https://github.com/tact-software/coav/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/tact-software/coav/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tact-software/coav/releases/tag/v1.0.0
