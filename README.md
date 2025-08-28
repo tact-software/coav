@@ -339,7 +339,7 @@ bun test:e2e      # E2Eテスト (未実装)
 
 COAVはオープンソースプロジェクトです。皆様の貢献を歓迎します！
 
-詳細は[CONTRIBUTING.md](./CONTRIBUTING.md)をご覧ください。
+詳細は[CONTRIBUTING.md](./docs/ja/CONTRIBUTING.md)をご覧ください。
 
 ### 貢献方法
 
@@ -375,7 +375,7 @@ COAVはオープンソースプロジェクトです。皆様の貢献を歓迎�
   - [ ] GitHub Actionsによるビルド自動化
   - [ ] 各プラットフォーム向けのインストーラー作成
 
-詳細は[TODO.md](./TODO.md)をご覧ください。
+詳細は開発計画をご確認ください。
 
 ---
 
