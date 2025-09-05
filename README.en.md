@@ -339,7 +339,7 @@ bun test:e2e      # E2E tests (not yet implemented)
 
 COAV is an open source project. We welcome contributions from everyone!
 
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING.md](./docs/en/CONTRIBUTING.md) for details.
 
 ### How to Contribute
 
@@ -375,7 +375,7 @@ The following features are currently under development:
   - [ ] Build automation with GitHub Actions
   - [ ] Platform-specific installer creation
 
-See [TODO.md](./TODO.md) for details.
+See our development plans for details.
 
 ---
 
