@@ -6,35 +6,7 @@ import {
   HistogramType,
   HistogramSettings,
 } from '../stores/useHistogramStore';
-
-// ポリゴンの面積を計算（Shoelace formula）
-function calculatePolygonArea(segmentation: number[][]): number {
-  if (!segmentation || segmentation.length === 0) {
-    return 0;
-  }
-
-  let totalArea = 0;
-
-  for (const polygon of segmentation) {
-    if (polygon.length < 6) continue; // 最低3点（x1,y1,x2,y2,x3,y3）が必要
-
-    let area = 0;
-    const pointCount = polygon.length / 2;
-
-    for (let i = 0; i < pointCount; i++) {
-      const x1 = polygon[i * 2];
-      const y1 = polygon[i * 2 + 1];
-      const x2 = polygon[((i + 1) % pointCount) * 2];
-      const y2 = polygon[((i + 1) % pointCount) * 2 + 1];
-
-      area += x1 * y2 - x2 * y1;
-    }
-
-    totalArea += Math.abs(area) / 2;
-  }
-
-  return totalArea;
-}
+import { calculatePolygonArea } from './geometry';
 
 // アノテーションからサイズ値を取得
 export function getAnnotationSize(annotation: COCOAnnotation, type: HistogramType): number {
@@ -318,7 +290,6 @@ export function exportHistogramAsCSV(data: HistogramData, categories: Map<number
 
     return csv;
   } catch (error) {
-    console.error('Error in exportHistogramAsCSV:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`CSV export failed: ${errorMessage}`);
   }

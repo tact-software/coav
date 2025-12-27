@@ -304,22 +304,9 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
       diffFilters: new Set(['tp-gt', 'tp-pred', 'fp', 'fn']), // Show all result types by default
     });
     get().calculateDiff();
-
-    console.log('🎯 COMPARISON STARTED - Auto-enabled all result filters:', {
-      diffFiltersSize: 4,
-      enabledFilters: ['tp-gt', 'tp-pred', 'fp', 'fn'],
-    });
   },
 
   clearComparison: () => {
-    console.log('🧹 CLEARING COMPARISON - Before:', {
-      isComparing: get().isComparing,
-      hasComparisonData: !!get().comparisonData,
-      diffResultsSize: get().diffResults.size,
-      diffFiltersSize: get().diffFilters.size,
-    });
-
-    // Get current state before clearing
     const currentState = get();
 
     set({
@@ -335,22 +322,10 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
         currentState.cocoData?.categories.map((cat) => cat.id) || currentState.visibleCategoryIds,
     });
 
-    console.log('🧹 CLEARING COMPARISON - After:', {
-      isComparing: get().isComparing,
-      hasComparisonData: !!get().comparisonData,
-      diffResultsSize: get().diffResults.size,
-      diffFiltersSize: get().diffFilters.size,
-      visibleCategoriesCount: get().visibleCategoryIds.length,
-      autoEnabledCategories: true,
-    });
-
     // Force a re-calculation of visible annotations by triggering a state update
-    // This ensures all comparison-related rendering is cleared immediately
     const state = get();
     if (state.cocoData) {
-      // Trigger a minor state update to force re-render
       set({ selectedAnnotationIds: [...state.selectedAnnotationIds] });
-      console.log('🧹 Forced re-render by updating selectedAnnotationIds');
     }
   },
 
@@ -416,22 +391,7 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
         (ann) => ann.image_id === state.currentImageId
       );
 
-      console.debug('updateComparisonForCurrentImage:', {
-        currentImageId: state.currentImageId,
-        originalComparisonDataHasImages: state.originalComparisonData.images.length,
-        originalComparisonDataHasAnnotations: state.originalComparisonData.annotations.length,
-        availableImageIds: [
-          ...new Set(state.originalComparisonData.annotations.map((ann) => ann.image_id)),
-        ],
-        correspondingAnnotationsCount: correspondingAnnotations.length,
-      });
-
       if (correspondingAnnotations.length === 0) {
-        // No corresponding annotations found, show empty comparison data
-        console.warn(
-          'No corresponding annotations found in comparison data for image ID:',
-          state.currentImageId
-        );
 
         // Prevent duplicate toasts for the same image ID
         if (lastToastImageId !== state.currentImageId) {

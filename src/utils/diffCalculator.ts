@@ -15,14 +15,13 @@ function calculateBBoxIoU(box1: number[], box2: number[]): number {
   const [x1, y1, w1, h1] = box1;
   const [x2, y2, w2, h2] = box2;
 
-  // Calculate intersection area
   const xLeft = Math.max(x1, x2);
   const yTop = Math.max(y1, y2);
   const xRight = Math.min(x1 + w1, x2 + w2);
   const yBottom = Math.min(y1 + h1, y2 + h2);
 
   if (xRight < xLeft || yBottom < yTop) {
-    return 0; // No intersection
+    return 0;
   }
 
   const intersectionArea = (xRight - xLeft) * (yBottom - yTop);
@@ -55,8 +54,7 @@ function isPointInPolygon(x: number, y: number, polygon: number[]): boolean {
 }
 
 /**
- * Calculate IoU between two polygons
- * Uses a grid-based approximation for efficiency
+ * Calculate IoU between two polygons using grid-based approximation
  */
 function calculatePolygonIoU(
   seg1: number[][],
@@ -64,21 +62,17 @@ function calculatePolygonIoU(
   bbox1: number[],
   bbox2: number[]
 ): number {
-  // If segmentations are empty, fall back to bbox IoU
   if (!seg1 || seg1.length === 0 || !seg2 || seg2.length === 0) {
     return calculateBBoxIoU(bbox1, bbox2);
   }
 
-  // Get the first polygon from each segmentation (COCO can have multiple polygons)
   const poly1 = seg1[0];
   const poly2 = seg2[0];
 
   if (poly1.length < 6 || poly2.length < 6) {
-    // Need at least 3 points (6 coordinates) to form a polygon
     return calculateBBoxIoU(bbox1, bbox2);
   }
 
-  // Find bounding box of the union
   const [x1, y1, w1, h1] = bbox1;
   const [x2, y2, w2, h2] = bbox2;
   const minX = Math.min(x1, x2);
@@ -86,14 +80,12 @@ function calculatePolygonIoU(
   const maxX = Math.max(x1 + w1, x2 + w2);
   const maxY = Math.max(y1 + h1, y2 + h2);
 
-  // Use a grid resolution based on the size of the region
   const gridSize = Math.max(1, Math.min((maxX - minX) / 50, (maxY - minY) / 50));
 
   let intersectionCount = 0;
   let union1Count = 0;
   let union2Count = 0;
 
-  // Sample points in a grid
   for (let x = minX; x <= maxX; x += gridSize) {
     for (let y = minY; y <= maxY; y += gridSize) {
       const inPoly1 = isPointInPolygon(x, y, poly1);
@@ -135,7 +127,7 @@ function calculateIoU(
 }
 
 /**
- * Find overlapping annotations between two datasets with multiple matching support
+ * Find overlapping annotations with multiple matching support
  */
 function findOverlappingAnnotationsMultiple(
   datasetA: COCOAnnotation[],
@@ -163,7 +155,6 @@ function findOverlappingAnnotationsMultiple(
   const matchCountA = new Map<number, number>();
   const matchCountB = new Map<number, number>();
 
-  // Find all potential matches (both above and below threshold)
   const potentialMatches: {
     annotationA: COCOAnnotation;
     annotationB: COCOAnnotation;
@@ -175,76 +166,35 @@ function findOverlappingAnnotationsMultiple(
     iou: number;
   }[] = [];
 
-  let totalComparisons = 0;
-  let aboveThresholdCount = 0;
-  let belowThresholdCount = 0;
-  let zeroIouCount = 0;
-
   datasetA.forEach((annA) => {
     datasetB.forEach((annB) => {
-      totalComparisons++;
-
-      // Check category mapping (1対多対応)
       const mappedCategories = categoryMapping.get(annA.category_id);
       if (mappedCategories !== undefined) {
-        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
         if (!mappedCategories.includes(annB.category_id)) return;
       } else {
-        // マッピングが設定されていない場合は評価対象外（スキップ）
         return;
       }
 
-      // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);
 
-      // Log first few IoU calculations for debugging
-      if (totalComparisons <= 5) {
-        console.debug('IoU calculation:', {
-          annA_id: annA.id,
-          annB_id: annB.id,
-          bboxA: annA.bbox,
-          bboxB: annB.bbox,
-          iou,
-          threshold: iouThreshold,
-          method: iouMethod,
-        });
-      }
-
       if (iou >= iouThreshold) {
-        aboveThresholdCount++;
         potentialMatches.push({
           annotationA: annA,
           annotationB: annB,
           iou,
         });
       } else if (iou > 0) {
-        // Store below threshold matches that have some overlap
-        belowThresholdCount++;
         potentialBelowThreshold.push({
           annotationA: annA,
           annotationB: annB,
           iou,
         });
-      } else {
-        zeroIouCount++;
       }
     });
   });
 
-  console.debug('IoU comparison summary:', {
-    totalComparisons,
-    aboveThresholdCount,
-    belowThresholdCount,
-    zeroIouCount,
-    threshold: iouThreshold,
-    datasetASize: datasetA.length,
-    datasetBSize: datasetB.length,
-  });
-
-  // Sort by IoU descending
   potentialMatches.sort((a, b) => b.iou - a.iou);
 
-  // Select matches respecting maxMatchesPerAnnotation
   potentialMatches.forEach((match) => {
     const countA = matchCountA.get(match.annotationA.id) || 0;
     const countB = matchCountB.get(match.annotationB.id) || 0;
@@ -256,30 +206,17 @@ function findOverlappingAnnotationsMultiple(
     }
   });
 
-  // Sort and process below threshold matches for unmatched annotations only
   potentialBelowThreshold.sort((a, b) => b.iou - a.iou);
-  console.debug(`Processing ${potentialBelowThreshold.length} potential below threshold matches`);
 
   potentialBelowThreshold.forEach((match) => {
-    // Only include if both annotations are unmatched (have no above-threshold matches)
     const hasMatchA = matchCountA.has(match.annotationA.id);
     const hasMatchB = matchCountB.has(match.annotationB.id);
-
-    console.debug('Below threshold candidate:', {
-      aId: match.annotationA.id,
-      bId: match.annotationB.id,
-      iou: match.iou,
-      hasMatchA,
-      hasMatchB,
-      willInclude: !hasMatchA || !hasMatchB,
-    });
 
     if (!hasMatchA || !hasMatchB) {
       belowThresholdMatches.push(match);
     }
   });
 
-  // Find unmatched annotations
   const unmatchedA = datasetA.filter((ann) => !matchCountA.has(ann.id));
   const unmatchedB = datasetB.filter((ann) => !matchCountB.has(ann.id));
 
@@ -287,7 +224,7 @@ function findOverlappingAnnotationsMultiple(
 }
 
 /**
- * Find overlapping annotations between two datasets (role-agnostic) - Legacy single match version
+ * Find overlapping annotations - single match version
  */
 function findOverlappingAnnotations(
   datasetA: COCOAnnotation[],
@@ -314,25 +251,19 @@ function findOverlappingAnnotations(
   const usedA = new Set<number>();
   const usedB = new Set<number>();
 
-  // For each annotation in dataset A, find the best matching annotation in dataset B
   datasetA.forEach((annA) => {
     let bestMatch: { annotation: COCOAnnotation; iou: number } | null = null;
 
     datasetB.forEach((annB) => {
-      // Skip if already matched
       if (usedB.has(annB.id)) return;
 
-      // Check category mapping (1対多対応)
       const mappedCategories = categoryMapping.get(annA.category_id);
       if (mappedCategories !== undefined) {
-        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
         if (!mappedCategories.includes(annB.category_id)) return;
       } else {
-        // マッピングが設定されていない場合は評価対象外（スキップ）
         return;
       }
 
-      // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);
       if (iou >= iouThreshold) {
         if (!bestMatch || iou > bestMatch.iou) {
@@ -353,24 +284,18 @@ function findOverlappingAnnotations(
     }
   });
 
-  // Find unmatched annotations
   const unmatchedA = datasetA.filter((ann) => !usedA.has(ann.id));
   const unmatchedB = datasetB.filter((ann) => !usedB.has(ann.id));
 
-  // Find below threshold matches among unmatched annotations
   unmatchedA.forEach((annA) => {
     unmatchedB.forEach((annB) => {
-      // Check category mapping (1対多対応)
       const mappedCategories = categoryMapping.get(annA.category_id);
       if (mappedCategories !== undefined) {
-        // マッピングが設定されている場合、マッピング先のカテゴリに含まれるかチェック
         if (!mappedCategories.includes(annB.category_id)) return;
       } else {
-        // マッピングが設定されていない場合は評価対象外（スキップ）
         return;
       }
 
-      // Calculate IoU
       const iou = calculateIoU(annA, annB, iouMethod);
       if (iou > 0 && iou < iouThreshold) {
         belowThresholdMatches.push({
@@ -381,8 +306,6 @@ function findOverlappingAnnotations(
       }
     });
   });
-
-  console.debug(`Single match: Found ${belowThresholdMatches.length} below threshold matches`);
 
   return { matches, unmatchedA, unmatchedB, belowThresholdMatches };
 }
@@ -399,14 +322,11 @@ function calculateStatistics(
   let totalFP = 0;
   let totalFN = 0;
 
-  // Initialize category stats
   categories.forEach((cat) => {
     categoryStatsMap.set(cat.id, { tp: 0, fp: 0, fn: 0 });
   });
 
-  // Aggregate results
   diffResults.forEach((result) => {
-    // Count true positives
     result.truePositives.forEach((match) => {
       totalTP++;
       const catId = match.gtAnnotation.category_id;
@@ -414,7 +334,6 @@ function calculateStatistics(
       if (stats) stats.tp++;
     });
 
-    // Count false positives
     result.falsePositives.forEach((ann) => {
       totalFP++;
       const catId = ann.category_id;
@@ -422,7 +341,6 @@ function calculateStatistics(
       if (stats) stats.fp++;
     });
 
-    // Count false negatives
     result.falseNegatives.forEach((ann) => {
       totalFN++;
       const catId = ann.category_id;
@@ -431,7 +349,6 @@ function calculateStatistics(
     });
   });
 
-  // Calculate metrics
   const calculateMetrics = (tp: number, fp: number, fn: number): CategoryStats => {
     const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
     const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
@@ -440,7 +357,6 @@ function calculateStatistics(
     return { tp, fp, fn, precision, recall, f1 };
   };
 
-  // Build final statistics
   const byCategory = new Map<number, CategoryStats & { categoryName: string }>();
   categories.forEach((cat) => {
     const stats = categoryStatsMap.get(cat.id);
@@ -459,7 +375,7 @@ function calculateStatistics(
 }
 
 /**
- * Main diff calculation function - role-agnostic approach
+ * Main diff calculation function
  */
 export function calculateDiff(
   dataA: COCOData,
@@ -469,34 +385,16 @@ export function calculateDiff(
   results: Map<number, DiffResult>;
   statistics: DiffStatistics;
 } {
-  // Debug logging to verify data sources
-  console.log('calculateDiff called with:', {
-    dataA_annotations: dataA.annotations.length,
-    dataB_annotations: dataB.annotations.length,
-    gtFileId: settings.gtFileId,
-    dataA_sample_ids: dataA.annotations.slice(0, 3).map((a) => a.id),
-    dataB_sample_ids: dataB.annotations.slice(0, 3).map((a) => a.id),
-    areDataSetsIdentical: dataA.annotations === dataB.annotations,
-    annotationIdsOverlap: dataA.annotations.some((a) =>
-      dataB.annotations.some((b) => b.id === a.id)
-    ),
-    maxMatchesPerAnnotation: settings.maxMatchesPerAnnotation || 1,
-  });
-
   const results = new Map<number, DiffResult>();
 
-  // Get all unique image IDs from both datasets
   const allImageIds = new Set<number>();
   dataA.annotations.forEach((ann) => allImageIds.add(ann.image_id));
   dataB.annotations.forEach((ann) => allImageIds.add(ann.image_id));
 
-  // Process each image
   allImageIds.forEach((imageId) => {
     const annotationsA = dataA.annotations.filter((ann) => ann.image_id === imageId);
     const annotationsB = dataB.annotations.filter((ann) => ann.image_id === imageId);
 
-    // Step 1: Find overlapping annotations (role-agnostic)
-    // Use multiple matching if specified, otherwise use single matching
     const iouMethod = settings.iouMethod || 'bbox';
     const overlappingResult =
       settings.maxMatchesPerAnnotation && settings.maxMatchesPerAnnotation > 1
@@ -518,18 +416,13 @@ export function calculateDiff(
 
     const { matches, unmatchedA, unmatchedB, belowThresholdMatches } = overlappingResult;
 
-    // Step 2: Classify based on role settings
     const truePositives: MatchedAnnotation[] = [];
     const falsePositives: COCOAnnotation[] = [];
     const falseNegatives: COCOAnnotation[] = [];
 
-    // Determine which dataset is GT and which is Pred based on settings
-    // Note: settings should contain information about which dataset is GT
-    // For now, we'll assume the first parameter (dataA) corresponds to the primary file
     const isPrimaryGT = settings.gtFileId === 'primary';
 
     if (isPrimaryGT) {
-      // dataA is GT, dataB is Pred
       matches.forEach((match) => {
         truePositives.push({
           gtAnnotation: match.annotationA,
@@ -537,10 +430,9 @@ export function calculateDiff(
           iou: match.iou,
         });
       });
-      falseNegatives.push(...unmatchedA); // Unmatched GT
-      falsePositives.push(...unmatchedB); // Unmatched Pred
+      falseNegatives.push(...unmatchedA);
+      falsePositives.push(...unmatchedB);
     } else {
-      // dataA is Pred, dataB is GT
       matches.forEach((match) => {
         truePositives.push({
           gtAnnotation: match.annotationB,
@@ -548,54 +440,27 @@ export function calculateDiff(
           iou: match.iou,
         });
       });
-      falseNegatives.push(...unmatchedB); // Unmatched GT
-      falsePositives.push(...unmatchedA); // Unmatched Pred
+      falseNegatives.push(...unmatchedB);
+      falsePositives.push(...unmatchedA);
     }
 
-    // Debug logging for first image
-    if (imageId === allImageIds.values().next().value) {
-      console.log('Diff results for first image:', {
-        imageId,
-        truePositives: truePositives.map((tp) => ({
-          gtId: tp.gtAnnotation.id,
-          predId: tp.predAnnotation.id,
-          iou: tp.iou,
-        })),
-        falsePositives: falsePositives.map((fp) => fp.id),
-        falseNegatives: falseNegatives.map((fn) => fn.id),
-        isPrimaryGT,
-      });
-    }
-
-    // Convert below threshold matches to MatchedAnnotation format
-    const belowThresholdMatchedAnnotations: MatchedAnnotation[] = [];
-
-    console.debug(
-      `Image ${imageId}: Found ${belowThresholdMatches.length} below threshold matches`
-    );
-
-    belowThresholdMatches.forEach((match) => {
-      console.debug('Below threshold match:', {
-        aId: match.annotationA.id,
-        bId: match.annotationB.id,
-        iou: match.iou,
-        isPrimaryGT,
-      });
-
-      if (isPrimaryGT) {
-        belowThresholdMatchedAnnotations.push({
-          gtAnnotation: match.annotationA,
-          predAnnotation: match.annotationB,
-          iou: match.iou,
-        });
-      } else {
-        belowThresholdMatchedAnnotations.push({
-          gtAnnotation: match.annotationB,
-          predAnnotation: match.annotationA,
-          iou: match.iou,
-        });
+    const belowThresholdMatchedAnnotations: MatchedAnnotation[] = belowThresholdMatches.map(
+      (match) => {
+        if (isPrimaryGT) {
+          return {
+            gtAnnotation: match.annotationA,
+            predAnnotation: match.annotationB,
+            iou: match.iou,
+          };
+        } else {
+          return {
+            gtAnnotation: match.annotationB,
+            predAnnotation: match.annotationA,
+            iou: match.iou,
+          };
+        }
       }
-    });
+    );
 
     results.set(imageId, {
       imageId,
@@ -606,7 +471,6 @@ export function calculateDiff(
     });
   });
 
-  // Calculate statistics using the appropriate GT dataset for categories
   const gtDataForStats = settings.gtFileId === 'primary' ? dataA : dataB;
   const statistics = calculateStatistics(results, gtDataForStats.categories);
 

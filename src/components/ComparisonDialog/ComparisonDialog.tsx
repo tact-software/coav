@@ -57,13 +57,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
     if (isOpen) {
       if (isComparing && currentComparisonData && currentComparisonSettings) {
         // In comparison mode: load current settings
-        console.log('Loading existing comparison settings:', {
-          categoryMapping: currentComparisonSettings.categoryMapping,
-          iouThreshold: currentComparisonSettings.iouThreshold,
-          roleSelection:
-            currentComparisonSettings.gtFileId === 'primary' ? 'current_gt' : 'current_pred',
-        });
-
         // Use original comparison data if available, otherwise use current (for backward compatibility)
         setComparisonData(originalComparisonData || currentComparisonData);
         setSelectedImageId(currentImageId);
@@ -175,14 +168,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
     setLoading(true, t('comparison.processing'), t('comparison.processingSubMessage'));
 
-    console.debug('Starting comparison:', {
-      selectedImageId,
-      currentImageId,
-      isComparing,
-      comparisonImages: comparisonData.images.length,
-      comparisonAnnotations: comparisonData.annotations.length,
-    });
-
     // When changing settings in comparison mode, we should use the full comparison data
     // Only filter for initial comparison setup
     const shouldFilterData = !isComparing;
@@ -223,15 +208,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
             })),
         };
 
-    console.debug('After filtering and ID mapping:', {
-      originalImageId: selectedImageId,
-      targetImageId,
-      currentImageId,
-      filteredAnnotations: filteredComparisonData.annotations.length,
-      filteredImages: filteredComparisonData.images.length,
-      firstFilteredAnnotation: filteredComparisonData.annotations[0],
-    });
-
     const settings: ComparisonSettings = {
       gtFileId: roleSelection === 'current_gt' ? 'primary' : 'comparison',
       predFileId: roleSelection === 'current_gt' ? 'comparison' : 'primary',
@@ -270,14 +246,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
   };
 
   const updateCategoryMapping = (gtCatId: number, predCatId: number, isAdd: boolean = true) => {
-    console.debug('updateCategoryMapping called:', {
-      gtCatId,
-      predCatId,
-      isAdd,
-      currentMappingSize: categoryMapping.size,
-      currentMappings: Array.from(categoryMapping.entries()),
-    });
-
     const newMapping = new Map(categoryMapping);
     const currentMappings = newMapping.get(gtCatId) || [];
 
@@ -286,14 +254,6 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       if (!currentMappings.includes(predCatId)) {
         const newMappings = [...currentMappings, predCatId];
         newMapping.set(gtCatId, newMappings);
-        console.debug('Added mapping successfully:', {
-          gtCatId,
-          predCatId,
-          oldMappings: currentMappings,
-          newMappings,
-        });
-      } else {
-        console.warn('Mapping already exists:', { gtCatId, predCatId, currentMappings });
       }
     } else {
       // 削除：指定されたマッピングを削除
@@ -303,19 +263,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
       } else {
         newMapping.delete(gtCatId);
       }
-      console.debug('Removed mapping:', {
-        gtCatId,
-        predCatId,
-        oldMappings: currentMappings,
-        newMappings: filteredMappings,
-      });
     }
 
-    console.debug('Setting new category mapping:', {
-      oldSize: categoryMapping.size,
-      newSize: newMapping.size,
-      newMappings: Array.from(newMapping.entries()),
-    });
     setCategoryMapping(newMapping);
     setHasManualMapping(true); // Mark that manual mapping has been set
   };
@@ -328,24 +277,8 @@ export const ComparisonDialog = ({ isOpen, onClose }: Props) => {
 
   // カテゴリ選択ダイアログでカテゴリを選択
   const handleCategorySelect = (predCategoryId: number) => {
-    console.debug('handleCategorySelect called:', {
-      currentGtCategoryId,
-      predCategoryId,
-      currentMappingState: Array.from(categoryMapping.entries()),
-    });
-
     if (currentGtCategoryId !== null) {
-      console.debug('Calling updateCategoryMapping with:', {
-        gtCategoryId: currentGtCategoryId,
-        predCategoryId,
-        isAdd: true,
-      });
       updateCategoryMapping(currentGtCategoryId, predCategoryId, true);
-      console.debug('After updateCategoryMapping, new state:', {
-        newMappingState: Array.from(categoryMapping.entries()),
-      });
-    } else {
-      console.warn('currentGtCategoryId is null, cannot add mapping');
     }
     setShowCategoryDialog(false);
     setCurrentGtCategoryId(null);
