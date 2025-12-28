@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
 import i18n from '../i18n/config';
+import { hslToRgb } from '../utils/colorConverter';
 
 export type Language = 'ja' | 'en';
 export type Theme = 'light' | 'dark' | 'system';
@@ -86,10 +87,11 @@ interface SettingsState {
   toggleBoundingBoxes: () => void;
 }
 
-// Helper function to generate color from category ID
+// Helper function to generate color from category ID (returns HEX format for color picker compatibility)
 export const generateCategoryColor = (categoryId: number): string => {
   const hue = (categoryId * 137.5) % 360;
-  return `hsl(${hue}, 50%, 50%)`;
+  const [r, g, b] = hslToRgb(hue, 50, 50);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
 const defaultSettings: Omit<
