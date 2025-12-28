@@ -6,7 +6,7 @@ interface SidebarProps {
   tabs: TabType[];
   activeTab: string;
   onTabChange: (tab: string) => void;
-  layout: 'docked' | 'overlay';
+  layout: 'sidebar' | 'overlay';
   visible: boolean;
   onToggle: () => void;
   renderContent: (tab: string) => ReactNode;

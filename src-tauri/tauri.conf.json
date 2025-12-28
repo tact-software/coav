@@ -4,9 +4,9 @@
   "version": "1.1.0",
   "identifier": "com.coav.app",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "bun vite",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
+    "beforeBuildCommand": "bun tsc && bun vite build",
     "frontendDist": "../dist"
   },
   "app": {
