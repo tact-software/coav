@@ -424,13 +424,6 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
               annotation.segmentation.length > 0 && (
                 <>
                   {annotation.segmentation.map((points, idx) => {
-                    // Simplify polygon points for medium LOD
-                    // Don't simplify complex shapes with specific vertex counts (e.g., cross with 24 points)
-                    const simplifiedPoints =
-                      effectiveLod === 'medium' && points.length > 40
-                        ? points.filter((_, index) => index % 2 === 0)
-                        : points;
-
                     const currentFillOpacity = isSelected
                       ? colors.selectedFillOpacity
                       : isHovered
@@ -461,12 +454,11 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
                     return (
                       <Line
                         key={getUniqueKey(annotation, `-poly-${idx}`)}
-                        points={simplifiedPoints}
+                        points={points}
                         closed
                         fill={fillColor}
                         stroke={strokeColor}
                         strokeWidth={isSelected ? display.lineWidth + 1 : display.lineWidth}
-                        tension={effectiveLod === 'medium' ? 0.2 : 0} // Smooth curves for medium LOD
                       />
                     );
                   })}
