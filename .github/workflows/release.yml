@@ -20,7 +20,7 @@ jobs:
             os: ubuntu-latest
             artifact-name: linux
           - name: macOS (Intel)
-            os: macos-13
+            os: macos-15-large
             artifact-name: macos-x64
           - name: macOS (Apple Silicon)
             os: macos-latest
@@ -32,13 +32,12 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v2.2.2
         with:
-          version: v2025.5.11
           cache: true
           experimental: true
 
       - name: Setup
         run: |
-          mise install
+          mise install || mise install
           mise run install
 
       - name: Rust cache

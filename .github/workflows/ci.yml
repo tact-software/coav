@@ -19,13 +19,12 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v2.2.2
         with:
-          version: v2025.5.11
           cache: true
           experimental: true
 
       - name: Setup
         run: |
-          mise install
+          mise install || mise install
           mise run install
 
       - name: Run frontend CI
@@ -40,12 +39,11 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v2.2.2
         with:
-          version: v2025.5.11
           cache: true
           experimental: true
 
       - name: Setup
-        run: mise install
+        run: mise install || mise install
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
