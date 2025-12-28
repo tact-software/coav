@@ -235,7 +235,7 @@ const ImageViewer: React.FC = () => {
           </Layer>
           {cocoData && currentImageId && (
             <AnnotationLayer
-              key={`annotation-layer-${currentImageId}-${isComparing ? 'comparing' : 'normal'}`} // Force remount on comparison state change
+              key={`annotation-layer-${currentImageId}-${isComparing ? 'comparing' : 'normal'}`}
               imageId={currentImageId}
               scale={zoom}
               viewport={getViewport()}

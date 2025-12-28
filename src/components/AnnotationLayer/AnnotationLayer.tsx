@@ -257,7 +257,7 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
   }, [cocoData, comparisonData, isComparing, diffResults, diffFilters]);
 
   const annotations = useMemo(() => {
-    return allAnnotations.filter((ann) => {
+    const filtered = allAnnotations.filter((ann) => {
       // Filter 1: Must be current image
       if (ann.image_id !== imageId) {
         return false;
@@ -305,6 +305,8 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
 
       return true;
     });
+
+    return filtered;
   }, [
     allAnnotations,
     imageId,

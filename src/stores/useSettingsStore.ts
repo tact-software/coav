@@ -268,6 +268,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'coav-settings',
+      version: 2, // Bump version to trigger migration
       partialize: (state) => ({
         language: state.language,
         theme: state.theme,
@@ -276,17 +277,21 @@ export const useSettingsStore = create<SettingsState>()(
         panelLayout: state.panelLayout,
         colors: state.colors,
       }),
-      migrate: (persistedState: unknown) => {
+      migrate: (persistedState: unknown, _version: number) => {
+        if (!persistedState || typeof persistedState !== 'object') {
+          return persistedState;
+        }
+
+        const state = persistedState as Record<string, unknown>;
+
         // Migrate from older versions that don't have comparison colors
         if (
-          persistedState &&
-          typeof persistedState === 'object' &&
-          'colors' in persistedState &&
-          persistedState.colors &&
-          typeof persistedState.colors === 'object' &&
-          !('comparison' in persistedState.colors)
+          'colors' in state &&
+          state.colors &&
+          typeof state.colors === 'object' &&
+          !('comparison' in state.colors)
         ) {
-          (persistedState.colors as Partial<ColorSettings>).comparison = {
+          (state.colors as Partial<ColorSettings>).comparison = {
             gtColors: {
               tp: '#4caf50', // Green
               fn: '#ff9800', // Orange
@@ -297,7 +302,16 @@ export const useSettingsStore = create<SettingsState>()(
             },
           };
         }
-        return persistedState;
+
+        // Migrate display settings to include showAnnotations
+        if ('display' in state && state.display && typeof state.display === 'object') {
+          const display = state.display as Record<string, unknown>;
+          if (!('showAnnotations' in display)) {
+            display.showAnnotations = true;
+          }
+        }
+
+        return state;
       },
     }
   )

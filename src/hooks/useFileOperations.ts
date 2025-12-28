@@ -141,6 +141,11 @@ export function useFileOperations() {
         setCurrentImageId(data.images[0].id);
       } else {
         setCocoData(data);
+        // Set first available image ID from annotations if images array is empty/missing
+        if (data.annotations && data.annotations.length > 0) {
+          const firstImageId = data.annotations[0].image_id;
+          setCurrentImageId(firstImageId);
+        }
       }
 
       addRecentFile({
@@ -251,6 +256,12 @@ export function useFileOperations() {
 
         const data = await invoke<COCOData>('load_annotations', { filePath: jsonPath });
         setCocoData(data);
+        // Set current image ID for sample data
+        if (data.images && data.images.length > 0) {
+          setCurrentImageId(data.images[0].id);
+        } else if (data.annotations && data.annotations.length > 0) {
+          setCurrentImageId(data.annotations[0].image_id);
+        }
         toast.success(
           t('success.sampleGenerated'),
           `${t('success.generated')} ${data.annotations.length} ${t('controls.annotations').toLowerCase()}`
@@ -363,6 +374,11 @@ export function useFileOperations() {
           setCurrentImageId(data.images[0].id);
         } else {
           setCocoData(data);
+          // Set first available image ID from annotations if images array is empty/missing
+          if (data.annotations && data.annotations.length > 0) {
+            const firstImageId = data.annotations[0].image_id;
+            setCurrentImageId(firstImageId);
+          }
         }
 
         addRecentFile({
