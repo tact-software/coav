@@ -1,7 +1,7 @@
 [tools]
 bun = "1.2.4"
 node = "22.15.1"
-rust = "1.82.0"
+# rust は rust-toolchain.toml で管理（rustfmt/clippy を含む）
 act = "latest"
 actionlint = "latest"
 
@@ -75,12 +75,16 @@ description = "Run Rust tests"
 
 # CI用の複合タスク
 [tasks."ci:frontend"]
-depends = ["lint", "format-check", "type-check", "test"]
+depends = ["lint", "format-check", "type-check"]
 description = "Run all frontend CI checks"
 
 [tasks."ci:backend"]
-depends = ["rust-fmt-check", "rust-check", "rust-test"]
-description = "Run all backend CI checks"
+run = """
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+cargo test --manifest-path src-tauri/Cargo.toml --all
+"""
+description = "Run all backend CI checks (sequential)"
 
 [tasks."ci:all"]
 depends = ["ci:frontend", "ci:backend"]

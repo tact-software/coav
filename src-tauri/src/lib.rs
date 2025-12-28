@@ -9,8 +9,7 @@ use tauri::{Emitter, Manager};
 /// Command to update menu language
 #[tauri::command]
 fn set_menu_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
-    let menu = create_menu_with_language(&app, &language)
-        .map_err(|e| e.to_string())?;
+    let menu = create_menu_with_language(&app, &language).map_err(|e| e.to_string())?;
     app.set_menu(menu).map_err(|e| e.to_string())?;
     Ok(())
 }

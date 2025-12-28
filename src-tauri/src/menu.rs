@@ -110,18 +110,45 @@ impl MenuLabels {
     }
 }
 
-pub fn create_menu_with_language(app: &tauri::AppHandle, lang: &str) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+pub fn create_menu_with_language(
+    app: &tauri::AppHandle,
+    lang: &str,
+) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
     let l = MenuLabels::from_language(lang);
     let menu = MenuBuilder::new(app)
         // File menu
         .item(
             &SubmenuBuilder::new(app, l.file)
-                .item(&MenuItem::with_id(app, "open_image", l.open_image, true, Some("CmdOrCtrl+O"))?)
-                .item(&MenuItem::with_id(app, "open_annotations", l.open_annotations, true, Some("CmdOrCtrl+Shift+O"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "open_image",
+                    l.open_image,
+                    true,
+                    Some("CmdOrCtrl+O"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "open_annotations",
+                    l.open_annotations,
+                    true,
+                    Some("CmdOrCtrl+Shift+O"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "generate_sample", l.generate_sample, true, Some("CmdOrCtrl+G"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "generate_sample",
+                    l.generate_sample,
+                    true,
+                    Some("CmdOrCtrl+G"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "export_annotations", l.export_annotations, true, Some("CmdOrCtrl+S"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "export_annotations",
+                    l.export_annotations,
+                    true,
+                    Some("CmdOrCtrl+S"),
+                )?)
                 .separator()
                 .item(&PredefinedMenuItem::close_window(app, None)?)
                 .build()?,
@@ -129,14 +156,56 @@ pub fn create_menu_with_language(app: &tauri::AppHandle, lang: &str) -> Result<M
         // View menu
         .item(
             &SubmenuBuilder::new(app, l.view)
-                .item(&MenuItem::with_id(app, "zoom_in", l.zoom_in, true, Some("CmdOrCtrl+Plus"))?)
-                .item(&MenuItem::with_id(app, "zoom_out", l.zoom_out, true, Some("CmdOrCtrl+Minus"))?)
-                .item(&MenuItem::with_id(app, "zoom_fit", l.fit_to_window, true, Some("CmdOrCtrl+0"))?)
-                .item(&MenuItem::with_id(app, "zoom_100", l.actual_size, true, Some("CmdOrCtrl+1"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "zoom_in",
+                    l.zoom_in,
+                    true,
+                    Some("CmdOrCtrl+Plus"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "zoom_out",
+                    l.zoom_out,
+                    true,
+                    Some("CmdOrCtrl+Minus"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "zoom_fit",
+                    l.fit_to_window,
+                    true,
+                    Some("CmdOrCtrl+0"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "zoom_100",
+                    l.actual_size,
+                    true,
+                    Some("CmdOrCtrl+1"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "toggle_annotations", l.toggle_annotations, true, Some("CmdOrCtrl+H"))?)
-                .item(&MenuItem::with_id(app, "toggle_labels", l.toggle_labels, true, Some("CmdOrCtrl+L"))?)
-                .item(&MenuItem::with_id(app, "toggle_bbox", l.toggle_bounding_boxes, true, Some("CmdOrCtrl+B"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "toggle_annotations",
+                    l.toggle_annotations,
+                    true,
+                    Some("CmdOrCtrl+H"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "toggle_labels",
+                    l.toggle_labels,
+                    true,
+                    Some("CmdOrCtrl+L"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "toggle_bbox",
+                    l.toggle_bounding_boxes,
+                    true,
+                    Some("CmdOrCtrl+B"),
+                )?)
                 .separator()
                 .item(&PredefinedMenuItem::fullscreen(app, None)?)
                 .build()?,
@@ -144,18 +213,66 @@ pub fn create_menu_with_language(app: &tauri::AppHandle, lang: &str) -> Result<M
         // Tools menu
         .item(
             &SubmenuBuilder::new(app, l.tools)
-                .item(&MenuItem::with_id(app, "compare", l.compare, true, Some("CmdOrCtrl+D"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "compare",
+                    l.compare,
+                    true,
+                    Some("CmdOrCtrl+D"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "statistics", l.statistics, true, Some("CmdOrCtrl+I"))?)
-                .item(&MenuItem::with_id(app, "histogram", l.histogram, true, Some("CmdOrCtrl+Shift+H"))?)
-                .item(&MenuItem::with_id(app, "heatmap", l.heatmap, true, Some("CmdOrCtrl+Shift+M"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "statistics",
+                    l.statistics,
+                    true,
+                    Some("CmdOrCtrl+I"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "histogram",
+                    l.histogram,
+                    true,
+                    Some("CmdOrCtrl+Shift+H"),
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "heatmap",
+                    l.heatmap,
+                    true,
+                    Some("CmdOrCtrl+Shift+M"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "settings", l.settings, true, Some("CmdOrCtrl+,"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "settings",
+                    l.settings,
+                    true,
+                    Some("CmdOrCtrl+,"),
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "show_all_categories", l.show_all_categories, true, None::<&str>)?)
-                .item(&MenuItem::with_id(app, "hide_all_categories", l.hide_all_categories, true, None::<&str>)?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "show_all_categories",
+                    l.show_all_categories,
+                    true,
+                    None::<&str>,
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "hide_all_categories",
+                    l.hide_all_categories,
+                    true,
+                    None::<&str>,
+                )?)
                 .separator()
-                .item(&MenuItem::with_id(app, "clear_data", l.clear_data, true, None::<&str>)?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "clear_data",
+                    l.clear_data,
+                    true,
+                    None::<&str>,
+                )?)
                 .build()?,
         )
         // Window menu
@@ -164,14 +281,32 @@ pub fn create_menu_with_language(app: &tauri::AppHandle, lang: &str) -> Result<M
                 .item(&PredefinedMenuItem::minimize(app, None)?)
                 .item(&PredefinedMenuItem::maximize(app, None)?)
                 .separator()
-                .item(&MenuItem::with_id(app, "toggle_sidebar", l.toggle_sidebar, true, Some("CmdOrCtrl+\\"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "toggle_sidebar",
+                    l.toggle_sidebar,
+                    true,
+                    Some("CmdOrCtrl+\\"),
+                )?)
                 .build()?,
         )
         // Help menu
         .item(
             &SubmenuBuilder::new(app, l.help)
-                .item(&MenuItem::with_id(app, "about", l.about, true, None::<&str>)?)
-                .item(&MenuItem::with_id(app, "shortcuts", l.shortcuts, true, Some("CmdOrCtrl+/"))?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "about",
+                    l.about,
+                    true,
+                    None::<&str>,
+                )?)
+                .item(&MenuItem::with_id(
+                    app,
+                    "shortcuts",
+                    l.shortcuts,
+                    true,
+                    Some("CmdOrCtrl+/"),
+                )?)
                 .build()?,
         );
 

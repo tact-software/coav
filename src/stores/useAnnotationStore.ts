@@ -392,7 +392,6 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
       );
 
       if (correspondingAnnotations.length === 0) {
-
         // Prevent duplicate toasts for the same image ID
         if (lastToastImageId !== state.currentImageId) {
           lastToastImageId = state.currentImageId;

@@ -64,7 +64,7 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
 
     // Create output directory if it doesn't exist
     fs::create_dir_all(&output_dir)
-        .map_err(|e| format!("Failed to create output directory: {}", e))?;
+        .map_err(|e| format!("Failed to create output directory: {e}"))?;
 
     // Define all possible categories
     let all_categories = vec![
@@ -274,13 +274,13 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
 
         // Save image
         let image_filename = if num_images == 1 {
-            format!("{}-image.png", base_filename)
+            format!("{base_filename}-image.png")
         } else {
             format!("{}-image-{}.png", base_filename, image_idx + 1)
         };
         let image_path = Path::new(&output_dir).join(&image_filename);
         img.save(&image_path)
-            .map_err(|e| format!("Failed to save image: {}", e))?;
+            .map_err(|e| format!("Failed to save image: {e}"))?;
 
         // Store image info
         all_images.push(COCOImage {
@@ -367,11 +367,11 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
     };
 
     // Save COCO JSON
-    let json_filename = format!("{}-annotation.json", base_filename);
+    let json_filename = format!("{base_filename}-annotation.json");
     let json_path = Path::new(&output_dir).join(&json_filename);
     let json_content = serde_json::to_string_pretty(&coco_data)
-        .map_err(|e| format!("Failed to serialize COCO data: {}", e))?;
-    fs::write(&json_path, json_content).map_err(|e| format!("Failed to save JSON file: {}", e))?;
+        .map_err(|e| format!("Failed to serialize COCO data: {e}"))?;
+    fs::write(&json_path, json_content).map_err(|e| format!("Failed to save JSON file: {e}"))?;
 
     // Generate pair JSON if requested
     if params.include_pair_json.unwrap_or(false) {
@@ -390,18 +390,17 @@ pub async fn generate_sample_data(params: SampleGeneratorParams) -> Result<Strin
             distribution,
             change_category_names,
         );
-        let pair_json_filename = format!("{}-pair.json", base_filename);
+        let pair_json_filename = format!("{base_filename}-pair.json");
         let pair_json_path = Path::new(&output_dir).join(&pair_json_filename);
         let pair_json_content = serde_json::to_string_pretty(&pair_coco_data)
-            .map_err(|e| format!("Failed to serialize pair COCO data: {}", e))?;
+            .map_err(|e| format!("Failed to serialize pair COCO data: {e}"))?;
         fs::write(&pair_json_path, pair_json_content)
-            .map_err(|e| format!("Failed to save pair JSON file: {}", e))?;
+            .map_err(|e| format!("Failed to save pair JSON file: {e}"))?;
     }
 
     let total_annotations = coco_data.annotations.len();
     let message = format!(
-        "Sample data generated successfully in {} with {} images, {} classes and {} total annotations",
-        output_dir, num_images, num_classes, total_annotations
+        "Sample data generated successfully in {output_dir} with {num_images} images, {num_classes} classes and {total_annotations} total annotations"
     );
     Ok(message)
 }
@@ -416,10 +415,7 @@ fn generate_pair_json(
     let mut pair_annotations = Vec::new();
     let mut annotation_id_counter = 1;
 
-    println!(
-        "Generating pair JSON with max_pair_matches: {}",
-        max_pair_matches
-    );
+    println!("Generating pair JSON with max_pair_matches: {max_pair_matches}");
 
     // Define distribution of matching patterns using the provided tuple
     let (perfect_ratio, partial_ratio, no_match_ratio, additional_ratio) = distribution;
@@ -430,8 +426,7 @@ fn generate_pair_json(
     let additional_count = (total_annotations as f32 * additional_ratio).round() as usize;
 
     println!(
-        "Distribution: {} perfect, {} partial, {} no match, {} additional",
-        perfect_match_count, partial_match_count, no_match_count, additional_count
+        "Distribution: {perfect_match_count} perfect, {partial_match_count} partial, {no_match_count} no match, {additional_count} additional"
     );
 
     let mut annotation_indices: Vec<usize> = (0..original_data.annotations.len()).collect();
@@ -450,7 +445,7 @@ fn generate_pair_json(
             "multiple"
         };
 
-        println!("Processing annotation {} as {}", ann_idx, match_type);
+        println!("Processing annotation {ann_idx} as {match_type}");
 
         match match_type {
             "perfect" => {
@@ -519,10 +514,7 @@ fn generate_pair_json(
                     1
                 };
 
-                println!(
-                    "Creating {} matches for annotation {}",
-                    num_matches, ann_idx
-                );
+                println!("Creating {num_matches} matches for annotation {ann_idx}");
 
                 for match_idx in 0..num_matches {
                     // Multiple matches with variations
@@ -637,8 +629,7 @@ fn generate_pair_json(
     // Debug: Check for category and shape consistency
     println!("Debug: Checking pair annotation consistency...");
     println!(
-        "Perfect matches: {}, Partial matches: {}, No matches: {}, Additional: {}",
-        perfect_match_count, partial_match_count, no_match_count, additional_count
+        "Perfect matches: {perfect_match_count}, Partial matches: {partial_match_count}, No matches: {no_match_count}, Additional: {additional_count}"
     );
 
     let mut category_mismatches = 0;
@@ -665,8 +656,7 @@ fn generate_pair_json(
             if original_has_seg != pair_has_seg {
                 shape_mismatches += 1;
                 println!(
-                    "Warning: Shape type mismatch in annotation {} - original has segmentation: {}, pair has segmentation: {}",
-                    i, original_has_seg, pair_has_seg
+                    "Warning: Shape type mismatch in annotation {i} - original has segmentation: {original_has_seg}, pair has segmentation: {pair_has_seg}"
                 );
             }
         }
@@ -676,8 +666,7 @@ fn generate_pair_json(
         println!("✓ All matched annotations have consistent categories and shapes");
     } else {
         println!(
-            "⚠ Found {} category mismatches and {} shape mismatches",
-            category_mismatches, shape_mismatches
+            "⚠ Found {category_mismatches} category mismatches and {shape_mismatches} shape mismatches"
         );
     }
 

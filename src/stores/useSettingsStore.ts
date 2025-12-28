@@ -279,15 +279,16 @@ export const useSettingsStore = create<SettingsState>()(
         panelLayout: state.panelLayout,
         colors: state.colors,
       }),
-      migrate: (persistedState: unknown, _version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
         if (!persistedState || typeof persistedState !== 'object') {
           return persistedState;
         }
 
         const state = persistedState as Record<string, unknown>;
 
-        // Migrate from older versions that don't have comparison colors
+        // Migration from version 0 or 1: add comparison colors
         if (
+          version < 2 &&
           'colors' in state &&
           state.colors &&
           typeof state.colors === 'object' &&
@@ -305,8 +306,13 @@ export const useSettingsStore = create<SettingsState>()(
           };
         }
 
-        // Migrate display settings to include showAnnotations
-        if ('display' in state && state.display && typeof state.display === 'object') {
+        // Migration from version 0 or 1: add showAnnotations to display settings
+        if (
+          version < 2 &&
+          'display' in state &&
+          state.display &&
+          typeof state.display === 'object'
+        ) {
           const display = state.display as Record<string, unknown>;
           if (!('showAnnotations' in display)) {
             display.showAnnotations = true;

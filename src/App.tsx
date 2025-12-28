@@ -116,7 +116,12 @@ function App() {
       toast.info('COAV v1.1.0 - COCO Annotation Viewer');
     },
     onShowShortcuts: () => {
-      toast.info(t('help.shortcutsHint', 'キーボードショートカット: ⌘+O (画像を開く), ⌘+⇧+O (アノテーションを開く)'));
+      toast.info(
+        t(
+          'help.shortcutsHint',
+          'キーボードショートカット: ⌘+O (画像を開く), ⌘+⇧+O (アノテーションを開く)'
+        )
+      );
     },
   });
 

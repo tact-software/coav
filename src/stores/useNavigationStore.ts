@@ -164,11 +164,11 @@ export const useNavigationStore = create<NavigationStore>()(
       },
 
       // Filtering - placeholder for future implementation
-      filterByCategory: (_categoryIds) => {
+      filterByCategory: () => {
         // Not implemented yet
       },
 
-      filterByExistence: (_existsOnly) => {
+      filterByExistence: () => {
         // Not implemented yet
       },
 
