@@ -65,53 +65,19 @@ const AnnotationDetailPanel: React.FC = () => {
     let comparison = null;
     if (isComparing && selected.length > 0 && diffResults && comparisonSettings) {
       const firstAnnotation = selected[0];
-
-      // Debug: Log selected annotation info
-      console.debug('Selected annotation for detail panel:', {
-        id: firstAnnotation.id,
-        source: firstAnnotation._source,
-        category_id: firstAnnotation.category_id,
-        bbox: firstAnnotation.bbox,
-        selectedIds: selectedAnnotationIds,
-      });
-
       const imageDiff = diffResults.get(firstAnnotation.image_id);
 
       if (imageDiff) {
-        // Find matching pairs for this annotation
         const matches = [];
 
-        // Determine if this is GT or Pred based on source and settings
         const isFromGTDataset =
           (comparisonSettings.gtFileId === 'primary' && firstAnnotation._source === 'primary') ||
           (comparisonSettings.gtFileId === 'comparison' &&
             firstAnnotation._source === 'comparison');
 
-        // Debug: Log comparison data
-        console.debug('Searching for matches:', {
-          annotationId: firstAnnotation.id,
-          source: firstAnnotation._source,
-          isFromGTDataset,
-          gtFileId: comparisonSettings.gtFileId,
-          truePositivesCount: imageDiff.truePositives.length,
-          belowThresholdCount: imageDiff.belowThresholdMatches?.length || 0,
-          fpCount: imageDiff.falsePositives.length,
-          fnCount: imageDiff.falseNegatives.length,
-        });
-
-        // Check TP matches - need to match both ID and source
+        // Check TP matches
         for (const tp of imageDiff.truePositives) {
-          console.debug('Checking TP match:', {
-            tpGtId: tp.gtAnnotation.id,
-            tpPredId: tp.predAnnotation.id,
-            searchingId: firstAnnotation.id,
-            isFromGTDataset,
-            iou: tp.iou,
-          });
-
           if (isFromGTDataset && tp.gtAnnotation.id === firstAnnotation.id) {
-            // This is a GT annotation, found its TP match
-            console.debug('Found GT TP match!');
             matches.push({
               type: 'tp' as const,
               gtAnnotation: tp.gtAnnotation,
@@ -119,8 +85,6 @@ const AnnotationDetailPanel: React.FC = () => {
               iou: tp.iou,
             });
           } else if (!isFromGTDataset && tp.predAnnotation.id === firstAnnotation.id) {
-            // This is a Pred annotation, found its TP match
-            console.debug('Found Pred TP match!');
             matches.push({
               type: 'tp' as const,
               gtAnnotation: tp.gtAnnotation,
@@ -130,24 +94,10 @@ const AnnotationDetailPanel: React.FC = () => {
           }
         }
 
-        // Check below threshold matches for FP/FN annotations
+        // Check below threshold matches
         if (matches.length === 0 && imageDiff.belowThresholdMatches) {
-          console.debug(
-            'Checking below threshold matches:',
-            imageDiff.belowThresholdMatches.length
-          );
           for (const btm of imageDiff.belowThresholdMatches) {
-            console.debug('Checking below threshold match:', {
-              btmGtId: btm.gtAnnotation.id,
-              btmPredId: btm.predAnnotation.id,
-              searchingId: firstAnnotation.id,
-              isFromGTDataset,
-              iou: btm.iou,
-            });
-
             if (isFromGTDataset && btm.gtAnnotation.id === firstAnnotation.id) {
-              // This is a GT annotation with below threshold match
-              console.debug('Found GT below threshold match!');
               matches.push({
                 type: 'below-threshold' as const,
                 gtAnnotation: btm.gtAnnotation,
@@ -155,8 +105,6 @@ const AnnotationDetailPanel: React.FC = () => {
                 iou: btm.iou,
               });
             } else if (!isFromGTDataset && btm.predAnnotation.id === firstAnnotation.id) {
-              // This is a Pred annotation with below threshold match
-              console.debug('Found Pred below threshold match!');
               matches.push({
                 type: 'below-threshold' as const,
                 gtAnnotation: btm.gtAnnotation,
@@ -167,18 +115,12 @@ const AnnotationDetailPanel: React.FC = () => {
           }
         }
 
-        // Check FP (only for Pred annotations)
         const isFP =
           !isFromGTDataset && imageDiff.falsePositives.some((fp) => fp.id === firstAnnotation.id);
-
-        // Check FN (only for GT annotations)
         const isFN =
           isFromGTDataset && imageDiff.falseNegatives.some((fn) => fn.id === firstAnnotation.id);
 
-        // Determine annotation type
-        // Only consider TP if there are matches above threshold (not below-threshold matches)
         const hasTPMatch = matches.some((m) => m.type === 'tp');
-
         let annotationType: 'tp' | 'fp' | 'fn' = 'fp';
         if (hasTPMatch) {
           annotationType = 'tp';
@@ -187,20 +129,6 @@ const AnnotationDetailPanel: React.FC = () => {
         } else if (isFP) {
           annotationType = 'fp';
         }
-
-        console.debug('Final match results:', {
-          annotationType,
-          hasTPMatch,
-          isFP,
-          isFN,
-          matchesFound: matches.length,
-          matches: matches.map((m) => ({
-            type: m.type,
-            iou: m.iou,
-            gtId: m.gtAnnotation.id,
-            predId: m.predAnnotation.id,
-          })),
-        });
 
         comparison = {
           type: annotationType,

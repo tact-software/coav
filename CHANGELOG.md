@@ -1,7 +1,5 @@
 # 変更履歴
 
-[English](./CHANGELOG.en.md) | **日本語**
-
 このプロジェクトの注目すべき変更はすべてこのファイルに記録されます。
 
 フォーマットは[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/)に基づいており、

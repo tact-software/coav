@@ -50,9 +50,4 @@ export default [
       react: { version: 'detect' },
     },
   },
-  {
-    rules: {
-      // Prettierと競合しないように
-    },
-  },
 ];

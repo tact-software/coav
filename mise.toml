@@ -1,5 +1,64 @@
 [tools]
-act = "latest"
 bun = "1.2.4"
 node = "22.15.1"
 rust = "1.82.0"
+
+[tasks.install]
+run = "bun install"
+description = "Install dependencies"
+
+[tasks.dev]
+run = "bun run tauri dev"
+description = "Start development server with Tauri"
+
+[tasks.build]
+run = "bun run tauri build"
+description = "Build production application"
+
+[tasks.lint]
+run = "bun run eslint 'src/**/*.{ts,tsx}' --report-unused-disable-directives --max-warnings 0"
+description = "Run ESLint"
+
+[tasks.fix]
+run = "bun run eslint 'src/**/*.{ts,tsx}' --fix"
+description = "Fix ESLint errors"
+
+[tasks.format]
+run = "bun run prettier --write 'src/**/*.{ts,tsx,css}' '*.{json,md}'"
+description = "Format code with Prettier"
+
+[tasks.format-check]
+run = "bun run prettier --check 'src/**/*.{ts,tsx,css}' '*.{json,md}'"
+description = "Check code formatting"
+
+[tasks.type-check]
+run = "bun run tsc --noEmit"
+description = "Run TypeScript type check"
+
+[tasks.test]
+run = "bun run vitest"
+description = "Run unit tests"
+
+[tasks.test-ui]
+run = "bun run vitest --ui"
+description = "Run tests with UI"
+
+[tasks.test-coverage]
+run = "bun run vitest --coverage"
+description = "Run tests with coverage"
+
+[tasks.test-e2e]
+run = "bun run playwright test"
+description = "Run E2E tests"
+
+[tasks.check]
+depends = ["lint", "format-check", "type-check"]
+description = "Run all checks (lint, format, type-check)"
+
+[tasks.rust-fmt]
+run = "cargo fmt --manifest-path src-tauri/Cargo.toml"
+description = "Format Rust code"
+
+[tasks.rust-check]
+run = "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
+description = "Run Clippy on Rust code"

@@ -1,20 +1,41 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useImageStore, useAnnotationStore } from '../stores';
+import { useImageStore, useAnnotationStore, useSettingsStore } from '../stores';
 
-export const useMenuEvents = (
-  onOpenImage: () => void,
-  onOpenAnnotations: () => void,
-  onGenerateSample: () => void,
-  onExportAnnotations: () => void,
-  onShowStatistics: () => void,
-  onShowSettings: () => void,
-  onShowComparison?: () => void,
-  onShowHistogram?: () => void,
-  onShowHeatmap?: () => void
-) => {
+interface MenuEventHandlers {
+  onOpenImage: () => void;
+  onOpenAnnotations: () => void;
+  onGenerateSample: () => void;
+  onExportAnnotations: () => void;
+  onShowStatistics: () => void;
+  onShowSettings: () => void;
+  onShowComparison?: () => void;
+  onShowHistogram?: () => void;
+  onShowHeatmap?: () => void;
+  onShowAbout?: () => void;
+  onShowShortcuts?: () => void;
+  onToggleSidebar?: () => void;
+}
+
+export const useMenuEvents = (handlers: MenuEventHandlers) => {
+  const {
+    onOpenImage,
+    onOpenAnnotations,
+    onGenerateSample,
+    onExportAnnotations,
+    onShowStatistics,
+    onShowSettings,
+    onShowComparison,
+    onShowHistogram,
+    onShowHeatmap,
+    onShowAbout,
+    onShowShortcuts,
+    onToggleSidebar,
+  } = handlers;
+
   const { zoomIn, zoomOut, resetView, fitToWindow } = useImageStore();
   const { showAllCategories, hideAllCategories, clearCocoData } = useAnnotationStore();
+  const { toggleAnnotations, toggleLabels, toggleBoundingBoxes } = useSettingsStore();
 
   useEffect(() => {
     const unsubscribers: Array<() => void> = [];
@@ -36,6 +57,11 @@ export const useMenuEvents = (
         await listen('menu-zoom_fit', fitToWindow),
         await listen('menu-zoom_100', resetView),
 
+        // View menu - toggle events
+        await listen('menu-toggle_annotations', toggleAnnotations),
+        await listen('menu-toggle_labels', toggleLabels),
+        await listen('menu-toggle_bbox', toggleBoundingBoxes),
+
         // Tools menu events
         await listen('menu-statistics', onShowStatistics),
         await listen('menu-settings', onShowSettings),
@@ -44,19 +70,24 @@ export const useMenuEvents = (
         await listen('menu-clear_data', clearCocoData)
       );
 
-      // Add comparison dialog listener if handler provided
+      // Optional event listeners
       if (onShowComparison) {
         unsubscribers.push(await listen('menu-compare', onShowComparison));
       }
-
-      // Add histogram dialog listener if handler provided
       if (onShowHistogram) {
         unsubscribers.push(await listen('menu-histogram', onShowHistogram));
       }
-
-      // Add heatmap dialog listener if handler provided
       if (onShowHeatmap) {
         unsubscribers.push(await listen('menu-heatmap', onShowHeatmap));
+      }
+      if (onShowAbout) {
+        unsubscribers.push(await listen('menu-about', onShowAbout));
+      }
+      if (onShowShortcuts) {
+        unsubscribers.push(await listen('menu-shortcuts', onShowShortcuts));
+      }
+      if (onToggleSidebar) {
+        unsubscribers.push(await listen('menu-toggle_sidebar', onToggleSidebar));
       }
     };
 
@@ -76,10 +107,16 @@ export const useMenuEvents = (
     onShowComparison,
     onShowHistogram,
     onShowHeatmap,
+    onShowAbout,
+    onShowShortcuts,
+    onToggleSidebar,
     zoomIn,
     zoomOut,
     resetView,
     fitToWindow,
+    toggleAnnotations,
+    toggleLabels,
+    toggleBoundingBoxes,
     showAllCategories,
     hideAllCategories,
     clearCocoData,

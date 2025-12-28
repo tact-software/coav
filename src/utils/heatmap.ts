@@ -1,28 +1,6 @@
 import { COCOData, COCOAnnotation } from '../types/coco';
 import { HeatmapData, HeatmapType, HeatmapSettings, HeatmapBin } from '../stores/useHeatmapStore';
-
-// ポリゴンの面積を計算（Shoelace formula）
-function calculatePolygonArea(segmentation: number[][]): number {
-  if (!segmentation || segmentation.length === 0) return 0;
-
-  // 最初のポリゴンのみを使用
-  const polygon = segmentation[0];
-  if (!polygon || polygon.length < 6) return 0; // 最低3点必要
-
-  let area = 0;
-  const n = polygon.length / 2;
-
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    const xi = polygon[i * 2];
-    const yi = polygon[i * 2 + 1];
-    const xj = polygon[j * 2];
-    const yj = polygon[j * 2 + 1];
-    area += xi * yj - xj * yi;
-  }
-
-  return Math.abs(area) / 2;
-}
+import { calculatePolygonArea } from './geometry';
 
 // アノテーションから2次元の値を取得
 function getAnnotationValues(

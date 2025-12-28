@@ -163,20 +163,17 @@ export const useNavigationStore = create<NavigationStore>()(
         });
       },
 
-      // Filtering (to be implemented based on COCO data integration)
-      filterByCategory: (categoryIds) => {
-        // TODO: Implement filtering logic
-        console.log('Filter by categories:', categoryIds);
+      // Filtering - placeholder for future implementation
+      filterByCategory: (_categoryIds) => {
+        // Not implemented yet
       },
 
-      filterByExistence: (existsOnly) => {
-        // TODO: Implement filtering logic
-        console.log('Filter by existence:', existsOnly);
+      filterByExistence: (_existsOnly) => {
+        // Not implemented yet
       },
 
       clearFilters: () => {
-        // TODO: Implement clear filters logic
-        console.log('Clear filters');
+        // Not implemented yet
       },
     }),
     {
