@@ -2,6 +2,8 @@
 bun = "1.2.4"
 node = "22.15.1"
 rust = "1.82.0"
+act = "latest"
+actionlint = "latest"
 
 [tasks.install]
 run = "bun install"
@@ -62,3 +64,37 @@ description = "Format Rust code"
 [tasks.rust-check]
 run = "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
 description = "Run Clippy on Rust code"
+
+[tasks.rust-fmt-check]
+run = "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check"
+description = "Check Rust code formatting"
+
+[tasks.rust-test]
+run = "cargo test --manifest-path src-tauri/Cargo.toml --all"
+description = "Run Rust tests"
+
+# CI用の複合タスク
+[tasks."ci:frontend"]
+depends = ["lint", "format-check", "type-check", "test"]
+description = "Run all frontend CI checks"
+
+[tasks."ci:backend"]
+depends = ["rust-fmt-check", "rust-check", "rust-test"]
+description = "Run all backend CI checks"
+
+[tasks."ci:all"]
+depends = ["ci:frontend", "ci:backend"]
+description = "Run all CI checks"
+
+# ワークフロー検証タスク
+[tasks."workflow:lint"]
+run = "actionlint"
+description = "Lint GitHub Actions workflows"
+
+[tasks."workflow:test"]
+run = "act --list"
+description = "List available workflow jobs"
+
+[tasks."workflow:run"]
+run = "act -n"
+description = "Dry-run GitHub Actions workflows locally"

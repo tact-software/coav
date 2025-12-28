@@ -10,9 +10,8 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  # フロントエンド静的解析ジョブ
-  frontend-lint:
-    name: Frontend Lint & Format Check
+  frontend:
+    name: Frontend CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,27 +23,16 @@ jobs:
           cache: true
           experimental: true
 
-      - name: Install tools with mise
+      - name: Setup
         run: |
           mise install
-          mise list
+          mise run install
 
-      - name: Install frontend dependencies
-        run: bun install
+      - name: Run frontend CI
+        run: mise run ci:frontend
 
-      # TypeScript/JavaScript関連
-      - name: ESLint
-        run: bun run lint
-
-      - name: Type check
-        run: bun run type-check || echo "Type check command not found, skipping..."
-
-      - name: Prettier format check
-        run: bun run format:check
-
-  # バックエンド静的解析ジョブ
-  backend-lint:
-    name: Backend Lint & Format Check
+  backend:
+    name: Backend CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,26 +44,15 @@ jobs:
           cache: true
           experimental: true
 
-      - name: Install tools with mise
-        run: |
-          mise install
-          mise list
-
-      - name: Install Rust components
-        run: |
-          cd src-tauri
-          rustup component add rustfmt clippy
-          rustup show
-          rustup component list --installed
+      - name: Setup
+        run: mise install
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
-          shared-key: 'backend-lint'
 
-      # Linux用の依存関係（RustのClippyで必要）
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -88,203 +65,5 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      # Rust関連
-      - name: Rust format check
-        run: cargo fmt --manifest-path ./src-tauri/Cargo.toml --all -- --check
-
-      - name: Clippy
-        run: cargo clippy --manifest-path ./src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
-
-  # # テストジョブ（Ubuntu & Windows）
-  # test:
-  #   name: Test - ${{ matrix.os }}
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest]
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Install mise
-  #       uses: jdx/mise-action@v2.2.2
-  #       with:
-  #         version: v2025.5.11
-  #         cache: true
-  #         experimental: true
-
-  #     - name: Install tools with mise
-  #       run: |
-  #         mise install
-  #         mise list
-
-  #     - name: Rust cache
-  #       uses: swatinem/rust-cache@v2
-  #       with:
-  #         workspaces: './src-tauri -> target'
-
-  #     # Linux用の依存関係（Rustのテストで必要）
-  #     - name: Install system dependencies (Ubuntu)
-  #       if: matrix.os == 'ubuntu-latest'
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y libwebkit2gtk-4.1-dev \
-  #           build-essential \
-  #           curl \
-  #           wget \
-  #           file \
-  #           libssl-dev \
-  #           libayatana-appindicator3-dev \
-  #           librsvg2-dev
-
-  #     - name: Install frontend dependencies
-  #       run: bun install
-
-  #     # フロントエンドテスト
-  #     - name: Run frontend tests
-  #       run: bun test || echo "No tests found, skipping..."
-
-  #     # Rustテスト
-  #     - name: Run Rust tests
-  #       run: cargo test --manifest-path ./src-tauri/Cargo.toml --all
-
-  # ビルドジョブ（Ubuntu & Windows）
-  build:
-    name: Build - ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.os }}
-    # needs: [lint, test] # 静的解析とテストが成功した後に実行
-    needs: [frontend-lint, backend-lint] # 静的解析が成功した後に実行
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - name: Linux
-            os: ubuntu-latest
-            rust-target: x86_64-unknown-linux-gnu
-          - name: Windows
-            os: windows-latest
-            rust-target: x86_64-pc-windows-msvc
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install mise
-        uses: jdx/mise-action@v2.2.2
-        with:
-          version: v2025.5.11
-          cache: true
-          experimental: true
-
-      - name: Install tools with mise
-        run: |
-          mise install
-          mise list
-
-      - name: Install Rust components
-        run: |
-          cd src-tauri
-          rustup component add rustfmt clippy
-          rustup show
-          rustup component list --installed
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
-      # Linux用の依存関係
-      - name: Install system dependencies (Ubuntu)
-        if: matrix.platform.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: Install frontend dependencies
-        run: bun install
-
-      # フロントエンドビルド
-      - name: Build frontend
-        run: bun run build
-
-      # Tauriアプリのビルド（デバッグ）
-      - name: Build Tauri app (debug)
-        run: bun run tauri build --debug
-
-      # ビルド成果物の確認
-      - name: List build artifacts
-        shell: bash
-        run: |
-          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
-            ls -la src-tauri/target/debug/
-            ls -la src-tauri/target/debug/bundle/ || true
-          else
-            ls -la src-tauri/target/debug/
-            ls -la src-tauri/target/debug/bundle/ || true
-          fi
-
-  # # リリースビルド（タグプッシュ時のみ）
-  # release:
-  #   name: Release Build - ${{ matrix.platform.name }}
-  #   if: startsWith(github.ref, 'refs/tags/')
-  #   runs-on: ${{ matrix.platform.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       platform:
-  #         - name: Linux
-  #           os: ubuntu-latest
-  #           rust-target: x86_64-unknown-linux-gnu
-  #         - name: Windows
-  #           os: windows-latest
-  #           rust-target: x86_64-pc-windows-msvc
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Install mise
-  #       uses: jdx/mise-action@v2.2.2
-  #       with:
-  #         version: v2025.5.11
-  #         cache: true
-  #         experimental: true
-
-  #     - name: Install tools with mise
-  #       run: |
-  #         mise install
-  #         mise list
-
-  #     # Linux用の依存関係
-  #     - name: Install system dependencies (Ubuntu)
-  #       if: matrix.platform.os == 'ubuntu-latest'
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y libwebkit2gtk-4.1-dev \
-  #           build-essential \
-  #           curl \
-  #           wget \
-  #           file \
-  #           libssl-dev \
-  #           libayatana-appindicator3-dev \
-  #           librsvg2-dev
-
-  #     - name: Install frontend dependencies
-  #       run: bun install
-
-  #     # リリースビルド
-  #     - name: Build Tauri app (release)
-  #       run: bun run tauri build
-
-  #     # アーティファクトのアップロード
-  #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ matrix.platform.name }}-release
-  #         path: |
-  #           src-tauri/target/release/bundle/
+      - name: Run backend CI
+        run: mise run ci:backend
