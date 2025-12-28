@@ -101,17 +101,24 @@ function App() {
   });
 
   // Menu events
-  useMenuEvents(
-    fileOps.handleOpenImage,
-    fileOps.handleOpenAnnotations,
-    fileOps.handleGenerateSample,
-    fileOps.handleExportAnnotations,
-    fileOps.handleShowStatistics,
-    openSettingsModal,
-    () => fileOps.setShowComparisonDialog(true),
-    () => fileOps.setShowHistogramDialog(true),
-    openHeatmapModal
-  );
+  useMenuEvents({
+    onOpenImage: fileOps.handleOpenImage,
+    onOpenAnnotations: fileOps.handleOpenAnnotations,
+    onGenerateSample: fileOps.handleGenerateSample,
+    onExportAnnotations: fileOps.handleExportAnnotations,
+    onShowStatistics: fileOps.handleShowStatistics,
+    onShowSettings: openSettingsModal,
+    onShowComparison: () => fileOps.setShowComparisonDialog(true),
+    onShowHistogram: () => fileOps.setShowHistogramDialog(true),
+    onShowHeatmap: openHeatmapModal,
+    onToggleSidebar: toggleLeftPanel,
+    onShowAbout: () => {
+      toast.info('COAV v1.1.0 - COCO Annotation Viewer');
+    },
+    onShowShortcuts: () => {
+      toast.info(t('help.shortcutsHint', 'キーボードショートカット: ⌘+O (画像を開く), ⌘+⇧+O (アノテーションを開く)'));
+    },
+  });
 
   // Drag and drop
   useDragAndDrop({

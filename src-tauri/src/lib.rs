@@ -3,8 +3,17 @@ mod menu;
 mod models;
 
 use commands::{load_annotations, load_image, sample_generator::generate_sample_data, scan_folder};
-use menu::create_menu;
+use menu::create_menu_with_language;
 use tauri::{Emitter, Manager};
+
+/// Command to update menu language
+#[tauri::command]
+fn set_menu_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
+    let menu = create_menu_with_language(&app, &language)
+        .map_err(|e| e.to_string())?;
+    app.set_menu(menu).map_err(|e| e.to_string())?;
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,11 +25,13 @@ pub fn run() {
             load_annotations,
             load_image,
             scan_folder,
-            generate_sample_data
+            generate_sample_data,
+            set_menu_language
         ])
         .setup(|app| {
             let handle = app.handle();
-            let menu = create_menu(handle)?;
+            // Default to Japanese menu
+            let menu = create_menu_with_language(handle, "ja")?;
             app.set_menu(menu)?;
             Ok(())
         })

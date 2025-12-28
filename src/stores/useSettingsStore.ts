@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { invoke } from '@tauri-apps/api/core';
 import i18n from '../i18n/config';
 
 export type Language = 'ja' | 'en';
 export type Theme = 'light' | 'dark' | 'system';
 
 interface DisplaySettings {
+  showAnnotations: boolean;
   showLabels: boolean;
   showBoundingBoxes: boolean;
   lineWidth: number;
@@ -79,6 +81,9 @@ interface SettingsState {
   updateColorSettings: (settings: Partial<ColorSettings>) => void;
   setCategoryColor: (categoryId: number, color: string) => void;
   resetCategoryColors: () => void;
+  toggleAnnotations: () => void;
+  toggleLabels: () => void;
+  toggleBoundingBoxes: () => void;
 }
 
 // Helper function to generate color from category ID
@@ -101,10 +106,14 @@ const defaultSettings: Omit<
   | 'updateColorSettings'
   | 'setCategoryColor'
   | 'resetCategoryColors'
+  | 'toggleAnnotations'
+  | 'toggleLabels'
+  | 'toggleBoundingBoxes'
 > = {
   language: 'ja',
   theme: 'system',
   display: {
+    showAnnotations: true,
     showLabels: true,
     showBoundingBoxes: true,
     lineWidth: 2,
@@ -145,6 +154,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setLanguage: (language) => {
         i18n.changeLanguage(language);
+        // Update native menu language
+        invoke('set_menu_language', { language }).catch((err) => {
+          console.error('Failed to update menu language:', err);
+        });
         set({ language });
       },
 
@@ -234,6 +247,24 @@ export const useSettingsStore = create<SettingsState>()(
           },
         }));
       },
+
+      toggleAnnotations: () => {
+        set((state) => ({
+          display: { ...state.display, showAnnotations: !state.display.showAnnotations },
+        }));
+      },
+
+      toggleLabels: () => {
+        set((state) => ({
+          display: { ...state.display, showLabels: !state.display.showLabels },
+        }));
+      },
+
+      toggleBoundingBoxes: () => {
+        set((state) => ({
+          display: { ...state.display, showBoundingBoxes: !state.display.showBoundingBoxes },
+        }));
+      },
     }),
     {
       name: 'coav-settings',
@@ -292,3 +323,13 @@ const initializeTheme = () => {
 };
 
 initializeTheme();
+
+// Initialize menu language on app start
+const initializeMenuLanguage = () => {
+  const { language } = useSettingsStore.getState();
+  invoke('set_menu_language', { language }).catch((err) => {
+    console.error('Failed to initialize menu language:', err);
+  });
+};
+
+initializeMenuLanguage();

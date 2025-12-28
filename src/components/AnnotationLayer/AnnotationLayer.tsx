@@ -222,7 +222,8 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     [viewport]
   );
 
-  if (!cocoData) return null;
+  // Early return if annotations are hidden or no data
+  if (!cocoData || !display.showAnnotations) return null;
 
   // Collect annotations from both datasets when comparing
   // Use a more explicit approach to prevent stale data
