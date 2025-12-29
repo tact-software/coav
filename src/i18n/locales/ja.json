@@ -173,15 +173,19 @@
     "invalidImageFormat": "有効な画像形式であることを確認してください",
     "invalidJsonFormat": "有効なJSON形式であることを確認してください",
     "exportFailed": "エクスポートに失敗しました",
+    "saveAnnotationsFailed": "アノテーションの保存に失敗しました",
+    "noAnnotationsToSave": "保存するアノテーションがありません",
     "error": "エラー"
   },
   "success": {
     "imageLoaded": "画像を読み込みました",
     "annotationsLoaded": "アノテーションを読み込みました",
     "annotationsExported": "アノテーションをエクスポートしました",
+    "annotationsSaved": "アノテーションを保存しました",
     "sampleGenerated": "サンプルデータを生成しました",
     "loaded": "読み込み完了",
     "exported": "エクスポート完了",
+    "saved": "保存完了",
     "generated": "生成完了"
   },
   "sampleGenerator": {
@@ -428,8 +432,7 @@
     "allImages": "全画像"
   },
   "mode": {
-    "normal": "通常",
-    "comparison": "比較",
+    "viewer": "ビュワー",
     "annotation": "アノテーション",
     "annotationDisabledHint": "アノテーションモードを使用するにはプロジェクトを開いてください"
   },
@@ -462,10 +465,20 @@
   },
   "editor": {
     "title": "エディタ",
-    "tools": "ツール",
-    "select": "選択",
-    "bbox": "バウンディングボックス",
-    "polygon": "ポリゴン",
+    "tools": {
+      "title": "ツール",
+      "select": "選択",
+      "bbox": "バウンディングボックス",
+      "polygon": "ポリゴン"
+    },
+    "addAnnotation": "アノテーションを追加",
+    "drawingMode": "描画中",
+    "hints": {
+      "bbox": "ドラッグして矩形を描画します。Escでキャンセル。",
+      "polygon": "クリックで頂点を追加。ダブルクリックまたはEnterで完了。Escでキャンセル。"
+    },
+    "selectCategory": "カテゴリ",
+    "actions": "操作",
     "undo": "元に戻す",
     "redo": "やり直す",
     "save": "保存",

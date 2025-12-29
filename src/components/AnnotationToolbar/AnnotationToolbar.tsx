@@ -1,31 +1,51 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useEditorStore,
   useHistoryStore,
   useModeStore,
   useAnnotationStore,
+  generateCategoryColor,
 } from '../../stores';
+import { useFileOperations } from '../../hooks/useFileOperations';
 import type { EditorTool, EditAction } from '../../types';
+import type { EditableAnnotation } from '../../types/editor';
 import './AnnotationToolbar.css';
 
 export function AnnotationToolbar() {
   const { t } = useTranslation();
+  const { handleSaveAnnotations } = useFileOperations();
   const mode = useModeStore((state) => state.mode);
   const currentTool = useEditorStore((state) => state.currentTool);
   const setTool = useEditorStore((state) => state.setTool);
   const hasChanges = useEditorStore((state) => state.hasChanges);
+  const currentCategoryId = useEditorStore((state) => state.currentCategoryId);
+  const setCurrentCategoryId = useEditorStore((state) => state.setCurrentCategoryId);
 
   const canUndo = useHistoryStore((state) => state.canUndo());
   const canRedo = useHistoryStore((state) => state.canRedo());
   const undoHistory = useHistoryStore((state) => state.undo);
   const redoHistory = useHistoryStore((state) => state.redo);
+  const pushHistory = useHistoryStore((state) => state.push);
 
   const {
+    cocoData,
     addAnnotation,
     deleteAnnotation,
     updateAnnotation,
+    selectedAnnotationIds,
+    getSelectedAnnotations,
   } = useAnnotationStore();
+
+  // カテゴリ一覧
+  const categories = cocoData?.categories ?? [];
+
+  // 初期カテゴリを設定
+  useEffect(() => {
+    if (currentCategoryId === null && categories.length > 0) {
+      setCurrentCategoryId(categories[0].id);
+    }
+  }, [categories, currentCategoryId, setCurrentCategoryId]);
 
   // アクションを適用する（Undo時は逆操作、Redo時は順操作）
   const applyAction = useCallback(
@@ -82,9 +102,32 @@ export function AnnotationToolbar() {
     }
   }, [redoHistory, applyAction]);
 
+  // 選択中のアノテーションを削除
+  const handleDelete = useCallback(() => {
+    const selectedAnnotations = getSelectedAnnotations();
+    if (selectedAnnotations.length === 0) return;
+
+    // 履歴に追加（バッチ削除）
+    if (selectedAnnotations.length === 1) {
+      const ann = selectedAnnotations[0];
+      const editableAnn: EditableAnnotation = { ...ann, zIndex: 0 };
+      pushHistory({ type: 'DELETE', annotation: editableAnn }, 'アノテーションを削除');
+      deleteAnnotation(ann.id);
+    } else {
+      const deleteActions: EditAction[] = selectedAnnotations.map((ann) => ({
+        type: 'DELETE' as const,
+        annotation: { ...ann, zIndex: 0 } as EditableAnnotation,
+      }));
+      pushHistory({ type: 'BATCH', actions: deleteActions }, `${selectedAnnotations.length}件のアノテーションを削除`);
+      selectedAnnotations.forEach((ann) => deleteAnnotation(ann.id));
+    }
+  }, [getSelectedAnnotations, deleteAnnotation, pushHistory]);
+
   if (mode !== 'annotation') {
     return null;
   }
+
+  const hasSelection = selectedAnnotationIds.length > 0;
 
   const tools: { key: EditorTool; icon: React.ReactNode; label: string }[] = [
     {
@@ -117,10 +160,9 @@ export function AnnotationToolbar() {
     },
   ];
 
-  const handleSave = () => {
-    // TODO: 保存処理を実装
-    console.log('Save annotations');
-  };
+  const handleSave = useCallback(() => {
+    handleSaveAnnotations();
+  }, [handleSaveAnnotations]);
 
   return (
     <div className="annotation-toolbar">
@@ -136,6 +178,30 @@ export function AnnotationToolbar() {
           </button>
         ))}
       </div>
+
+      <div className="annotation-toolbar__separator" />
+
+      {/* カテゴリセレクター */}
+      {categories.length > 0 && (
+        <div className="annotation-toolbar__category">
+          <select
+            className="annotation-toolbar__category-select"
+            value={currentCategoryId ?? ''}
+            onChange={(e) => setCurrentCategoryId(Number(e.target.value))}
+            title={t('editor.selectCategory')}
+          >
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <div
+            className="annotation-toolbar__category-color"
+            style={{ backgroundColor: generateCategoryColor(currentCategoryId ?? 1) }}
+          />
+        </div>
+      )}
 
       <div className="annotation-toolbar__separator" />
 
@@ -160,6 +226,17 @@ export function AnnotationToolbar() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 7v6h-6" />
             <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+          </svg>
+        </button>
+        <button
+          className="annotation-toolbar__button annotation-toolbar__button--danger"
+          onClick={handleDelete}
+          disabled={!hasSelection}
+          title={t('editor.delete')}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
         </button>
       </div>

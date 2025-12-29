@@ -9,8 +9,7 @@ export { useHeatmapStore } from './useHeatmapStore';
 export { useNavigationStore } from './useNavigationStore';
 export {
   useModeStore,
-  selectIsNormalMode,
-  selectIsComparisonMode,
+  selectIsViewerMode,
   selectIsAnnotationMode,
 } from './useModeStore';
 export {

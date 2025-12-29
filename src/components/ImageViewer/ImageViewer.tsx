@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { useTranslation } from 'react-i18next';
-import { useImageStore, useAnnotationStore, useNavigationStore, useModeStore } from '../../stores';
+import { useImageStore, useAnnotationStore, useNavigationStore, useModeStore, useEditorStore } from '../../stores';
 import AnnotationLayer from '../AnnotationLayer';
 import { DrawingLayer } from '../DrawingLayer';
 import './ImageViewer.css';
@@ -34,6 +34,10 @@ const ImageViewer: React.FC = () => {
 
   const { navigationMode } = useNavigationStore();
   const appMode = useModeStore((state) => state.mode);
+  const currentTool = useEditorStore((state) => state.currentTool);
+
+  // アノテーションモードで描画ツール（bbox/polygon）使用中はStageのドラッグを無効にする
+  const isDraggable = !(appMode === 'annotation' && currentTool !== 'select');
 
   // Calculate viewport for culling
   const getViewport = useCallback(() => {
@@ -224,7 +228,7 @@ const ImageViewer: React.FC = () => {
           ref={stageRef}
           width={containerSize.width}
           height={containerSize.height}
-          draggable
+          draggable={isDraggable}
           onWheel={handleWheel}
           onDragEnd={handleDragEnd}
           scaleX={zoom}

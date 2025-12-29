@@ -4,7 +4,7 @@ import type { COCOAnnotation } from './coco';
 import type { Point } from './app';
 
 /** アプリケーションモード */
-export type AppMode = 'normal' | 'comparison' | 'annotation';
+export type AppMode = 'viewer' | 'annotation';
 
 /** エディタツール */
 export type EditorTool = 'select' | 'bbox' | 'polygon';

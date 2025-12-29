@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import {
   useAnnotationStore,
@@ -230,6 +230,43 @@ export function useFileOperations() {
     toast.success(t('success.annotationsExported'), t('success.exported'));
   }, [t]);
 
+  const handleSaveAnnotations = useCallback(async () => {
+    const { cocoData } = useAnnotationStore.getState();
+    if (!cocoData) {
+      toast.error(t('errors.saveAnnotationsFailed'), t('errors.noAnnotationsToSave'));
+      return;
+    }
+
+    try {
+      const filePath = await save({
+        filters: [
+          {
+            name: 'JSON',
+            extensions: ['json'],
+          },
+        ],
+        defaultPath: 'annotations.json',
+      });
+
+      if (!filePath) return;
+
+      await invoke('save_annotations', {
+        filePath,
+        cocoData,
+      });
+
+      toast.success(t('success.annotationsSaved'), `${t('success.saved')}: ${filePath.split('/').pop() || filePath.split('\\').pop()}`);
+
+      // Clear the hasChanges flag after successful save
+      const { setHasChanges } = await import('../stores/useEditorStore').then(m => m.useEditorStore.getState());
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error saving annotations:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(t('errors.saveAnnotationsFailed'), errorMessage);
+    }
+  }, [t]);
+
   const handleGenerateSample = useCallback(() => {
     setShowSampleGenerator(true);
   }, []);
@@ -437,6 +474,7 @@ export function useFileOperations() {
     handleOpenAnnotations,
     handleOpenFolder,
     handleExportAnnotations,
+    handleSaveAnnotations,
     handleGenerateSample,
     handleShowStatistics,
     handleSampleGenerated,

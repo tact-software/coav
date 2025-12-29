@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Layer, Line, Rect, Text, Group } from 'react-konva';
 import Konva from 'konva';
-import { useAnnotationStore, useSettingsStore, generateCategoryColor } from '../../stores';
+import { useAnnotationStore, useSettingsStore, useModeStore, useEditorStore, generateCategoryColor } from '../../stores';
 import { COCOAnnotation } from '../../types/coco';
 import { DiffFilter } from '../../types/diff';
 import { hslToRgb } from '../../utils/colorConverter';
@@ -33,6 +33,8 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
     diffFilters,
   } = useAnnotationStore();
 
+  const mode = useModeStore((state) => state.mode);
+  const currentTool = useEditorStore((state) => state.currentTool);
   const settingsStore = useSettingsStore();
   // Use comparison display settings if in comparison mode, otherwise use regular display settings
   const display =
@@ -180,13 +182,17 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ imageId, scale = 1, v
       e: Konva.KonvaEventObject<MouseEvent>,
       selectionId?: number | string
     ) => {
+      // アノテーションモードでselectツール以外の場合は選択しない
+      if (mode === 'annotation' && currentTool !== 'select') {
+        return;
+      }
       e.cancelBubble = true;
       const multiSelect = e.evt.ctrlKey || e.evt.metaKey;
       // Use provided selection ID or fall back to annotation ID
       const idToSelect = selectionId !== undefined ? selectionId : annotation.id;
       selectAnnotation(idToSelect, multiSelect);
     },
-    [selectAnnotation]
+    [selectAnnotation, mode, currentTool]
   );
 
   const handleMouseEnter = useCallback(

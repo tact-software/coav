@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { Layer, Rect, Line, Circle, Group } from 'react-konva';
 import Konva from 'konva';
 import {
@@ -19,6 +19,7 @@ interface DrawingLayerProps {
 export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, imageId }) => {
   const mode = useModeStore((state) => state.mode);
   const currentTool = useEditorStore((state) => state.currentTool);
+  const setTool = useEditorStore((state) => state.setTool);
   const drawingState = useEditorStore((state) => state.drawingState);
   const startDrawing = useEditorStore((state) => state.startDrawing);
   const updateDrawing = useEditorStore((state) => state.updateDrawing);
@@ -28,10 +29,20 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
   const currentCategoryId = useEditorStore((state) => state.currentCategoryId);
   const setHasChanges = useEditorStore((state) => state.setHasChanges);
 
+  // 描画完了後に選択モードに戻る
+  const returnToSelectMode = useCallback(() => {
+    setTool('select');
+  }, [setTool]);
+
   const { cocoData, addAnnotation } = useAnnotationStore();
   const pushHistory = useHistoryStore((state) => state.push);
 
   const isDrawingRef = useRef(false);
+
+  // ポリゴン閉じるためのスナップ距離（画面座標でのピクセル数）
+  const SNAP_DISTANCE = 8;
+  // マウスが始点のスナップ範囲内にいるかどうか
+  const [isNearStartPoint, setIsNearStartPoint] = useState(false);
 
   // アノテーションモード以外では何も表示しない
   if (mode !== 'annotation') {
@@ -52,6 +63,28 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
 
     return { x: pos.x, y: pos.y };
   }, [stageRef]);
+
+  // 2点間の距離を計算（画面座標で）
+  const getScreenDistance = useCallback(
+    (p1: Point, p2: Point): number => {
+      const dx = (p2.x - p1.x) * scale;
+      const dy = (p2.y - p1.y) * scale;
+      return Math.sqrt(dx * dx + dy * dy);
+    },
+    [scale]
+  );
+
+  // 始点に近いかどうかを判定
+  const isCloseToStartPoint = useCallback(
+    (currentPoint: Point): boolean => {
+      const points = drawingState.points;
+      if (points.length < 3) return false; // 3点以上ないと閉じられない
+
+      const startPoint = points[0];
+      return getScreenDistance(currentPoint, startPoint) < SNAP_DISTANCE;
+    },
+    [drawingState.points, getScreenDistance, SNAP_DISTANCE]
+  );
 
   // アノテーションをCOCOデータに追加
   const addAnnotationToStore = useCallback(
@@ -101,8 +134,10 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
       }
 
       finishDrawing();
+      // 描画完了後に選択モードに戻る
+      returnToSelectMode();
     },
-    [drawingState.startPoint, imageId, currentCategoryId, addAnnotationToStore, finishDrawing]
+    [drawingState.startPoint, imageId, currentCategoryId, addAnnotationToStore, finishDrawing, returnToSelectMode]
   );
 
   // ポリゴン描画完了
@@ -136,7 +171,9 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
 
     addAnnotationToStore(newAnnotation);
     finishDrawing();
-  }, [drawingState.points, imageId, currentCategoryId, addAnnotationToStore, finishDrawing, cancelDrawing]);
+    // 描画完了後に選択モードに戻る
+    returnToSelectMode();
+  }, [drawingState.points, imageId, currentCategoryId, addAnnotationToStore, finishDrawing, cancelDrawing, returnToSelectMode]);
 
   // マウスイベントハンドラ
   const handleMouseDown = useCallback(
@@ -154,30 +191,38 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
         if (e.evt.detail === 2) {
           finishPolygonDrawing();
         } else {
-          if (!drawingState.isDrawing) {
-            startDrawing(point);
+          // 始点に近い場合はポリゴンを閉じる
+          if (drawingState.isDrawing && isCloseToStartPoint(point)) {
+            finishPolygonDrawing();
+            setIsNearStartPoint(false);
+          } else {
+            if (!drawingState.isDrawing) {
+              startDrawing(point);
+            }
+            addPolygonPointAction(point);
           }
-          addPolygonPointAction(point);
         }
       }
     },
-    [currentTool, getPointerPosition, startDrawing, addPolygonPointAction, finishPolygonDrawing, drawingState.isDrawing]
+    [currentTool, getPointerPosition, startDrawing, addPolygonPointAction, finishPolygonDrawing, drawingState.isDrawing, isCloseToStartPoint]
   );
 
-  const handleMouseMove = useCallback(
-    (_e: Konva.KonvaEventObject<MouseEvent>) => {
-      if (currentTool !== 'bbox' || !isDrawingRef.current) return;
-
+  const handleMouseMove = useCallback(() => {
       const point = getPointerPosition();
       if (!point) return;
 
-      updateDrawing(point);
+      if (currentTool === 'bbox' && isDrawingRef.current) {
+        updateDrawing(point);
+      } else if (currentTool === 'polygon' && drawingState.isDrawing) {
+        // ポリゴン描画中はマウス位置を更新して始点との距離をチェック
+        updateDrawing(point);
+        setIsNearStartPoint(isCloseToStartPoint(point));
+      }
     },
-    [currentTool, getPointerPosition, updateDrawing]
+    [currentTool, getPointerPosition, updateDrawing, drawingState.isDrawing, isCloseToStartPoint]
   );
 
-  const handleMouseUp = useCallback(
-    (_e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleMouseUp = useCallback(() => {
       if (currentTool !== 'bbox' || !isDrawingRef.current) return;
 
       const point = getPointerPosition();
@@ -189,15 +234,16 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
     [currentTool, getPointerPosition, finishBboxDrawing]
   );
 
-  // キーボードイベント（Escでキャンセル、Enterで完了）
+  // キーボードイベント（Escでキャンセル＆選択モードに戻る、Enterで完了）
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (mode !== 'annotation') return;
 
       if (e.key === 'Escape') {
-        // 描画キャンセル
+        // 描画キャンセル＆選択モードに戻る
         isDrawingRef.current = false;
         cancelDrawing();
+        returnToSelectMode();
       } else if (e.key === 'Enter' && currentTool === 'polygon') {
         // ポリゴン描画完了
         finishPolygonDrawing();
@@ -206,7 +252,7 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, currentTool, cancelDrawing, finishPolygonDrawing]);
+  }, [mode, currentTool, cancelDrawing, finishPolygonDrawing, returnToSelectMode]);
 
   // 描画中のプレビューをレンダリング
   const renderDrawingPreview = () => {
@@ -240,6 +286,8 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
     if (currentTool === 'polygon' && drawingState.points.length > 0) {
       const points = drawingState.points;
       const flatPoints = points.flatMap((p: Point) => [p.x, p.y]);
+      const startPoint = points[0];
+      const snapRadius = SNAP_DISTANCE / scale; // 画像座標でのスナップ範囲
 
       return (
         <Group>
@@ -251,18 +299,44 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
             closed={false}
             dash={[5 / scale, 5 / scale]}
           />
+          {/* 始点のスナップ範囲インジケーター（3点以上で表示） */}
+          {points.length >= 3 && (
+            <Circle
+              x={startPoint.x}
+              y={startPoint.y}
+              radius={snapRadius}
+              stroke={isNearStartPoint ? '#ff0000' : '#ff000066'}
+              strokeWidth={isNearStartPoint ? 2 / scale : 1 / scale}
+              dash={[4 / scale, 4 / scale]}
+              fill={isNearStartPoint ? 'rgba(255, 0, 0, 0.15)' : 'transparent'}
+            />
+          )}
           {/* 頂点マーカー */}
           {points.map((point: Point, index: number) => (
             <Circle
               key={index}
               x={point.x}
               y={point.y}
-              radius={pointRadius}
+              radius={index === 0 ? pointRadius * 1.5 : pointRadius}
               fill={index === 0 ? '#ff0000' : '#00ff00'}
               stroke="#ffffff"
               strokeWidth={1 / scale}
             />
           ))}
+          {/* 現在のマウス位置へのプレビューライン */}
+          {drawingState.currentPoint && points.length > 0 && (
+            <Line
+              points={[
+                points[points.length - 1].x,
+                points[points.length - 1].y,
+                drawingState.currentPoint.x,
+                drawingState.currentPoint.y,
+              ]}
+              stroke="#00ff0088"
+              strokeWidth={strokeWidth}
+              dash={[3 / scale, 3 / scale]}
+            />
+          )}
         </Group>
       );
     }

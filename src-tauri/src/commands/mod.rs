@@ -1,6 +1,7 @@
 use crate::models::{COCOData, COCOImage};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 
 pub mod sample_generator;
@@ -173,4 +174,24 @@ pub async fn scan_folder(
     }
 
     Ok(image_metadata_list)
+}
+
+#[tauri::command]
+#[allow(dead_code)]
+pub async fn save_annotations(file_path: String, coco_data: COCOData) -> Result<(), String> {
+    // バリデーション
+    coco_data.validate()?;
+
+    // JSONシリアライズ（整形あり）
+    let json_content = serde_json::to_string_pretty(&coco_data)
+        .map_err(|e| format!("Failed to serialize JSON: {e}"))?;
+
+    // ファイル書き込み
+    let mut file =
+        fs::File::create(&file_path).map_err(|e| format!("Failed to create file: {e}"))?;
+
+    file.write_all(json_content.as_bytes())
+        .map_err(|e| format!("Failed to write file: {e}"))?;
+
+    Ok(())
 }

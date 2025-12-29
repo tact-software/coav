@@ -10,16 +10,14 @@ interface ModeState {
 
   // アクション
   setMode: (mode: AppMode) => void;
-  enterComparisonMode: () => void;
-  exitComparisonMode: () => void;
   enterAnnotationMode: () => void;
   exitAnnotationMode: () => void;
 }
 
 export const useModeStore = create<ModeState>()(
   subscribeWithSelector((set, get) => ({
-    mode: 'normal',
-    previousMode: 'normal',
+    mode: 'viewer',
+    previousMode: 'viewer',
 
     setMode: (mode) => {
       const currentMode = get().mode;
@@ -29,31 +27,8 @@ export const useModeStore = create<ModeState>()(
       });
     },
 
-    enterComparisonMode: () => {
-      const { mode } = get();
-      if (mode === 'annotation') {
-        console.warn('Cannot enter comparison mode while in annotation mode');
-        return;
-      }
-      set({
-        mode: 'comparison',
-        previousMode: mode,
-      });
-    },
-
-    exitComparisonMode: () => {
-      set({
-        mode: 'normal',
-        previousMode: 'comparison',
-      });
-    },
-
     enterAnnotationMode: () => {
       const { mode } = get();
-      if (mode === 'comparison') {
-        console.warn('Cannot enter annotation mode while in comparison mode');
-        return;
-      }
       set({
         mode: 'annotation',
         previousMode: mode,
@@ -62,7 +37,7 @@ export const useModeStore = create<ModeState>()(
 
     exitAnnotationMode: () => {
       set({
-        mode: 'normal',
+        mode: 'viewer',
         previousMode: 'annotation',
       });
     },
@@ -70,6 +45,5 @@ export const useModeStore = create<ModeState>()(
 );
 
 // セレクタ
-export const selectIsNormalMode = (state: ModeState) => state.mode === 'normal';
-export const selectIsComparisonMode = (state: ModeState) => state.mode === 'comparison';
+export const selectIsViewerMode = (state: ModeState) => state.mode === 'viewer';
 export const selectIsAnnotationMode = (state: ModeState) => state.mode === 'annotation';

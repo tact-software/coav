@@ -351,3 +351,229 @@
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-md);
 }
+
+/* Mode Selector Section */
+.mode-section {
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.control-panel-mode-selector {
+  width: 100%;
+}
+
+/* Annotation Mode Styles */
+.annotation-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.annotation-tool-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.annotation-tool-button:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-brand-primary);
+}
+
+.annotation-tool-button--active {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: white;
+}
+
+.annotation-tool-button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.annotation-tool-button span {
+  font-size: 0.875rem;
+}
+
+.annotation-category-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.annotation-category-selector .category-select {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.annotation-category-selector .category-select:focus {
+  outline: none;
+  border-color: var(--color-brand-primary);
+}
+
+.category-color-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.annotation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.annotation-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.8rem;
+}
+
+.annotation-actions .btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-danger {
+  background: var(--color-danger, #dc3545);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover, #c82333);
+}
+
+.btn-danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.save-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.save-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.selection-info {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-brand-primary-light, #e3f2fd);
+  color: var(--color-brand-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Drawing Mode Indicator */
+.drawing-mode-section {
+  background-color: var(--color-warning-bg, #fff3cd);
+  border: 1px solid var(--color-warning-border, #ffc107);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.drawing-mode-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.drawing-mode-label {
+  font-weight: 600;
+  color: var(--color-warning-text, #856404);
+}
+
+.drawing-mode-hint {
+  font-size: 0.8rem;
+  color: var(--color-warning-text, #856404);
+  opacity: 0.85;
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.75rem;
+}
+
+/* Add Annotation Buttons */
+.annotation-add-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.annotation-add-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 2px dashed var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.annotation-add-button:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-brand-primary);
+  border-style: solid;
+}
+
+.annotation-add-button svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.annotation-add-button:hover svg {
+  color: var(--color-brand-primary);
+}
+
+.annotation-add-button-label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.annotation-add-button-shortcut {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-primary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+}

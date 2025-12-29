@@ -173,15 +173,19 @@
     "invalidImageFormat": "Please check if the file is a valid image format",
     "invalidJsonFormat": "Please check if the file is a valid JSON format",
     "exportFailed": "Failed to export",
+    "saveAnnotationsFailed": "Failed to save annotations",
+    "noAnnotationsToSave": "No annotations to save",
     "error": "Error"
   },
   "success": {
     "imageLoaded": "Image loaded successfully",
     "annotationsLoaded": "Annotations loaded successfully",
     "annotationsExported": "Annotations exported successfully",
+    "annotationsSaved": "Annotations saved successfully",
     "sampleGenerated": "Sample data generated successfully",
     "loaded": "Loaded",
     "exported": "Exported",
+    "saved": "Saved",
     "generated": "Generated"
   },
   "sampleGenerator": {
@@ -429,8 +433,7 @@
     "allImages": "All Images"
   },
   "mode": {
-    "normal": "Normal",
-    "comparison": "Comparison",
+    "viewer": "Viewer",
     "annotation": "Annotation",
     "annotationDisabledHint": "Open a project to use annotation mode"
   },
@@ -463,10 +466,20 @@
   },
   "editor": {
     "title": "Editor",
-    "tools": "Tools",
-    "select": "Select",
-    "bbox": "Bounding Box",
-    "polygon": "Polygon",
+    "tools": {
+      "title": "Tools",
+      "select": "Select",
+      "bbox": "Bounding Box",
+      "polygon": "Polygon"
+    },
+    "addAnnotation": "Add Annotation",
+    "drawingMode": " Drawing",
+    "hints": {
+      "bbox": "Drag to draw a rectangle. Press Esc to cancel.",
+      "polygon": "Click to add vertices. Double-click or Enter to finish. Esc to cancel."
+    },
+    "selectCategory": "Category",
+    "actions": "Actions",
     "undo": "Undo",
     "redo": "Redo",
     "save": "Save",

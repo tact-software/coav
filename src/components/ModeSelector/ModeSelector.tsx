@@ -18,14 +18,9 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
 
   const modes: { key: AppMode; label: string; disabled: boolean }[] = [
     {
-      key: 'normal',
-      label: t('mode.normal'),
+      key: 'viewer',
+      label: t('mode.viewer'),
       disabled: false,
-    },
-    {
-      key: 'comparison',
-      label: t('mode.comparison'),
-      disabled: mode === 'annotation',
     },
     {
       key: 'annotation',
@@ -36,11 +31,6 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
 
   const handleModeChange = (newMode: AppMode) => {
     if (newMode === mode) return;
-
-    // 比較モードへの切り替えはアノテーションモード中は不可
-    if (newMode === 'comparison' && mode === 'annotation') {
-      return;
-    }
 
     // アノテーションモードへの切り替えは画像データが必要
     if (newMode === 'annotation' && !canEnterAnnotationMode) {
@@ -55,6 +45,7 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
       {modes.map(({ key, label, disabled }) => (
         <button
           key={key}
+          type="button"
           className={`mode-selector__button ${mode === key ? 'mode-selector__button--active' : ''} ${disabled ? 'mode-selector__button--disabled' : ''}`}
           onClick={() => handleModeChange(key)}
           disabled={disabled}
