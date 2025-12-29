@@ -18,7 +18,14 @@ interface DetailSettings {
   promotedFields: string[]; // Promoted field paths like "option.detection.confidence"
 }
 
-export type TabType = 'control' | 'info' | 'detail' | 'files' | 'navigation';
+export type TabType =
+  | 'control'
+  | 'info'
+  | 'detail'
+  | 'files'
+  | 'navigation'
+  | 'comparison'
+  | 'annotation';
 export type PanelSide = 'left' | 'right';
 
 interface PanelLayoutSettings {

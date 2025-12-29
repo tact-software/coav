@@ -7,6 +7,38 @@ export { useLoadingStore } from './useLoadingStore';
 export { useHistogramStore } from './useHistogramStore';
 export { useHeatmapStore } from './useHeatmapStore';
 export { useNavigationStore } from './useNavigationStore';
+export {
+  useModeStore,
+  selectIsNormalMode,
+  selectIsComparisonMode,
+  selectIsAnnotationMode,
+} from './useModeStore';
+export {
+  useProjectStore,
+  selectCurrentProject,
+  selectIsProjectLoaded,
+  selectIsDirty,
+  selectCategories,
+  selectSelectedCategoryId,
+  selectSelectedCategory,
+} from './useProjectStore';
+export {
+  useEditorStore,
+  selectActiveTool,
+  selectIsDrawing,
+  selectDrawingState,
+  selectSelectedAnnotationIds,
+  selectHasSelection,
+  selectCanPaste,
+} from './useEditorStore';
+export {
+  useHistoryStore,
+  selectCanUndo,
+  selectCanRedo,
+  selectUndoDescription,
+  selectRedoDescription,
+  selectHistoryCount,
+} from './useHistoryStore';
 export type { RecentFile } from './useRecentFilesStore';
 export type { Language, Theme, TabType } from './useSettingsStore';
 export type {
