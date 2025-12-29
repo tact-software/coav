@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { TabIcon, useTabTitle } from './TabHelpers';
+import { ModeSelector } from '../ModeSelector';
 import type { TabType } from '../../stores';
 
 interface SidebarProps {
@@ -10,6 +11,7 @@ interface SidebarProps {
   visible: boolean;
   onToggle: () => void;
   renderContent: (tab: string) => ReactNode;
+  showModeSelector?: boolean;
 }
 
 export function Sidebar({
@@ -20,6 +22,7 @@ export function Sidebar({
   visible,
   onToggle,
   renderContent,
+  showModeSelector = false,
 }: SidebarProps) {
   const getTabTitle = useTabTitle();
 
@@ -29,6 +32,11 @@ export function Sidebar({
     <aside className={`sidebar sidebar--${layout} ${visible ? 'sidebar--visible' : ''}`}>
       {layout === 'overlay' && visible && <div className="sidebar-backdrop" onClick={onToggle} />}
       <div className="sidebar-container">
+        {showModeSelector && (
+          <div className="sidebar-mode-selector">
+            <ModeSelector />
+          </div>
+        )}
         <div className="sidebar-header">
           <div className="sidebar-tabs">
             {tabs.map((tab) => (

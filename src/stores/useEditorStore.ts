@@ -4,6 +4,8 @@ import type { EditorTool, DrawingState, ClipboardData, Point } from '../types';
 interface EditorState {
   /** 選択中のツール */
   activeTool: EditorTool;
+  /** currentToolはactiveToolのエイリアス */
+  currentTool: EditorTool;
   /** 描画中フラグ */
   isDrawing: boolean;
   /** 描画中の状態 */
@@ -16,13 +18,19 @@ interface EditorState {
   clipboard: ClipboardData | null;
   /** 編集中の頂点インデックス */
   editingVertexIndex: number | null;
+  /** 現在選択中のカテゴリID */
+  currentCategoryId: number | null;
+  /** 変更フラグ */
+  hasChanges: boolean;
 
   // アクション
   setActiveTool: (tool: EditorTool) => void;
+  setTool: (tool: EditorTool) => void;
   startDrawing: (point: Point) => void;
   updateDrawing: (point: Point) => void;
   finishDrawing: () => void;
   cancelDrawing: () => void;
+  setDrawingState: (state: Partial<DrawingState>) => void;
   addPolygonPoint: (point: Point) => void;
   removeLastPolygonPoint: () => void;
   selectAnnotation: (id: number, additive?: boolean) => void;
@@ -32,6 +40,8 @@ interface EditorState {
   setHoveredAnnotation: (id: number | null) => void;
   setClipboard: (data: ClipboardData | null) => void;
   setEditingVertex: (index: number | null) => void;
+  setCurrentCategoryId: (id: number | null) => void;
+  setHasChanges: (hasChanges: boolean) => void;
   reset: () => void;
 }
 
@@ -43,16 +53,29 @@ const initialDrawingState: DrawingState = {
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
   activeTool: 'select',
+  currentTool: 'select',
   isDrawing: false,
   drawingState: initialDrawingState,
   selectedAnnotationIds: [],
   hoveredAnnotationId: null,
   clipboard: null,
   editingVertexIndex: null,
+  currentCategoryId: null,
+  hasChanges: false,
 
   setActiveTool: (tool) => {
     set({
       activeTool: tool,
+      currentTool: tool,
+      drawingState: { ...initialDrawingState, tool },
+      isDrawing: false,
+    });
+  },
+
+  setTool: (tool) => {
+    set({
+      activeTool: tool,
+      currentTool: tool,
       drawingState: { ...initialDrawingState, tool },
       isDrawing: false,
     });
@@ -93,6 +116,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       isDrawing: false,
       drawingState: { ...initialDrawingState, tool: get().activeTool },
     });
+  },
+
+  setDrawingState: (newState) => {
+    set((state) => ({
+      drawingState: { ...state.drawingState, ...newState },
+      isDrawing: newState.isDrawing ?? state.isDrawing,
+    }));
   },
 
   addPolygonPoint: (point) => {
@@ -170,14 +200,25 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set({ editingVertexIndex: index });
   },
 
+  setCurrentCategoryId: (id) => {
+    set({ currentCategoryId: id });
+  },
+
+  setHasChanges: (hasChanges) => {
+    set({ hasChanges });
+  },
+
   reset: () => {
     set({
       activeTool: 'select',
+      currentTool: 'select',
       isDrawing: false,
       drawingState: initialDrawingState,
       selectedAnnotationIds: [],
       hoveredAnnotationId: null,
       editingVertexIndex: null,
+      currentCategoryId: null,
+      hasChanges: false,
     });
   },
 }));

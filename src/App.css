@@ -201,6 +201,11 @@ body.drag-over .app::before {
   width: var(--sidebar-width);
 }
 
+.sidebar-mode-selector {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;

@@ -2,8 +2,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { useTranslation } from 'react-i18next';
-import { useImageStore, useAnnotationStore, useNavigationStore } from '../../stores';
+import { useImageStore, useAnnotationStore, useNavigationStore, useModeStore } from '../../stores';
 import AnnotationLayer from '../AnnotationLayer';
+import { DrawingLayer } from '../DrawingLayer';
 import './ImageViewer.css';
 
 const ImageViewer: React.FC = () => {
@@ -32,6 +33,7 @@ const ImageViewer: React.FC = () => {
     useAnnotationStore();
 
   const { navigationMode } = useNavigationStore();
+  const appMode = useModeStore((state) => state.mode);
 
   // Calculate viewport for culling
   const getViewport = useCallback(() => {
@@ -239,6 +241,13 @@ const ImageViewer: React.FC = () => {
               imageId={currentImageId}
               scale={zoom}
               viewport={getViewport()}
+            />
+          )}
+          {appMode === 'annotation' && currentImageId && (
+            <DrawingLayer
+              scale={zoom}
+              stageRef={stageRef}
+              imageId={currentImageId}
             />
           )}
         </Stage>

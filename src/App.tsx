@@ -21,6 +21,7 @@ import {
   FloatingActionButton,
   TabContent,
 } from './components/Layout';
+import { AnnotationToolbar } from './components/AnnotationToolbar';
 import {
   useAnnotationStore,
   useImageStore,
@@ -28,6 +29,7 @@ import {
   useSettingsStore,
   useLoadingStore,
   useHeatmapStore,
+  useModeStore,
   toast,
 } from './stores';
 import type { TabType } from './stores';
@@ -46,6 +48,7 @@ function App() {
     useSettingsStore();
   const { isLoading, message, subMessage, progress } = useLoadingStore();
   const { openModal: openHeatmapModal } = useHeatmapStore();
+  const appMode = useModeStore((state) => state.mode);
 
   // File operations hook
   const fileOps = useFileOperations();
@@ -242,11 +245,13 @@ function App() {
                 visible={leftPanelVisible}
                 onToggle={toggleLeftPanel}
                 renderContent={renderTabContent}
+                showModeSelector={true}
               />
             )}
 
         {/* Main Content */}
         <div className="app-content">
+          {appMode === 'annotation' && <AnnotationToolbar />}
           <div className="viewer-container">
             {imageSize ? (
               <ImageViewer />

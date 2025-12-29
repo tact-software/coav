@@ -11,9 +11,12 @@ interface HistoryState {
   maxHistorySize: number;
 
   // アクション
+  push: (action: EditAction, description?: string) => void;
   pushHistory: (action: EditAction, description: string) => void;
   undo: () => HistoryEntry | null;
   redo: () => HistoryEntry | null;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
   clearHistory: () => void;
 }
 
@@ -30,7 +33,7 @@ export const useHistoryStore = create<HistoryState>()(
     future: [],
     maxHistorySize: MAX_HISTORY_SIZE,
 
-    pushHistory: (action, description) => {
+    push: (action, description = '') => {
       const entry: HistoryEntry = {
         id: generateId(),
         timestamp: Date.now(),
@@ -45,6 +48,10 @@ export const useHistoryStore = create<HistoryState>()(
           future: [], // 新しい操作をしたらRedoはクリア
         };
       });
+    },
+
+    pushHistory: (action, description) => {
+      get().push(action, description);
     },
 
     undo: () => {
@@ -73,6 +80,14 @@ export const useHistoryStore = create<HistoryState>()(
       });
 
       return entry;
+    },
+
+    canUndo: () => {
+      return get().past.length > 0;
+    },
+
+    canRedo: () => {
+      return get().future.length > 0;
     },
 
     clearHistory: () => {
