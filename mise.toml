@@ -1,9 +1,13 @@
 [tools]
 bun = "1.2.4"
 node = "22.15.1"
-# rust は rust-toolchain.toml で管理（rustfmt/clippy を含む）
+# rust は rust-toolchain.toml で管理（rustfmt/clippy コンポーネントを含む）
 act = "latest"
 actionlint = "latest"
+
+[settings]
+# rust-toolchain.toml を認識させる（mise 2025.10.0以降はデフォルト無効になるため明示的に指定）
+idiomatic_version_file_enable_tools = ["rust"]
 
 [tasks.install]
 run = "bun install"
