@@ -1,6 +1,12 @@
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEditorStore, useHistoryStore, useModeStore } from '../../stores';
-import type { EditorTool } from '../../types';
+import {
+  useEditorStore,
+  useHistoryStore,
+  useModeStore,
+  useAnnotationStore,
+} from '../../stores';
+import type { EditorTool, EditAction } from '../../types';
 import './AnnotationToolbar.css';
 
 export function AnnotationToolbar() {
@@ -12,8 +18,69 @@ export function AnnotationToolbar() {
 
   const canUndo = useHistoryStore((state) => state.canUndo());
   const canRedo = useHistoryStore((state) => state.canRedo());
-  const undo = useHistoryStore((state) => state.undo);
-  const redo = useHistoryStore((state) => state.redo);
+  const undoHistory = useHistoryStore((state) => state.undo);
+  const redoHistory = useHistoryStore((state) => state.redo);
+
+  const {
+    addAnnotation,
+    deleteAnnotation,
+    updateAnnotation,
+  } = useAnnotationStore();
+
+  // アクションを適用する（Undo時は逆操作、Redo時は順操作）
+  const applyAction = useCallback(
+    (action: EditAction, isUndo: boolean) => {
+      switch (action.type) {
+        case 'CREATE':
+          if (isUndo) {
+            // Undo: 作成を取り消し → 削除
+            deleteAnnotation(action.annotation.id);
+          } else {
+            // Redo: 再作成
+            addAnnotation(action.annotation);
+          }
+          break;
+        case 'DELETE':
+          if (isUndo) {
+            // Undo: 削除を取り消し → 復元
+            addAnnotation(action.annotation);
+          } else {
+            // Redo: 再削除
+            deleteAnnotation(action.annotation.id);
+          }
+          break;
+        case 'UPDATE':
+          if (isUndo) {
+            // Undo: 変更前の状態に戻す
+            updateAnnotation(action.id, action.before);
+          } else {
+            // Redo: 変更後の状態に戻す
+            updateAnnotation(action.id, action.after);
+          }
+          break;
+        case 'BATCH':
+          // バッチ操作は逆順で適用（Undoの場合）
+          const actions = isUndo ? [...action.actions].reverse() : action.actions;
+          actions.forEach((a) => applyAction(a, isUndo));
+          break;
+      }
+    },
+    [addAnnotation, deleteAnnotation, updateAnnotation]
+  );
+
+  const handleUndo = useCallback(() => {
+    const entry = undoHistory();
+    if (entry) {
+      applyAction(entry.action, true);
+    }
+  }, [undoHistory, applyAction]);
+
+  const handleRedo = useCallback(() => {
+    const entry = redoHistory();
+    if (entry) {
+      applyAction(entry.action, false);
+    }
+  }, [redoHistory, applyAction]);
 
   if (mode !== 'annotation') {
     return null;
@@ -75,7 +142,7 @@ export function AnnotationToolbar() {
       <div className="annotation-toolbar__group">
         <button
           className="annotation-toolbar__button"
-          onClick={undo}
+          onClick={handleUndo}
           disabled={!canUndo}
           title={t('editor.undo')}
         >
@@ -86,7 +153,7 @@ export function AnnotationToolbar() {
         </button>
         <button
           className="annotation-toolbar__button"
-          onClick={redo}
+          onClick={handleRedo}
           disabled={!canRedo}
           title={t('editor.redo')}
         >

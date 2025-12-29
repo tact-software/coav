@@ -28,7 +28,7 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
   const currentCategoryId = useEditorStore((state) => state.currentCategoryId);
   const setHasChanges = useEditorStore((state) => state.setHasChanges);
 
-  const { cocoData } = useAnnotationStore();
+  const { cocoData, addAnnotation } = useAnnotationStore();
   const pushHistory = useHistoryStore((state) => state.push);
 
   const isDrawingRef = useRef(false);
@@ -53,13 +53,13 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
     return { x: pos.x, y: pos.y };
   }, [stageRef]);
 
-  // アノテーションをCOCOデータに追加（実際の保存は後で実装）
+  // アノテーションをCOCOデータに追加
   const addAnnotationToStore = useCallback(
     (annotation: COCOAnnotation) => {
-      // 現在はコンソールに出力するのみ
-      // TODO: 後でAnnotationStoreにaddAnnotationメソッドを追加
-      console.log('New annotation:', annotation);
+      // AnnotationStoreに追加
+      addAnnotation(annotation);
 
+      // 履歴に追加
       const editableAnnotation: EditableAnnotation = {
         ...annotation,
         zIndex: cocoData?.annotations.length ?? 0,
@@ -71,7 +71,7 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({ scale, stageRef, ima
       );
       setHasChanges(true);
     },
-    [cocoData, pushHistory, setHasChanges]
+    [cocoData, addAnnotation, pushHistory, setHasChanges]
   );
 
   // BBox描画完了

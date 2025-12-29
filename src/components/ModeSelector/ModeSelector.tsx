@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useModeStore, useProjectStore } from '../../stores';
+import { useModeStore, useAnnotationStore } from '../../stores';
 import type { AppMode } from '../../types';
 import './ModeSelector.css';
 
@@ -11,7 +11,10 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
   const { t } = useTranslation();
   const mode = useModeStore((state) => state.mode);
   const setMode = useModeStore((state) => state.setMode);
-  const isProjectLoaded = useProjectStore((state) => state.isProjectLoaded);
+  const cocoData = useAnnotationStore((state) => state.cocoData);
+
+  // アノテーションモードは画像とアノテーションデータが読み込まれている場合に有効
+  const canEnterAnnotationMode = cocoData !== null;
 
   const modes: { key: AppMode; label: string; disabled: boolean }[] = [
     {
@@ -27,7 +30,7 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
     {
       key: 'annotation',
       label: t('mode.annotation'),
-      disabled: !isProjectLoaded,
+      disabled: !canEnterAnnotationMode,
     },
   ];
 
@@ -39,8 +42,8 @@ export function ModeSelector({ className = '' }: ModeSelectorProps) {
       return;
     }
 
-    // アノテーションモードへの切り替えはプロジェクトが必要
-    if (newMode === 'annotation' && !isProjectLoaded) {
+    // アノテーションモードへの切り替えは画像データが必要
+    if (newMode === 'annotation' && !canEnterAnnotationMode) {
       return;
     }
 

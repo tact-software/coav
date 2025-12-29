@@ -59,6 +59,12 @@ interface AnnotationState {
   getCategoryById: (id: number) => COCOCategory | undefined;
   getAnnotationsForCurrentImage: () => COCOAnnotation[];
 
+  // Annotation editing actions
+  addAnnotation: (annotation: COCOAnnotation) => void;
+  updateAnnotation: (id: number, updates: Partial<COCOAnnotation>) => void;
+  deleteAnnotation: (id: number) => void;
+  deleteAnnotations: (ids: number[]) => void;
+
   // Comparison actions
   setComparisonData: (
     originalData: COCOData,
@@ -292,6 +298,66 @@ export const useAnnotationStore = create<AnnotationState>((set, get) => ({
     if (!state.cocoData || !state.currentImageId) return [];
 
     return state.cocoData.annotations.filter((ann) => ann.image_id === state.currentImageId);
+  },
+
+  // Annotation editing actions
+  addAnnotation: (annotation) => {
+    set((state) => {
+      if (!state.cocoData) return state;
+
+      return {
+        cocoData: {
+          ...state.cocoData,
+          annotations: [...state.cocoData.annotations, annotation],
+        },
+      };
+    });
+  },
+
+  updateAnnotation: (id, updates) => {
+    set((state) => {
+      if (!state.cocoData) return state;
+
+      return {
+        cocoData: {
+          ...state.cocoData,
+          annotations: state.cocoData.annotations.map((ann) =>
+            ann.id === id ? { ...ann, ...updates } : ann
+          ),
+        },
+      };
+    });
+  },
+
+  deleteAnnotation: (id) => {
+    set((state) => {
+      if (!state.cocoData) return state;
+
+      return {
+        cocoData: {
+          ...state.cocoData,
+          annotations: state.cocoData.annotations.filter((ann) => ann.id !== id),
+        },
+        selectedAnnotationIds: state.selectedAnnotationIds.filter((aid) => aid !== id),
+      };
+    });
+  },
+
+  deleteAnnotations: (ids) => {
+    set((state) => {
+      if (!state.cocoData) return state;
+
+      const idSet = new Set(ids);
+      return {
+        cocoData: {
+          ...state.cocoData,
+          annotations: state.cocoData.annotations.filter((ann) => !idSet.has(ann.id)),
+        },
+        selectedAnnotationIds: state.selectedAnnotationIds.filter(
+          (aid) => typeof aid !== 'number' || !idSet.has(aid)
+        ),
+      };
+    });
   },
 
   // Comparison actions
