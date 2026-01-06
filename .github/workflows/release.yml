@@ -79,8 +79,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -100,3 +106,117 @@ jobs:
             artifacts/**/*.rpm
             artifacts/**/*.AppImage
             artifacts/**/*.dmg
+
+  update-homebrew:
+    name: Update Homebrew Tap
+    needs: release
+    runs-on: ubuntu-latest
+    # Only run if HOMEBREW_TAP_TOKEN secret is set
+    if: ${{ vars.ENABLE_HOMEBREW_TAP == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: macos-*
+          path: artifacts
+
+      - name: Calculate SHA256 checksums
+        id: checksums
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+
+          # Find DMG files
+          X64_DMG=$(find artifacts -name "*x64*.dmg" -o -name "*x86_64*.dmg" | head -1)
+          ARM64_DMG=$(find artifacts -name "*arm64*.dmg" -o -name "*aarch64*.dmg" | head -1)
+
+          if [ -n "$X64_DMG" ]; then
+            SHA256_X64=$(sha256sum "$X64_DMG" | cut -d' ' -f1)
+            echo "sha256_x64=$SHA256_X64" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "$ARM64_DMG" ]; then
+            SHA256_ARM64=$(sha256sum "$ARM64_DMG" | cut -d' ' -f1)
+            echo "sha256_arm64=$SHA256_ARM64" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Homebrew Cask
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          SHA256_X64="${{ steps.checksums.outputs.sha256_x64 }}"
+          SHA256_ARM64="${{ steps.checksums.outputs.sha256_arm64 }}"
+
+          sed -e "s/{{VERSION}}/$VERSION/g" \
+              -e "s/{{SHA256_X64}}/$SHA256_X64/g" \
+              -e "s/{{SHA256_ARM64}}/$SHA256_ARM64/g" \
+              packaging/homebrew/coav.rb.template > coav.rb
+
+          cat coav.rb
+
+      - name: Update Homebrew Tap Repository
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          repository: tact-software/homebrew-coav
+          event-type: update-cask
+          client-payload: |
+            {
+              "version": "${{ needs.release.outputs.version }}",
+              "sha256_x64": "${{ steps.checksums.outputs.sha256_x64 }}",
+              "sha256_arm64": "${{ steps.checksums.outputs.sha256_arm64 }}"
+            }
+
+  update-apt-repo:
+    name: Update APT Repository
+    needs: release
+    runs-on: ubuntu-latest
+    # Only run if APT repository is enabled
+    if: ${{ vars.ENABLE_APT_REPO == 'true' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux
+          path: artifacts
+
+      - name: Setup GPG
+        run: |
+          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | base64 -d | gpg --import
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+
+      - name: Install reprepro
+        run: sudo apt-get install -y reprepro
+
+      - name: Update APT repository
+        run: |
+          cd gh-pages
+
+          # Copy distributions config if not exists
+          if [ ! -f "conf/distributions" ]; then
+            mkdir -p conf
+            cp ../packaging/apt/distributions conf/
+          fi
+
+          # Add .deb package to repository
+          DEB_FILE=$(find ../artifacts -name "*.deb" | head -1)
+          if [ -n "$DEB_FILE" ]; then
+            reprepro -b . includedeb stable "$DEB_FILE"
+          fi
+
+      - name: Commit and push
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Update APT repository for v${{ needs.release.outputs.version }}"
+          git push

@@ -1,0 +1,61 @@
+# This workflow should be placed in the tact-software/homebrew-coav repository
+# File: .github/workflows/update-cask.yml
+
+name: Update Cask
+
+on:
+  repository_dispatch:
+    types: [update-cask]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Cask file
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          SHA256_X64="${{ github.event.client_payload.sha256_x64 }}"
+          SHA256_ARM64="${{ github.event.client_payload.sha256_arm64 }}"
+
+          cat > Casks/coav.rb << 'EOF'
+          cask "coav" do
+            version "$VERSION"
+
+            if Hardware::CPU.arm?
+              url "https://github.com/tact-software/coav/releases/download/v$VERSION/coav_${VERSION}_aarch64.dmg"
+              sha256 "$SHA256_ARM64"
+            else
+              url "https://github.com/tact-software/coav/releases/download/v$VERSION/coav_${VERSION}_x64.dmg"
+              sha256 "$SHA256_X64"
+            end
+
+            name "COAV"
+            desc "COCO Annotation Viewer - Desktop application for viewing and analyzing COCO dataset annotations"
+            homepage "https://github.com/tact-software/coav"
+            license "MIT"
+
+            app "coav.app"
+
+            zap trash: [
+              "~/Library/Application Support/com.coav.app",
+              "~/Library/Caches/com.coav.app",
+              "~/Library/Preferences/com.coav.app.plist",
+              "~/Library/Saved Application State/com.coav.app.savedState",
+            ]
+          end
+          EOF
+
+          # Replace variables
+          sed -i "s/\$VERSION/$VERSION/g" Casks/coav.rb
+          sed -i "s/\$SHA256_X64/$SHA256_X64/g" Casks/coav.rb
+          sed -i "s/\$SHA256_ARM64/$SHA256_ARM64/g" Casks/coav.rb
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/coav.rb
+          git commit -m "Update coav to v${{ github.event.client_payload.version }}"
+          git push

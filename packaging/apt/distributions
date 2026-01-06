@@ -1,0 +1,7 @@
+Origin: COAV
+Label: COAV
+Codename: stable
+Architectures: amd64
+Components: main
+Description: COAV - COCO Annotation Viewer
+SignWith: default

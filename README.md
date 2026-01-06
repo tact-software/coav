@@ -44,6 +44,44 @@ COAVは、機械学習の研究者、データサイエンティスト、エン�
 
 ## インストール
 
+### ダウンロード（推奨）
+
+[GitHub Releases](https://github.com/tact-software/coav/releases)から最新版をダウンロードしてください。
+
+| プラットフォーム | ファイル形式 |
+|------------------|--------------|
+| macOS (Apple Silicon) | `.dmg` |
+| macOS (Intel) | `.dmg` |
+| Linux (Debian/Ubuntu) | `.deb`, `.AppImage` |
+| Linux (Fedora/RHEL) | `.rpm` |
+
+### Homebrew（macOS）
+
+```bash
+brew tap tact-software/coav
+brew install --cask coav
+```
+
+### APT（Debian/Ubuntu）
+
+```bash
+# GPGキーを追加
+curl -fsSL https://tact-software.github.io/coav/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/coav-archive-keyring.gpg
+
+# リポジトリを追加
+echo "deb [signed-by=/usr/share/keyrings/coav-archive-keyring.gpg] https://tact-software.github.io/coav stable main" | sudo tee /etc/apt/sources.list.d/coav.list
+
+# インストール
+sudo apt update
+sudo apt install coav
+```
+
+> **Note**: Homebrew tap と APT リポジトリはオプションの設定です。詳細は [packaging/INSTALL.md](./packaging/INSTALL.md) を参照してください。
+
+---
+
+## 開発者向け
+
 ### 前提条件
 
 - [mise](https://mise.jdx.dev/)

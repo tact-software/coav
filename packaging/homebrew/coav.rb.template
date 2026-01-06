@@ -1,0 +1,33 @@
+# Homebrew Formula Template for COAV
+# This template is used by the release workflow to generate the actual formula
+
+cask "coav" do
+  version "{{VERSION}}"
+
+  if Hardware::CPU.arm?
+    url "https://github.com/tact-software/coav/releases/download/v{{VERSION}}/coav_{{VERSION}}_aarch64.dmg"
+    sha256 "{{SHA256_ARM64}}"
+  else
+    url "https://github.com/tact-software/coav/releases/download/v{{VERSION}}/coav_{{VERSION}}_x64.dmg"
+    sha256 "{{SHA256_X64}}"
+  end
+
+  name "COAV"
+  desc "COCO Annotation Viewer - Desktop application for viewing and analyzing COCO dataset annotations"
+  homepage "https://github.com/tact-software/coav"
+  license "MIT"
+
+  app "coav.app"
+
+  zap trash: [
+    "~/Library/Application Support/com.coav.app",
+    "~/Library/Caches/com.coav.app",
+    "~/Library/Preferences/com.coav.app.plist",
+    "~/Library/Saved Application State/com.coav.app.savedState",
+  ]
+
+  caveats <<~EOS
+    COAV is a desktop application for viewing and analyzing COCO dataset annotations.
+    After installation, you can find it in your Applications folder.
+  EOS
+end
