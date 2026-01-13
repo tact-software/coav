@@ -33,10 +33,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install mise
-        uses: jdx/mise-action@v2.2.2
-        with:
-          cache: true
-          experimental: true
+        uses: jdx/mise-action@v3
 
       - name: Setup
         run: |
