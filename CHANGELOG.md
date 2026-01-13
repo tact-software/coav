@@ -7,6 +7,42 @@
 
 ## [未リリース]
 
+## [1.1.3] - 2026-01-13
+
+### 追加
+
+- **Windows対応**
+  - Windows向けビルドをリリースワークフローに追加
+  - MSI・NSISインストーラーのサポート
+
+## [1.1.2] - 2025-12-29
+
+### 修正
+
+- miseでrust-toolchain.tomlを認識させてCI環境を修正
+- macOS Intel ランナーを macos-15-large に更新
+
+## [1.1.1] - 2025-12-20
+
+### 追加
+
+- **ネイティブメニューの多言語対応と機能整備**
+
+### 変更
+
+- CI/CD環境の改善とコード品質修正
+- miseタスクベースのCI/CDワークフローを整備
+- プロジェクト構成を整理し、mise統一
+- App.tsx を分割してモジュール化
+- utils/index.ts とeslint設定を整理
+- コードベースを整理し重複を削除
+
+### 修正
+
+- ポリゴン描画のtensionとポイント間引きを削除して形状の正確性を確保
+- カテゴリ色生成をHEX形式に変更してカラーピッカーとの互換性を確保
+- アノテーション描画の不具合を修正
+
 ## [1.1.0] - 2025-06-20
 
 ### 追加
@@ -107,6 +143,9 @@
 - Zustandによる状態管理
 - クロスプラットフォーム対応（Windows、macOS、Linux）
 
-[未リリース]: https://github.com/tact-software/coav/compare/v1.1.0...HEAD
+[未リリース]: https://github.com/tact-software/coav/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/tact-software/coav/compare/v1.1.2...v1.1.3
+[1.1.2]: https://github.com/tact-software/coav/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/tact-software/coav/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/tact-software/coav/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tact-software/coav/releases/tag/v1.0.0
