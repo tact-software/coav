@@ -39,6 +39,9 @@ jobs:
       - name: Setup
         run: mise install || mise install
 
+      - name: Install Rust components
+        run: rustup component add rustfmt clippy
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
